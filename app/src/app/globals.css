@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  /* crftd tokens — literal values taken from the .dc.html prototype (the
+     executed visual reference), which supersede the PRD §11 token table
+     where they conflict, per project brief. */
+  --color-ink: #0f0f10; /* near-black */
+  --color-cream: #f7f5f1; /* cream */
+  --color-blue: #1b4df5; /* crftd blue */
+  --color-signal: #c6302b; /* signal red/orange */
+  --color-line: #333333;
+}
+
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-cream: var(--color-cream);
+  --color-blue: var(--color-blue);
+  --color-signal: var(--color-signal);
+  --font-body: var(--font-body), system-ui, sans-serif;
+  --font-mono: var(--font-mono), monospace;
+}
+
+html,
+body {
+  background: var(--color-ink);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+.tap-target {
+  min-height: 48px;
+}
+
+/* crop-mark corner decoration used on POS header bands, per design ref */
+.crop-marks::before,
+.crop-marks::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid currentColor;
+  opacity: 0.7;
+  top: 4px;
+}
+.crop-marks::before {
+  left: 4px;
+  border-left: 2px solid currentColor;
+}
+.crop-marks::after {
+  right: 4px;
+  border-right: 2px solid currentColor;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
