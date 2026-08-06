@@ -6,10 +6,16 @@ import { verifySession, SESSION_COOKIE } from "@/lib/session";
 // session covers Sell/Orders/Stock/Restock and everything under /.
 const PUBLIC_PATHS = ["/pin", "/api/auth/pin", "/_next", "/favicon.ico", "/fonts"];
 
+// Any request for a static file under /public (mockups, sticker cutouts,
+// manifest, etc.) must never be caught by the PIN gate — that was a real bug:
+// unauthenticated <img> requests were getting redirected to the PIN HTML
+// page, which the browser then tried (and failed) to render as an image.
+const STATIC_FILE = /\.(svg|png|jpe?g|webp|gif|ico|css|js|json|txt|woff2?|ttf)$/i;
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p)) || STATIC_FILE.test(pathname)) {
     return NextResponse.next();
   }
 

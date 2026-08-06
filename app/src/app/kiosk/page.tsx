@@ -1,6 +1,65 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { Fraunces } from "next/font/google";
+
+// Kiosk-only accent face — full brutalist skin lives here per PRD §11/D19;
+// every other surface (Sell/Orders/Stock/Admin) stays on the restrained POS
+// skin and must not pick this up. Fraunces is OFL/free, no licensing concern
+// (unlike the Eina situation documented in the root layout).
+const fraunces = Fraunces({ subsets: ["latin"], weight: ["900"], style: ["italic"], variable: "--font-fraunces" });
+
+/** Halftone dot-grid texture, CSS-only (no image assets) — used behind hero
+ * blocks on the attract/ticket screens per the collision-layout brief. */
+function Halftone({ className = "", color = "#1B4DF5" }: { className?: string; color?: string }) {
+  return (
+    <div
+      className={`absolute inset-0 pointer-events-none opacity-25 ${className}`}
+      style={{
+        backgroundImage: `radial-gradient(${color} 1.4px, transparent 1.6px)`,
+        backgroundSize: "9px 9px",
+      }}
+    />
+  );
+}
+
+/** Crop-mark corners, matching the receipt's print-shop frame. Pass `dark`
+ * when the corners sit on a cream/white card (ticket screen) so they don't
+ * disappear against a same-color border. */
+function KioskCropMarks({ dark = false }: { dark?: boolean }) {
+  const arm = `absolute w-3 h-3 ${dark ? "border-ink" : "border-cream"}`;
+  return (
+    <>
+      <span className={`${arm} top-2 left-2 border-t-2 border-l-2`} />
+      <span className={`${arm} top-2 right-2 border-t-2 border-r-2`} />
+      <span className={`${arm} bottom-2 left-2 border-b-2 border-l-2`} />
+      <span className={`${arm} bottom-2 right-2 border-b-2 border-r-2`} />
+    </>
+  );
+}
+
+/** Rotated box-label tag — the "torn sticker" affordance used throughout the
+ * kiosk reference files for meta/status chips. */
+function BoxLabel({ children, rotate = -3 }: { children: React.ReactNode; rotate?: number }) {
+  return (
+    <span
+      className="inline-block bg-signal text-ink font-extrabold text-[10px] tracking-[0.14em] px-2.5 py-1 border-2 border-ink"
+      style={{ transform: `rotate(${rotate}deg)` }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** Star-burst glyph — cheap collision-layout ornament, positioned absolutely
+ * by the caller. */
+function StarBurst({ size = 28, color = "#F7F5F1" }: { size?: number; color?: string }) {
+  return (
+    <span style={{ fontSize: size, color, lineHeight: 1 }} className="select-none">
+      ✦
+    </span>
+  );
+}
 
 type Color = { id: string; name: string };
 type Fit = { id: string; name: string };
@@ -362,39 +421,86 @@ export default function KioskPage() {
   });
 
   return (
-    <div className="min-h-dvh bg-ink text-cream flex flex-col items-center justify-center p-4">
+    <div className={`min-h-dvh bg-ink text-cream flex flex-col items-center justify-center p-4 ${fraunces.variable}`}>
       {stage === "attract" && (
-        <div className="flex flex-col items-center gap-8 text-center">
-          <div className="font-extrabold text-6xl tracking-wide text-blue">CRFTD</div>
-          <div className="text-2xl font-extrabold">Build yours</div>
-          <div className="text-sm text-neutral-400 max-w-xs">
-            Design Studio — placeholder skin (full brutalist treatment is a later polish pass). Compose a tee, get a
-            ticket, hand it to a volunteer at the till.
+        <div className="relative w-full h-dvh flex flex-col items-center justify-center overflow-hidden">
+          <Halftone />
+          <KioskCropMarks />
+          <div className="absolute top-8 left-8">
+            <StarBurst size={40} color="#C6302B" />
           </div>
-          <button
-            onClick={() => setStage("path")}
-            className="bg-blue text-cream border-2 border-cream px-8 py-4 font-extrabold text-lg"
-          >
-            TAP TO START
-          </button>
+          <div className="absolute bottom-10 right-10">
+            <StarBurst size={28} color="#1B4DF5" />
+          </div>
+          <div className="absolute top-10 right-10 rotate-3">
+            <BoxLabel>STALL OS · KIOSK</BoxLabel>
+          </div>
+
+          <div className="relative flex flex-col items-center gap-8 text-center px-6">
+            <div
+              className="font-extrabold tracking-wide text-blue leading-none"
+              style={{ fontSize: "clamp(56px,14vw,110px)", fontStyle: "italic", transform: "skewX(-4deg)" }}
+            >
+              CRFT<span className="text-signal not-italic">★</span>D
+            </div>
+            <div className="text-3xl md:text-4xl font-extrabold">
+              Build{" "}
+              <span
+                className="not-italic"
+                style={{ fontFamily: "var(--font-fraunces), serif", fontStyle: "italic", fontWeight: 900 }}
+              >
+                yours
+              </span>
+            </div>
+            <div className="text-sm text-neutral-400 max-w-xs">
+              Compose a tee, get a ticket, hand it to a volunteer at the till. Nothing is charged until they scan it.
+            </div>
+            <button
+              onClick={() => setStage("path")}
+              className="relative bg-blue text-cream border-2 border-cream px-10 py-5 font-extrabold text-xl tracking-wide"
+              style={{ transform: "rotate(-1deg)" }}
+            >
+              TAP TO START
+              <span className="absolute -top-3 -right-3">
+                <StarBurst size={22} color="#F7F5F1" />
+              </span>
+            </button>
+          </div>
         </div>
       )}
 
       {stage === "path" && (
-        <div className="flex flex-col gap-4 w-full max-w-md">
-          <div className="font-extrabold text-xl text-center mb-2">How do you want to build?</div>
-          <div className="border-2 border-cream p-4">
-            <div className="font-extrabold mb-2">PRESETS</div>
-            <div className="grid grid-cols-2 gap-2">
+        <div className="relative flex flex-col gap-4 w-full max-w-md">
+          <div className="absolute -top-6 -left-4 rotate-[-6deg]">
+            <BoxLabel rotate={-6}>PICK A PATH</BoxLabel>
+          </div>
+          <div
+            className="font-extrabold text-2xl text-center mb-2"
+            style={{ fontFamily: "var(--font-fraunces), serif", fontStyle: "italic" }}
+          >
+            How do you want to build?
+          </div>
+          <div className="relative border-2 border-cream p-4 bg-ink">
+            <Halftone className="opacity-10" />
+            <div className="font-extrabold mb-2 tracking-wide">PRESETS</div>
+            <div className="grid grid-cols-2 gap-2 relative">
               {presets.map((p) => (
-                <button key={p.id} onClick={() => applyPreset(p)} className="bg-cream text-ink p-2 text-xs font-bold text-left">
+                <button
+                  key={p.id}
+                  onClick={() => applyPreset(p)}
+                  className="bg-cream text-ink p-2 text-xs font-bold text-left border-2 border-ink"
+                >
                   {p.name}
                 </button>
               ))}
               {presets.length === 0 && <div className="text-xs text-neutral-400 col-span-2">No presets yet.</div>}
             </div>
           </div>
-          <button onClick={() => setStage("product")} className="border-2 border-cream p-4 font-extrabold text-lg bg-blue">
+          <button
+            onClick={() => setStage("product")}
+            className="border-2 border-cream p-4 font-extrabold text-lg bg-blue relative"
+            style={{ transform: "rotate(0.5deg)" }}
+          >
             CANVAS — BUILD FROM SCRATCH
           </button>
         </div>
@@ -455,8 +561,11 @@ export default function KioskPage() {
       )}
 
       {stage === "canvas" && sku && printArea && (
-        <div className="flex flex-col gap-3 w-full max-w-md bg-cream text-ink p-3">
-          <div className="flex justify-between items-center">
+        <div className="relative flex flex-col gap-3 w-full max-w-md bg-cream text-ink p-3">
+          <div className="absolute -top-5 -left-3 -rotate-3">
+            <BoxLabel rotate={-3}>DESIGN STUDIO</BoxLabel>
+          </div>
+          <div className="flex justify-between items-center pt-2">
             <div className="font-extrabold">{sku.sku_code}</div>
             <div className="flex gap-1.5">
               {(["front", "back"] as const).map((s) => (
@@ -471,6 +580,9 @@ export default function KioskPage() {
             </div>
           </div>
 
+          {/* Canvas render area intentionally stays clean/legible — no
+              brutalist texture on top of the customer's actual design,
+              per the brief. Chrome around it carries the skin instead. */}
           <div
             ref={canvasRef}
             className="relative border-2 border-ink bg-white select-none"
@@ -562,13 +674,25 @@ export default function KioskPage() {
       )}
 
       {stage === "ticket" && ticket && (
-        <div className="flex flex-col items-center gap-5 bg-cream text-ink p-8 border-2 border-ink">
+        <div className="relative flex flex-col items-center gap-5 bg-cream text-ink p-8 border-2 border-ink max-w-sm">
+          <KioskCropMarks dark />
+          <div className="absolute -top-4 -right-4 rotate-6">
+            <StarBurst size={32} color="#C6302B" />
+          </div>
+          <div className="w-full bg-blue text-cream -mt-8 -mx-8 px-8 py-3 mb-2">
+            <div
+              className="font-extrabold text-2xl text-center"
+              style={{ fontFamily: "var(--font-fraunces), serif", fontStyle: "italic" }}
+            >
+              Get pressed
+            </div>
+          </div>
           <div className="font-extrabold text-sm tracking-wide">SHOW THIS TO A VOLUNTEER</div>
           <div className="font-extrabold text-6xl tracking-[0.3em]">{ticket.code}</div>
           <div className="text-xs font-mono text-neutral-600">
             Expires {new Date(ticket.expires_at).toLocaleTimeString("en-IN")} · Total ₹{total}
           </div>
-          <button onClick={resetAll} className="bg-ink text-cream px-6 py-3 font-extrabold text-sm">
+          <button onClick={resetAll} className="bg-ink text-cream px-6 py-3 font-extrabold text-sm w-full">
             DONE — NEXT CUSTOMER
           </button>
         </div>
