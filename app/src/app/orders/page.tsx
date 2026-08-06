@@ -1,10 +1,21 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PosFrame } from "@/components/PosFrame";
 import { TabBar } from "@/components/TabBar";
 import { BigButton, Mono } from "@/components/ui";
 import { getDeviceId } from "@/lib/deviceId";
+
+type Summary = {
+  shift: { name: string; venue: string };
+  gross: number;
+  discounts: number;
+  net: number;
+  raisedForAquaterra: number;
+  unitsSold: number;
+  topDesigns: { code: string; count: number }[];
+  cashVariance: number | null;
+};
 
 type Order = {
   id: string;
@@ -23,6 +34,8 @@ export default function OrdersPage() {
   const [closing, setClosing] = useState(false);
   const [countedCash, setCountedCash] = useState("");
   const [closeResult, setCloseResult] = useState<{ expectedCash: number; variance: number | null } | null>(null);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -62,7 +75,104 @@ export default function OrdersPage() {
     const j = await res.json();
     if (res.ok) {
       setCloseResult({ expectedCash: j.expectedCash, variance: j.variance });
+      const sJson = await fetch(`/api/shift/summary?shiftId=${shift.id}`).then((r) => r.json());
+      setSummary(sJson);
+      setTimeout(() => drawSummary(sJson), 50);
     }
+  }
+
+  function drawSummary(s: Summary) {
+    const canvas = canvasRef.current;
+    if (!canvas || !s) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = 600;
+    canvas.height = 750;
+    ctx.fillStyle = "#F7F5F1";
+    ctx.fillRect(0, 0, 600, 750);
+    ctx.strokeStyle = "#0F0F10";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(10, 10, 580, 730);
+    // crop marks
+    ctx.lineWidth = 2;
+    [
+      [20, 20, 40, 20],
+      [20, 20, 20, 40],
+      [580, 20, 560, 20],
+      [580, 20, 580, 40],
+    ].forEach(([x1, y1, x2, y2]) => {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    });
+
+    ctx.fillStyle = "#1B4DF5";
+    ctx.fillRect(30, 60, 540, 90);
+    ctx.fillStyle = "#F7F5F1";
+    ctx.font = "bold 28px monospace";
+    ctx.fillText("CRFTD — SHIFT SUMMARY", 45, 100);
+    ctx.font = "14px monospace";
+    ctx.fillText(`${s.shift?.name || ""} · ${s.shift?.venue || ""}`, 45, 130);
+
+    ctx.fillStyle = "#0F0F10";
+    ctx.font = "bold 16px monospace";
+    const rows: [string, string][] = [
+      ["Gross", `₹${s.gross}`],
+      ["Discounts", `₹${s.discounts}`],
+      ["Net", `₹${s.net}`],
+      ["Units sold", `${s.unitsSold}`],
+      ["Cash variance", s.cashVariance != null ? `₹${s.cashVariance}` : "—"],
+    ];
+    rows.forEach(([label, value], i) => {
+      ctx.fillText(label, 45, 190 + i * 34);
+      ctx.textAlign = "right";
+      ctx.fillText(value, 555, 190 + i * 34);
+      ctx.textAlign = "left";
+    });
+
+    ctx.fillStyle = "#1B4DF5";
+    ctx.fillRect(30, 380, 540, 80);
+    ctx.fillStyle = "#F7F5F1";
+    ctx.font = "bold 12px monospace";
+    ctx.fillText("RAISED FOR AQUATERRA", 45, 410);
+    ctx.font = "bold 34px monospace";
+    ctx.fillText(`₹${s.raisedForAquaterra}`, 45, 445);
+
+    ctx.fillStyle = "#0F0F10";
+    ctx.font = "bold 14px monospace";
+    ctx.fillText("TOP DESIGNS", 45, 500);
+    ctx.font = "13px monospace";
+    (s.topDesigns || []).forEach((d, i) => {
+      ctx.fillText(`${i + 1}. ${d.code} × ${d.count}`, 45, 530 + i * 24);
+    });
+
+    ctx.font = "11px monospace";
+    ctx.fillStyle = "#777";
+    ctx.fillText("crftd Stall OS · placeholder skin, full crop-mark brutalist card is a later polish pass", 45, 710);
+  }
+
+  function downloadSummary() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = "shift-summary.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+
+  async function shareSummary() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], "shift-summary.png", { type: "image/png" });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Shift summary" });
+      } else {
+        downloadSummary();
+      }
+    });
   }
 
   const pending = orders.filter((o) => o.fulfillment_status === "pending_press" && !o.voided_at);
@@ -133,6 +243,20 @@ export default function OrdersPage() {
             </div>
           )}
         </div>
+
+        {summary && (
+          <div className="flex flex-col gap-2">
+            <canvas ref={canvasRef} className="w-full border-2 border-ink" />
+            <div className="grid grid-cols-2 gap-2">
+              <BigButton variant="blue" onClick={shareSummary}>
+                SHARE
+              </BigButton>
+              <BigButton variant="ghost" onClick={downloadSummary}>
+                DOWNLOAD
+              </BigButton>
+            </div>
+          </div>
+        )}
       </PosFrame>
       <TabBar />
     </div>
