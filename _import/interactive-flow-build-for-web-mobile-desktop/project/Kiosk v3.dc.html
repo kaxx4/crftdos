@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap" rel="stylesheet" />
+<style>
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-Light.ttf') format('truetype'); font-weight: 300; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-RegularItalic.ttf') format('truetype'); font-weight: 400; font-style: italic; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-SemiBold.ttf') format('truetype'); font-weight: 600; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-BoldItalic.ttf') format('truetype'); font-weight: 700; font-style: italic; font-display: swap }
+  *, *::before, *::after { box-sizing: border-box }
+  html, body { margin: 0; padding: 0; background: #0F0F10; -webkit-tap-highlight-color: transparent; overscroll-behavior: none }
+  body { font-family: Eina, system-ui, sans-serif; font-weight: 400; -webkit-font-smoothing: antialiased }
+  a { color: #C6302B; text-decoration: none; border-bottom: 1px solid currentColor }
+  a:hover { color: #1B4DF5 }
+  button { font: inherit; touch-action: manipulation; user-select: none; -webkit-user-select: none; transition: background .32s cubic-bezier(.22,.61,.36,1), color .32s cubic-bezier(.22,.61,.36,1), border-color .32s cubic-bezier(.22,.61,.36,1) }
+  input { font: inherit; -webkit-appearance: none; appearance: none }
+  input[type="range"] { background: transparent; height: 44px; touch-action: none }
+  input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: currentColor; opacity: .28 }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -11px; border-radius: 999px; background: #C6302B; border: 2px solid #F7F5F1 }
+  .msi { font-family: 'Material Symbols Sharp'; font-weight: normal; font-style: normal; line-height: 1; display: inline-block; white-space: nowrap; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased }
+  ::-webkit-scrollbar { width: 0; height: 0 }
+  ::-webkit-scrollbar-thumb { background: transparent }
+  * { scrollbar-width: none }
+  @keyframes vIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+  @keyframes vFade { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes vWipe { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+  @keyframes vTape { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+  @keyframes vSheet { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: none } }
+  @keyframes vSpin { to { transform: rotate(360deg) } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important } }
+</style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+
+  <div style="{{ chromeStyle }}">
+    <span style="display:inline-flex;align-items:baseline;gap:2px;font-family:Eina,sans-serif;font-weight:700;font-size:13px;letter-spacing:0.01em;font-style:italic;transform:skewX(-6deg)">CRFT<span style="color:#C6302B;font-style:normal;transform:skewX(6deg);display:inline-block">★</span>O</span>
+    <span style="{{ dotStyle }}">✳</span>
+    <span style="{{ chromeLabelStyle }}">TASTE ENGINE</span>
+    <div style="flex:1 1 24px"></div>
+    <div style="{{ fieldGroupStyle }}">
+      <sc-for list="{{ fieldTabs }}" as="t" hint-placeholder-count="3">
+        <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+      </sc-for>
+    </div>
+    <div style="{{ stepGroupStyle }}">
+      <sc-for list="{{ stepTabs }}" as="t" hint-placeholder-count="6">
+        <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="flex:1 1 auto;min-height:0;display:flex;justify-content:center">
+    <div style="{{ shellStyle }}">
+
+      <sc-if value="{{ isAttract }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ start }}" style="{{ attractStyle }}">
+          <div style="{{ mosaicTopStyle }}"></div>
+          <div style="position:relative;flex:1 1 auto;min-height:0;display:grid;grid-template-columns:{{ heroCols }};gap:clamp(14px,3vmin,36px);padding:clamp(18px,4vmin,48px);overflow:hidden">
+            <div style="display:flex;flex-direction:column;justify-content:center;gap:clamp(6px,1.4vmin,14px);min-width:0;min-height:0">
+              <div style="display:flex;align-items:center;gap:10px;animation:vIn .44s cubic-bezier(.22,.61,.36,1) forwards">
+                <span style="{{ tapeLabelStyle }}">FOR AQUATERRA</span>
+                <span style="{{ dotStyle }}">✳</span>
+              </div>
+              <div style="{{ heroLine1 }}">Pick what</div>
+              <div style="{{ heroLine2 }}">you like</div>
+              <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;animation:vIn .58s .18s cubic-bezier(.22,.61,.36,1) forwards">
+                <span style="{{ heroLine3 }}">we build it</span>
+              </div>
+              <div style="{{ heroRuleStyle }}"></div>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:clamp(12px,3vmin,34px);animation:vIn .6s .3s cubic-bezier(.22,.61,.36,1) forwards">
+                <div style="{{ heroBodyStyle }}">Tell us two or three things you are into. We rank two hundred transfers against your taste, then build a whole tee. Change anything.</div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="{{ heroArrowStyle }}"><span class="msi" style="font-size:clamp(20px,3.4vmin,26px)">arrow_forward</span></span>
+                  <span style="{{ heroCtaStyle }}">Tap to begin</span>
+                </div>
+              </div>
+            </div>
+            <div style="{{ heroArtStyle }}">
+              <sc-for list="{{ heroTiles }}" as="t" hint-placeholder-count="4">
+                <span style="{{ t.wrapStyle }}">
+                  <span style="{{ t.notchStyle }}"></span>
+                  <span class="msi" style="{{ t.iconStyle }}">{{ t.icon }}</span>
+                  <span style="{{ t.codeStyle }}">{{ t.code }}</span>
+                </span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="{{ tapeStripStyle }}">
+            <span style="display:flex;width:200%;animation:vTape 48s linear infinite">
+              <sc-for list="{{ tape }}" as="m" hint-placeholder-count="8">
+                <span style="flex:0 0 auto;display:flex;align-items:center;gap:11px;padding:0 15px;font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.16em;white-space:nowrap">{{ m }}<span style="opacity:.55">✳</span></span>
+              </sc-for>
+            </span>
+          </div>
+        </button>
+      </sc-if>
+
+      <sc-if value="{{ inApp }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ headerStyle }}">
+          <button onClick="{{ back }}" style="{{ backStyle }}"><span class="msi" style="font-size:19px">arrow_back</span></button>
+          <div style="min-width:0;flex:1 1 auto">
+            <div style="display:flex;align-items:center;gap:9px">
+              <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#C6302B">{{ stepNo }}</span>
+              <span style="{{ kickerStyle }}">{{ stepKicker }}</span>
+            </div>
+            <div style="{{ stepTitleStyle }}">{{ stepTitle }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <sc-for list="{{ progress }}" as="d" hint-placeholder-count="4">
+              <span style="{{ d.style }}"></span>
+            </sc-for>
+          </div>
+          <div style="{{ totalWrapStyle }}">
+            <div style="{{ kickerStyle }}">TOTAL</div>
+            <div style="{{ totalValueStyle }}">{{ totalLabel }}</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTaste }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ pageStyle }}">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;animation:vIn .42s cubic-bezier(.22,.61,.36,1) forwards">
+            <div>
+              <div style="{{ pageTitleStyle }}">What are you <span style="font-style:italic">into</span></div>
+              <div style="{{ pageSubStyle }}">{{ tasteHint }}</div>
+            </div>
+            <button onClick="{{ surprise }}" style="{{ ghostBtnStyle }}"><span class="msi" style="font-size:17px">casino</span>Surprise me</button>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(112px,30vw,180px),1fr));gap:clamp(9px,1.4vmin,14px)">
+            <sc-for list="{{ interestCards }}" as="c" hint-placeholder-count="10">
+              <button onClick="{{ c.onClick }}" style="{{ c.style }}">
+                <span style="{{ c.notchStyle }}"></span>
+                <span style="{{ c.iconWrapStyle }}"><span class="msi" style="font-size:22px">{{ c.icon }}</span></span>
+                <span style="display:block;font-family:Eina,sans-serif;font-weight:700;font-size:clamp(15px,1.9vw,19px);line-height:1.15;letter-spacing:-0.015em;text-align:left">{{ c.label }}</span>
+                <span style="{{ c.countStyle }}">{{ c.count }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:clamp(12px,2vmin,20px)">
+            <sc-for list="{{ sliders }}" as="v" hint-placeholder-count="2">
+              <div style="{{ v.cardStyle }}">
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <span style="{{ v.labelStyle }}">{{ v.label }}</span>
+                  <span style="flex:1 1 auto"></span>
+                  <span style="font-family:Eina,sans-serif;font-weight:700;font-size:19px;letter-spacing:-0.01em;color:#C6302B">{{ v.value }}</span>
+                </div>
+                <input type="range" min="0" max="100" step="1" value="{{ v.raw }}" onChange="{{ v.onChange }}" style="width:100%" />
+                <div style="{{ v.footStyle }}"><span>{{ v.left }}</span><span>{{ v.right }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+
+          <button onClick="{{ toMatches }}" style="{{ primaryCtaStyle }}"><span class="msi" style="font-size:22px">arrow_forward</span>{{ tasteCtaLabel }}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMatches }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ pageStyle }}">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <div>
+              <div style="{{ pageTitleStyle }}">{{ matchCount }} <span style="font-style:italic">matches</span></div>
+              <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:9px">
+                <sc-for list="{{ recap }}" as="t" hint-placeholder-count="3">
+                  <span style="{{ t.style }}">{{ t.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="{{ segGroupStyle }}">
+              <sc-for list="{{ viewTabs }}" as="t" hint-placeholder-count="2">
+                <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(132px,42vw,200px),1fr));gap:clamp(10px,1.6vmin,16px)">
+            <sc-for list="{{ matchCards }}" as="m" hint-placeholder-count="8">
+              <div style="{{ m.wrapStyle }}">
+                <span style="{{ m.artStyle }}">
+                  <span style="{{ m.rankStyle }}">{{ m.rank }}</span>
+                  <span class="msi" style="{{ m.iconStyle }}">{{ m.icon }}</span>
+                  <span style="{{ m.codeStyle }}">{{ m.code }}</span>
+                </span>
+                <span style="{{ m.bodyStyle }}">
+                  <span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+                    <span style="font-family:Eina,sans-serif;font-weight:700;font-size:15px;line-height:1.15;letter-spacing:-0.015em">{{ m.name }}</span>
+                    <span style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;white-space:nowrap">{{ m.price }}</span>
+                  </span>
+                  <span style="{{ m.whyStyle }}">{{ m.why }}</span>
+                  <span style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <span style="{{ m.stockStyle }}">{{ m.stockLabel }}</span>
+                    <button onClick="{{ m.onAdd }}" style="{{ m.addStyle }}"><span class="msi" style="font-size:16px">{{ m.addIcon }}</span></button>
+                  </span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+
+          <button onClick="{{ shuffleTee }}" style="{{ hotCtaStyle }}"><span class="msi" style="{{ shuffleIconStyle }}">shuffle</span>Build me a whole tee</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStudio }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ studioGridStyle }}">
+          <div style="{{ stageStyle }}">
+            <div style="position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center">
+              <div style="{{ segGroupStyle }}">
+                <sc-for list="{{ sideChips }}" as="s" hint-placeholder-count="2">
+                  <button onClick="{{ s.onClick }}" style="{{ s.style }}">{{ s.label }}</button>
+                </sc-for>
+              </div>
+              <button onClick="{{ reshuffle }}" style="{{ reshuffleStyle }}"><span class="msi" style="{{ shuffleIconStyle }}">casino</span>Reshuffle</button>
+            </div>
+            <div style="{{ mockStyle }}">
+              <div style="{{ collarStyle }}"></div>
+              <div ref="{{ paRef }}" style="{{ printAreaStyle }}">
+                <sc-for list="{{ placements }}" as="p" hint-placeholder-count="0">
+                  <div onPointerDown="{{ p.onDown }}" style="{{ p.style }}">
+                    <span class="msi" style="{{ p.iconStyle }}">{{ p.icon }}</span>
+                    <span style="{{ p.codeStyle }}">{{ p.code }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="{{ stageNoteStyle }}">
+              <span>PRINT AREA 28 × 35 CM · TRUE SCALE</span>
+              <span style="{{ dotStyle }}">✳</span>
+              <span>{{ studioHint }}</span>
+            </div>
+            <sc-if value="{{ nudge }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ nudgeStyle }}"><span class="msi" style="font-size:17px">block</span>{{ nudge }}</div>
+            </sc-if>
+          </div>
+
+          <div style="{{ railColStyle }}">
+            <div style="{{ railHeadStyle }}">
+              <div style="{{ segGroupStyle }}">
+                <sc-for list="{{ garmentChips }}" as="g" hint-placeholder-count="3">
+                  <button onClick="{{ g.onClick }}" style="{{ g.style }}">{{ g.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;padding-bottom:2px">
+                <sc-for list="{{ sizeChips }}" as="z" hint-placeholder-count="6">
+                  <button onClick="{{ z.onClick }}" style="{{ z.style }}">{{ z.label }}</button>
+                </sc-for>
+                <button onClick="{{ openChart }}" style="{{ chartBtnStyle }}"><span class="msi" style="font-size:15px">straighten</span>Size chart</button>
+              </div>
+            </div>
+            <div style="{{ railLabelStyle }}">
+              <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#C6302B">03</span>
+              <span style="flex:1 1 auto;font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.06em">Picked for you</span>
+              <button onClick="{{ toMatchesFromStudio }}" style="{{ railAllStyle }}">All designs</button>
+            </div>
+            <div style="flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overflow-x:hidden;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));grid-auto-rows:110px;gap:9px;align-content:start">
+              <sc-for list="{{ railCards }}" as="r" hint-placeholder-count="8">
+                <button onClick="{{ r.onClick }}" style="{{ r.wrapStyle }}">
+                  <span style="{{ r.artStyle }}"><span class="msi" style="{{ r.iconStyle }}">{{ r.icon }}</span></span>
+                  <span style="{{ r.footStyle }}"><span>{{ r.code }}</span><span style="opacity:.6">{{ r.cm }}</span></span>
+                </button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ selectedLabel }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ selBarStyle }}">
+                <span style="font-family:Eina,sans-serif;font-weight:700;font-size:14px;white-space:nowrap">{{ selectedLabel }}</span>
+                <label style="flex:1 1 110px;display:flex;align-items:center;gap:9px;min-width:0">
+                  <span style="{{ kickerStyle }}">ROTATE</span>
+                  <input type="range" min="-180" max="180" step="1" value="{{ rotValue }}" onChange="{{ onRotate }}" style="flex:1 1 0;min-width:56px" />
+                  <span style="font-family:JetBrains Mono,monospace;font-size:10px;width:36px;text-align:right">{{ rotLabel }}</span>
+                </label>
+                <button onClick="{{ removeSelected }}" style="{{ removeStyle }}"><span class="msi" style="font-size:15px">close</span>Remove</button>
+              </div>
+            </sc-if>
+            <button onClick="{{ toReview }}" style="{{ studioCtaStyle }}">{{ studioCtaLabel }}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ reviewPageStyle }}">
+          <div style="display:flex;flex-direction:column;gap:12px;align-items:center;animation:vIn .4s cubic-bezier(.22,.61,.36,1) forwards">
+            <div style="{{ segGroupStyle }}">
+              <sc-for list="{{ sideChips }}" as="s" hint-placeholder-count="2">
+                <button onClick="{{ s.onClick }}" style="{{ s.reviewStyle }}">{{ s.label }}</button>
+              </sc-for>
+            </div>
+            <div style="{{ mockReviewStyle }}">
+              <div style="{{ collarStyle }}"></div>
+              <div style="{{ printAreaStaticStyle }}">
+                <sc-for list="{{ placements }}" as="p" hint-placeholder-count="0">
+                  <div style="{{ p.reviewStyle }}">
+                    <span class="msi" style="{{ p.iconStyle }}">{{ p.icon }}</span>
+                    <span style="{{ p.codeStyle }}">{{ p.code }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="{{ pageSubStyle }}">{{ garmentLabel }}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;animation:vIn .46s .06s cubic-bezier(.22,.61,.36,1) forwards">
+            <div style="{{ pageTitleStyle }}">This is <span style="font-style:italic">yours</span></div>
+            <div style="{{ reviewCardStyle }}">
+              <sc-for list="{{ reviewLines }}" as="l" hint-placeholder-count="3">
+                <div style="{{ l.rowStyle }}">
+                  <span style="display:flex;align-items:center;gap:12px;min-width:0">
+                    <span style="{{ l.iconWrapStyle }}"><span class="msi" style="font-size:18px">{{ l.icon }}</span></span>
+                    <span style="min-width:0">
+                      <span style="display:block;font-family:Eina,sans-serif;font-weight:700;font-size:15px;line-height:1.2;letter-spacing:-0.01em">{{ l.title }}</span>
+                      <span style="{{ l.subStyle }}">{{ l.sub }}</span>
+                    </span>
+                  </span>
+                  <span style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700;white-space:nowrap">{{ l.price }}</span>
+                </div>
+              </sc-for>
+              <div style="{{ totalRowStyle }}">
+                <span style="font-family:Eina,sans-serif;font-weight:700;font-size:12px;letter-spacing:0.06em">TOTAL</span>
+                <span style="font-family:Eina,sans-serif;font-weight:700;font-size:clamp(26px,4vmin,36px);letter-spacing:-0.02em;line-height:1">{{ totalLabel }}</span>
+              </div>
+            </div>
+            <div style="{{ careStyle }}">Hand wash recommended. Transfers rated ten to fifteen washes minimum. Every tee funds AquaTerra welfare work.</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+              <button onClick="{{ backToStudio }}" style="{{ ghostBigStyle }}">Keep editing</button>
+              <button onClick="{{ makeTicket }}" style="{{ hotBigStyle }}">Get ticket</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTicket }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ ticketPageStyle }}">
+          <div style="position:relative;display:flex;align-items:center;gap:10px;animation:vIn .4s cubic-bezier(.22,.61,.36,1) forwards">
+            <span style="{{ tapeLabelStyle }}">SHOW THIS AT THE TILL</span>
+            <span style="{{ dotStyle }}">✳</span>
+          </div>
+          <div style="{{ ticketCardStyle }}">
+            <span style="{{ ticketNotchStyle }}"></span>
+            <div style="{{ kickerStyle }}">TICKET CODE</div>
+            <div style="font-family:Eina,sans-serif;font-weight:700;font-size:clamp(50px,13vmin,88px);letter-spacing:0.02em;line-height:1;margin-top:2px">{{ ticketCode }}</div>
+            <div style="{{ qrStyle }}"></div>
+            <div style="font-family:JetBrains Mono,monospace;font-size:9px;opacity:.65;margin-top:9px">QR CARRIES THE FULL PAYLOAD · WORKS OFFLINE</div>
+          </div>
+          <div style="{{ pressSheetStyle }}">
+            <div style="font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.08em;color:#C6302B">PRESS SHEET · PLACEMENT LIST</div>
+            <sc-for list="{{ ticketLines }}" as="l" hint-placeholder-count="2">
+              <div style="font-family:JetBrains Mono,monospace;font-size:11px;margin-top:6px;opacity:.9">{{ l }}</div>
+            </sc-for>
+            <div style="{{ hrStyle }}"></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;font-family:Eina,sans-serif;font-weight:700;font-size:20px;letter-spacing:-0.01em"><span>Quoted</span><span>{{ totalLabel }}</span></div>
+            <div style="font-family:JetBrains Mono,monospace;font-size:9px;opacity:.6;margin-top:8px;line-height:1.55">QUOTE ONLY · EXPIRES IN {{ ticketExpiry }} · NOTHING RESERVED UNTIL THE VOLUNTEER CHARGES</div>
+          </div>
+          <button onClick="{{ reset }}" style="{{ hotBigStyle }}"><span class="msi" style="font-size:20px">restart_alt</span>Start again</button>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <sc-if value="{{ chartOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeChart }}" style="position:fixed;inset:0;z-index:70;background:rgba(15,15,16,.74);display:flex;align-items:flex-end;justify-content:center;animation:vFade .26s cubic-bezier(.22,.61,.36,1) forwards">
+      <div style="{{ sheetStyle }}">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-family:Eina,sans-serif;font-weight:700;font-size:clamp(22px,4vmin,30px);letter-spacing:-0.02em;line-height:1">Size chart</div>
+            <div style="{{ pageSubStyle }}">{{ chartFitLabel }} · INCHES · GARMENT FLAT</div>
+          </div>
+          <button onClick="{{ closeChart }}" style="{{ closeBtnStyle }}"><span class="msi" style="font-size:20px">close</span></button>
+        </div>
+        <div style="{{ segGroupStyle }}">
+          <sc-for list="{{ chartFitChips }}" as="c" hint-placeholder-count="3">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+        <div style="{{ chartTableStyle }}">
+          <div style="{{ chartHeadStyle }}">
+            <sc-for list="{{ chartHead }}" as="h" hint-placeholder-count="4">
+              <div style="padding:10px 9px;font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.08em">{{ h }}</div>
+            </sc-for>
+          </div>
+          <sc-for list="{{ chartRows }}" as="r" hint-placeholder-count="6">
+            <button onClick="{{ r.onClick }}" style="{{ r.style }}">
+              <span style="{{ r.sizeStyle }}">{{ r.size }}</span>
+              <span style="font-family:JetBrains Mono,monospace;font-size:13px">{{ r.chest }}</span>
+              <span style="font-family:JetBrains Mono,monospace;font-size:13px">{{ r.length }}</span>
+              <span style="font-family:JetBrains Mono,monospace;font-size:13px">{{ r.shoulder }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="{{ careStyle }}">{{ chartNote }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ toastStyle }}"><span style="color:#C6302B">✳</span>{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;field&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;paper&quot;,&quot;ink&quot;,&quot;electric&quot;],&quot;default&quot;:&quot;paper&quot;,&quot;tsType&quot;:&quot;'paper' | 'ink' | 'electric'&quot;,&quot;section&quot;:&quot;Look&quot;},&quot;showWhy&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Engine&quot;}}">
+class Component extends DCLogic {
+  paRef = React.createRef();
+  state = this.seed();
+
+  seed() {
+    const D = (code, size, name, tags) => ({ code, size, name, tags, stock: 3 + (this.hash(code) % 22) });
+    const designs = [
+      D('S-004','S','Ramen Ghost',['anime','food']),
+      D('S-011','S','Static Bloom',['abstract','space']),
+      D('S-014','S','No Signal',['typography','humour']),
+      D('S-023','S','Tape Deck',['music','retro']),
+      D('S-031','S','Koi Fragment',['anime','nature']),
+      D('S-038','S','Second Sun',['space','abstract']),
+      D('S-042','S','Chai Break',['food','humour']),
+      D('M-002','M','Feedback Loop',['typography','abstract','music']),
+      D('M-009','M','Riot Season',['band','typography']),
+      D('M-014','M','Deep Field',['space','abstract']),
+      D('M-018','M','Hand Wash Only',['typography','humour']),
+      D('M-027','M','Monsoon Grid',['abstract','nature']),
+      D('M-033','M','Kaiju Payslip',['anime','humour']),
+      D('M-041','M','Analog Heart',['retro','music']),
+      D('M-052','M','Night Shift',['typography','band']),
+      D('M-061','M','Wet Concrete',['abstract','nature']),
+      D('L-001','L','Cassette Sun',['retro','music']),
+      D('L-006','L','Eclipse Type',['typography','space']),
+      D('L-014','L','Deep Field XL',['space','abstract']),
+      D('L-019','L','Mecha Study',['anime','abstract']),
+      D('L-022','L','Terracotta Wave',['nature','retro']),
+      D('L-030','L','Band Practice',['band','music']),
+      D('L-037','L','Loud Enough',['typography','band']),
+      D('L-044','L','Slow Monsoon',['nature','abstract'])
+    ];
+    return {
+      field: this.props.field || 'ink',
+      step: 'attract', vw: 1024, vh: 768,
+      interests: [], loud: 55, density: 45,
+      designs, matchView: 'matched',
+      color: 'Black', fit: 'Oversized', size: 'M',
+      place: [], sel: null, side: 'front',
+      seed: 7, spinning: false,
+      ticket: null, nudge: '', toast: null,
+      chart: false, chartFit: null
+    };
+  }
+
+  hash(str) { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0x7fffffff; return h; }
+  rng(seed) { let a = seed >>> 0; return () => { a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  componentDidMount() { this.onResize(); window.addEventListener('resize', this.onResize); }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); clearTimeout(this.toastT); clearTimeout(this.nudgeT); clearTimeout(this.spinT); }
+  onResize = () => this.setState({ vw: window.innerWidth, vh: window.innerHeight });
+
+  flash(msg) { this.setState({ toast: msg }); clearTimeout(this.toastT); this.toastT = setTimeout(() => this.setState({ toast: null }), 2400); }
+  nudge(msg) { this.setState({ nudge: msg }); clearTimeout(this.nudgeT); this.nudgeT = setTimeout(() => this.setState({ nudge: '' }), 2300); }
+
+  // ---- tokens ----
+  T() {
+    const BLUE = '#1B4DF5', HOT = '#C6302B', PAPER = '#F7F5F1', INK = '#0F0F10';
+    if (this.state.field === 'paper') return { field: '#FFFFFF', card: '#F2F0EA', sunk: '#E4E1D8', fg: '#000000', sub: 'rgba(0,0,0,.78)', line: 'rgba(0,0,0,.34)', blue: '#0B2ED0', hot: '#A32521', onBlue: '#FFFFFF', paper: '#FFFFFF', ink: '#000000' };
+    if (this.state.field === 'electric') return { field: BLUE, card: '#1740D6', sunk: '#1236B8', fg: PAPER, sub: 'rgba(247,245,241,.72)', line: 'rgba(247,245,241,.24)', blue: PAPER, hot: HOT, onBlue: BLUE, paper: PAPER, ink: INK };
+    return { field: INK, card: '#1A1A1C', sunk: '#141416', fg: PAPER, sub: 'rgba(247,245,241,.6)', line: 'rgba(247,245,241,.14)', blue: BLUE, hot: HOT, onBlue: PAPER, paper: PAPER, ink: INK };
+  }
+
+  priceOf(d) { return { S: 79, M: 129, L: 199 }[d.size]; }
+  garmentPrice() { return { Oversized: 749, Regular: 699, Crop: 649 }[this.state.fit]; }
+  cmOf(d) { return { S: 6, M: 12, L: 22 }[d.size]; }
+  money(v) { return v === null || isNaN(v) ? '₹—' : '₹' + Number(Math.round(v)).toLocaleString('en-IN'); }
+  total() { return this.garmentPrice() + this.state.place.reduce((a, p) => a + this.priceOf(this.byCode(p.code)), 0); }
+  byCode(c) { return this.state.designs.find(d => d.code === c); }
+  stockOf(d) { return d.stock - this.state.place.filter(p => p.code === d.code).length; }
+
+  tagIcons = { anime: 'animation', typography: 'format_size', band: 'album', music: 'graphic_eq', retro: 'radio', space: 'blur_on', nature: 'water_drop', abstract: 'deblur', humour: 'mood', food: 'ramen_dining' };
+  iconOf(d) { return this.tagIcons[d.tags[0]] || 'label'; }
+  groundOf(d) {
+    const t = this.T(), h = this.hash(d.code) % 3;
+    if (h === 0) return { bg: t.blue, fg: t.onBlue };
+    if (h === 1) return { bg: t.hot, fg: t.ink };
+    return this.state.field === 'paper' ? { bg: t.ink, fg: t.paper } : { bg: t.paper, fg: t.ink };
+  }
+
+  related = { anime: ['abstract','humour'], typography: ['band','humour'], band: ['music','typography'], retro: ['music','nature'], space: ['abstract'], nature: ['abstract','retro'], humour: ['typography'], abstract: ['space','nature'], music: ['band','retro'], food: ['humour','anime'] };
+  score(d) {
+    const s = this.state, ints = s.interests;
+    let sc = 0, why = [];
+    const direct = d.tags.filter(t => ints.includes(t));
+    if (direct.length) { sc += direct.length * 24; why.push(direct.join(' + ')); }
+    const adj = d.tags.filter(t => !direct.includes(t) && ints.some(i => (this.related[i] || []).includes(t)));
+    if (adj.length) { sc += adj.length * 9; if (!why.length) why.push('near ' + adj[0]); }
+    const bigness = { S: 0, M: 50, L: 100 }[d.size];
+    const loudFit = 100 - Math.abs(bigness - s.loud);
+    sc += loudFit * 0.22;
+    if (loudFit > 82) why.push(s.loud > 60 ? 'big scale' : 'quiet scale');
+    sc += Math.min(10, this.stockOf(d)) * 0.6;
+    sc += (this.hash(d.code + s.seed) % 12);
+    return { score: sc, why: why.slice(0, 2).join(' · ') || 'wildcard' };
+  }
+  ranked() { return this.state.designs.map(d => Object.assign({ d }, this.score(d))).sort((a, b) => b.score - a.score); }
+
+  pctOf(d) { const cm = this.cmOf(d); return { w: cm / 28 * 100, h: cm / 35 * 100 }; }
+  boxOf(p) { const g = this.pctOf(this.byCode(p.code)); return { x1: p.x, y1: p.y, x2: p.x + g.w, y2: p.y + g.h }; }
+  clashes(p, list) {
+    const A = this.boxOf(p);
+    return list.some(o => { if (o.id === p.id || o.side !== p.side) return false; const B = this.boxOf(o); return A.x1 < B.x2 && A.x2 > B.x1 && A.y1 < B.y2 && A.y2 > B.y1; });
+  }
+  freeSlot(d, list, side, rand) {
+    const g = this.pctOf(d), maxX = Math.max(0, 100 - g.w), maxY = Math.max(0, 100 - g.h);
+    const cand = [];
+    for (let yi = 0; yi <= 9; yi++) for (let xi = 0; xi <= 4; xi++) cand.push({ x: Math.min(maxX, Math.max(0, maxX / 2 + (xi - 2) * 17)), y: Math.min(maxY, yi * 11) });
+    if (rand) cand.sort(() => rand() - 0.5);
+    return cand.find(c => !this.clashes({ id: 'x', code: d.code, side, x: c.x, y: c.y }, list)) || null;
+  }
+  addDesign = (d) => {
+    if (this.stockOf(d) <= 0) return this.nudge('SOLD OUT — ASK A VOLUNTEER');
+    const slot = this.freeSlot(d, this.state.place, this.state.side);
+    if (!slot) return this.nudge('NO ROOM ON THIS SIDE — TRY THE BACK');
+    const p = { id: 'p' + Date.now() + Math.random(), code: d.code, side: this.state.side, x: slot.x, y: slot.y, rot: 0 };
+    this.setState(s => ({ place: s.place.concat([p]), sel: p.id, step: s.step === 'matches' ? 'studio' : s.step }));
+  };
+
+  startDrag = (p) => (e) => {
+    e.preventDefault();
+    const pa = this.paRef.current; if (!pa) return;
+    const r = pa.getBoundingClientRect();
+    this.drag = { id: p.id, prev: { x: p.x, y: p.y }, ox: e.clientX - (r.left + p.x / 100 * r.width), oy: e.clientY - (r.top + p.y / 100 * r.height), r };
+    this.setState({ sel: p.id });
+    window.addEventListener('pointermove', this.onDrag);
+    window.addEventListener('pointerup', this.endDrag);
+  };
+  onDrag = (e) => {
+    const d = this.drag; if (!d) return;
+    const r = d.r;
+    this.setState(s => ({ place: s.place.map(p => {
+      if (p.id !== d.id) return p;
+      const g = this.pctOf(this.byCode(p.code));
+      let x = (e.clientX - d.ox - r.left) / r.width * 100;
+      let y = (e.clientY - d.oy - r.top) / r.height * 100;
+      return Object.assign({}, p, { x: Math.max(0, Math.min(100 - g.w, x)), y: Math.max(0, Math.min(100 - g.h, y)) });
+    }) }));
+  };
+  endDrag = () => {
+    window.removeEventListener('pointermove', this.onDrag);
+    window.removeEventListener('pointerup', this.endDrag);
+    const d = this.drag; this.drag = null; if (!d) return;
+    const cur = this.state.place.find(p => p.id === d.id);
+    if (cur && this.clashes(cur, this.state.place)) {
+      this.setState(s => ({ place: s.place.map(p => p.id === d.id ? Object.assign({}, p, d.prev) : p) }));
+      this.nudge('TRANSFERS CANNOT OVERLAP — SNAPPED BACK');
+    }
+  };
+
+  compose = (newSeed) => {
+    const seed = newSeed === undefined ? this.state.seed : newSeed;
+    const rand = this.rng(seed * 2654435761 % 2147483647);
+    const pool = this.ranked().filter(r => this.stockOf(r.d) > 0).slice(0, 12);
+    const n = 1 + Math.floor(rand() * 3);
+    const picked = [], place = [];
+    for (let i = 0; i < n && pool.length; i++) {
+      const j = Math.floor(Math.pow(rand(), 1.7) * pool.length);
+      const d = pool.splice(j, 1)[0].d;
+      const slot = this.freeSlot(d, place, 'front', rand);
+      if (!slot) continue;
+      picked.push(d);
+      place.push({ id: 'g' + i + seed, code: d.code, side: 'front', x: slot.x, y: slot.y, rot: Math.round((rand() - 0.5) * 12) });
+    }
+    const fits = ['Oversized','Regular','Crop'];
+    this.setState({
+      seed, place, sel: place.length ? place[0].id : null, side: 'front',
+      color: rand() > 0.45 ? 'Black' : 'White',
+      fit: fits[Math.floor(rand() * (this.state.density > 60 ? 3 : 2))],
+      size: ['S','M','L','XL'][1 + Math.floor(rand() * 2)],
+      step: 'studio', spinning: true,
+      toast: picked.length + ' TRANSFER' + (picked.length === 1 ? '' : 'S') + ' PICKED FOR YOUR TASTE'
+    });
+    clearTimeout(this.spinT); clearTimeout(this.toastT);
+    this.spinT = setTimeout(() => this.setState({ spinning: false }), 520);
+    this.toastT = setTimeout(() => this.setState({ toast: null }), 2400);
+  };
+
+  makeTicket = () => {
+    const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = ''; for (let i = 0; i < 4; i++) code += A[Math.floor(Math.random() * A.length)];
+    this.setState({ ticket: { code, at: Date.now(), total: this.total() }, step: 'ticket' });
+  };
+
+  renderVals() {
+    const s = this.state, t = this.T(), money = v => this.money(v);
+    const narrow = s.vw < 820, phone = s.vw < 560;
+    const E = 'cubic-bezier(.22,.61,.36,1)';
+    const paper = s.field === 'paper';
+    const R = phone ? 22 : 28, Ri = phone ? 14 : 18;
+    const edge = paper ? '2px solid ' + t.ink : 'none';
+    const notch = (bg) => 'position:absolute;top:0;right:' + (phone ? 16 : 22) + 'px;width:26px;height:12px;border-bottom-left-radius:13px;border-bottom-right-radius:13px;background:' + bg + ';pointer-events:none';
+    const pill = (bg, fg, bd) => 'display:inline-flex;align-items:center;gap:5px;white-space:nowrap;background:' + bg + ';color:' + fg + ';border-radius:999px;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;white-space:nowrap' + (bd ? ';border:1px solid ' + t.line : '');
+    const seg = (on) => 'background:' + (on ? t.fg : 'transparent') + ';color:' + (on ? t.field : t.fg) + ';border:none;border-radius:999px;padding:0 ' + (phone ? 14 : 17) + 'px;min-height:44px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.01em;cursor:pointer;white-space:nowrap';
+    const kicker = 'font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.12em;color:' + t.sub;
+
+    const v = {
+      rootStyle: 'height:100dvh;min-height:0;display:flex;flex-direction:column;background:' + t.field + ';color:' + t.fg + ';overflow:hidden;transition:background .45s ' + E + ',color .45s ' + E,
+      chromeStyle: 'flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:7px 10px;padding:' + (phone ? '8px 13px' : '11px 20px') + ';border-bottom:1px solid ' + t.line,
+      chromeLabelStyle: kicker,
+      dotStyle: 'color:' + t.hot + ';font-size:11px',
+      kickerStyle: kicker,
+      isAttract: s.step === 'attract', isTaste: s.step === 'taste', isMatches: s.step === 'matches', isStudio: s.step === 'studio', isReview: s.step === 'review', isTicket: s.step === 'ticket',
+      inApp: s.step !== 'attract', toast: s.toast, nudge: s.nudge, paRef: this.paRef,
+      totalLabel: money(this.total()),
+      shellStyle: 'width:100%;max-width:' + (s.step === 'studio' ? 1260 : 1140) + 'px;height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden',
+      toastStyle: 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;background:' + t.ink + ';color:' + t.paper + ';border-radius:999px;padding:12px 18px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.04em;animation:vFade .28s ' + E + ' forwards;pointer-events:none;max-width:92vw'
+    };
+
+    v.fieldGroupStyle = 'display:none'; // paper is the standard; kept for prop-driven preview only
+    v.fieldTabs = [['ink','Ink'],['paper','Paper'],['electric','Electric']].map(([k, l]) => ({
+      label: l,
+      style: 'background:' + (s.field === k ? t.hot : 'transparent') + ';color:' + (s.field === k ? t.ink : t.sub) + ';border:none;border-radius:999px;padding:5px 11px;font-family:Eina,sans-serif;font-weight:700;font-size:10px;cursor:pointer',
+      onClick: () => this.setState({ field: k })
+    }));
+
+    const steps = [['attract','Start'],['taste','Taste'],['matches','Matches'],['studio','Studio'],['review','Review'],['ticket','Ticket']];
+    v.stepGroupStyle = 'display:' + (phone ? 'none' : 'flex') + ';gap:2px;flex-wrap:wrap';
+    v.stepTabs = steps.map(([k, l]) => ({ label: l,
+      style: 'background:transparent;border:none;padding:5px 9px;border-radius:999px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;cursor:pointer;color:' + (s.step === k ? t.fg : t.sub) + ';box-shadow:' + (s.step === k ? 'inset 0 -2px 0 ' + t.hot : 'none'),
+      onClick: () => this.setState({ step: k }) }));
+    const idx = steps.findIndex(x => x[0] === s.step);
+    v.stepNo = ['00','01','02','03','04','05'][idx] || '00';
+    v.stepKicker = { taste: 'STEP ONE OF FOUR', matches: 'STEP TWO OF FOUR', studio: 'STEP THREE OF FOUR', review: 'STEP FOUR OF FOUR', ticket: 'DONE' }[s.step] || '';
+    v.stepTitle = { taste: 'Pick your interests', matches: 'Ranked for you', studio: 'Arrange it', review: 'Check it over', ticket: 'Take it to the till' }[s.step] || '';
+    v.stepTitleStyle = 'font-family:Eina,sans-serif;font-weight:700;font-size:clamp(18px,2.6vmin,25px);letter-spacing:-0.02em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px';
+    v.headerStyle = 'flex:0 0 auto;display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid ' + t.line;
+    v.backStyle = 'display:grid;place-items:center;width:42px;height:42px;flex:0 0 auto;background:transparent;color:' + t.fg + ';border:1px solid ' + t.line + ';border-radius:999px;cursor:pointer';
+    v.progress = ['taste','matches','studio','review'].map(k => ({
+      style: 'width:' + (k === s.step ? 20 : 7) + 'px;height:3px;border-radius:999px;background:' + (steps.findIndex(x => x[0] === k) <= idx ? t.hot : t.line) + ';transition:width .34s ' + E
+    }));
+    v.totalWrapStyle = 'text-align:right;border-left:1px solid ' + t.line + ';padding-left:14px';
+    v.totalValueStyle = 'font-family:Eina,sans-serif;font-weight:700;font-size:clamp(19px,2.7vmin,26px);letter-spacing:-0.02em;line-height:1.15';
+    const order = ['attract','taste','matches','studio','review','ticket'];
+    v.back = () => this.setState({ step: order[Math.max(0, order.indexOf(s.step) - 1)] });
+
+    // ---- attract ----
+    v.start = () => this.setState({ step: 'taste' });
+    v.attractStyle = 'flex:1 1 auto;min-height:0;position:relative;overflow:hidden;display:flex;flex-direction:column;background:transparent;color:inherit;border:none;padding:0;text-align:left;cursor:pointer';
+    v.mosaicTopStyle = 'position:absolute;top:0;left:0;right:0;height:24px;pointer-events:none;background-image:linear-gradient(90deg,' + t.blue + ' 25%,transparent 25%),linear-gradient(90deg,' + t.hot + ' 25%,transparent 25%);background-size:24px 12px,24px 12px;background-position:0 0,12px 12px;background-repeat:repeat-x;opacity:.9';
+    v.heroCols = narrow ? '1fr' : 'minmax(0,1.2fr) minmax(0,.8fr)';
+    v.tapeLabelStyle = 'display:inline-block;background:' + t.hot + ';color:' + t.ink + ';font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.14em;padding:6px 10px;transform:rotate(-1.6deg)';
+    const heroSize = 'font-size:clamp(34px,9.6vmin,104px);line-height:0.92;letter-spacing:-0.035em;font-family:Eina,sans-serif;font-weight:700';
+    v.heroLine1 = heroSize + ';animation:vIn .5s .06s ' + E + ' forwards';
+    v.heroLine2 = heroSize + ';color:' + t.hot + ';font-style:italic;animation:vIn .54s .12s ' + E + ' forwards';
+    v.heroLine3 = heroSize;
+    v.heroRuleStyle = 'height:3px;width:min(280px,62%);border-radius:999px;background:' + t.blue + ';transform-origin:left;animation:vWipe .62s .26s ' + E + ' forwards;margin:clamp(6px,1.6vmin,16px) 0';
+    v.heroBodyStyle = 'font-family:Eina,sans-serif;font-weight:400;font-size:clamp(13px,1.9vmin,16px);line-height:1.6;max-width:34ch;color:' + t.sub;
+    v.heroArrowStyle = 'display:grid;place-items:center;width:clamp(40px,6.4vmin,52px);height:clamp(40px,6.4vmin,52px);flex:0 0 auto;border-radius:999px;background:' + t.blue + ';color:' + t.onBlue;
+    v.heroCtaStyle = 'font-family:Eina,sans-serif;font-weight:700;font-size:clamp(17px,3vmin,25px);letter-spacing:-0.02em';
+    v.heroArtStyle = 'display:' + (narrow ? 'none' : 'grid') + ';grid-template-columns:1fr 1fr;align-content:center;gap:12px;min-width:0';
+    v.heroTiles = ['M-014','L-037','S-004','M-041'].map((c, i) => {
+      const d = this.byCode(c), g = this.groundOf(d);
+      return { icon: this.iconOf(d), code: d.code,
+        wrapStyle: 'position:relative;display:grid;place-items:center;aspect-ratio:1;border-radius:' + R + 'px;overflow:hidden;background:' + g.bg + ';color:' + g.fg + ';animation:vIn .5s ' + (0.1 + i * 0.07) + 's ' + E + ' forwards',
+        notchStyle: notch(t.field),
+        iconStyle: 'font-size:clamp(30px,5vmin,52px);opacity:.92',
+        codeStyle: 'position:absolute;bottom:9px;right:11px;font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;opacity:.7' };
+    });
+    v.tapeStripStyle = 'position:relative;flex:0 0 auto;background:' + t.blue + ';color:' + t.onBlue + ';overflow:hidden;padding:9px 0';
+    v.tape = ['200 DESIGNS','TRUE SCALE','NO SURPRISES','FUNDS AQUATERRA','200 DESIGNS','TRUE SCALE','NO SURPRISES','FUNDS AQUATERRA'];
+
+    // ---- shared page shells ----
+    v.pageStyle = 'flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:' + (phone ? '15px 14px 22px' : 'clamp(18px,3.2vmin,34px)') + ';display:flex;flex-direction:column;gap:' + (phone ? '15px' : 'clamp(18px,2.6vmin,30px)') + '';
+    v.pageTitleStyle = 'font-family:Eina,sans-serif;font-weight:700;font-size:clamp(28px,5.6vmin,52px);letter-spacing:-0.035em;line-height:1';
+    v.pageSubStyle = 'font-family:JetBrains Mono,monospace;font-size:10px;color:' + t.sub + ';margin-top:7px';
+    v.ghostBtnStyle = 'display:flex;white-space:nowrap;align-items:center;gap:9px;background:transparent;color:' + t.fg + ';border:1px solid ' + t.line + ';border-radius:999px;padding:0 18px;min-height:48px;font-family:Eina,sans-serif;font-weight:700;font-size:12px;cursor:pointer';
+    v.segGroupStyle = 'display:flex;gap:2px;border:1px solid ' + t.line + ';border-radius:999px;padding:3px;width:fit-content';
+    v.primaryCtaStyle = 'display:flex;align-items:center;justify-content:center;gap:11px;width:100%;background:' + t.blue + ';color:' + t.onBlue + ';border:none;border-radius:' + R + 'px;min-height:70px;font-family:Eina,sans-serif;font-weight:700;font-size:clamp(17px,2.4vmin,22px);letter-spacing:-0.02em;cursor:pointer';
+    v.hotCtaStyle = 'display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:' + t.hot + ';color:' + t.ink + ';border:none;border-radius:' + R + 'px;min-height:72px;font-family:Eina,sans-serif;font-weight:700;font-size:clamp(18px,2.6vmin,24px);letter-spacing:-0.02em;cursor:pointer';
+    v.careStyle = 'font-family:Eina,sans-serif;font-weight:400;font-size:12px;line-height:1.65;color:' + t.sub + ';border-top:1px solid ' + t.line + ';padding-top:12px';
+
+    // ---- taste ----
+    const tagDefs = [['anime','Anime'],['typography','Typography'],['band','Band'],['music','Music'],['retro','Retro'],['space','Space'],['nature','Nature'],['abstract','Abstract'],['humour','Humour'],['food','Food']];
+    v.interestCards = tagDefs.map(([k, label]) => {
+      const on = s.interests.includes(k);
+      return { label, icon: this.tagIcons[k], count: s.designs.filter(d => d.tags.includes(k)).length + ' designs',
+        style: 'position:relative;display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:' + (phone ? '15px' : '19px') + ';min-height:' + (phone ? 110 : 132) + 'px;border:' + (on ? 'none' : edge) + ';border-radius:' + R + 'px;cursor:pointer;background:' + (on ? t.blue : t.card) + ';color:' + (on ? t.onBlue : t.fg),
+        notchStyle: notch(t.field),
+        iconWrapStyle: 'display:grid;place-items:center;width:40px;height:40px;flex:0 0 auto;border-radius:999px;background:' + (on ? 'rgba(255,255,255,.16)' : t.hot) + ';color:' + (on ? t.onBlue : t.ink),
+        countStyle: 'display:block;font-family:JetBrains Mono,monospace;font-size:9px;opacity:.66;margin-top:auto',
+        onClick: () => this.setState(st => ({ interests: st.interests.includes(k) ? st.interests.filter(x => x !== k) : st.interests.concat([k]) })) };
+    });
+    v.tasteHint = s.interests.length === 0 ? 'PICK TWO OR THREE, OR HIT SURPRISE ME' : s.interests.length + ' PICKED · ' + this.ranked().filter(r => r.score > 20).length + ' DESIGNS MATCH';
+    v.surprise = () => {
+      const rand = this.rng(Date.now() % 100000);
+      const picks = tagDefs.map(x => x[0]).sort(() => rand() - 0.5).slice(0, 3);
+      this.setState({ interests: picks, loud: Math.round(rand() * 100), density: Math.round(rand() * 100) });
+      this.flash('TASTE RANDOMISED');
+    };
+    const sliderCard = 'border:' + edge + ';border-radius:' + R + 'px;background:' + t.card + ';color:' + t.fg + ';padding:' + (phone ? '16px' : '20px') + ';display:flex;flex-direction:column;gap:10px';
+    v.sliders = [
+      { label: 'SCALE', raw: s.loud, value: s.loud > 66 ? 'Big' : s.loud > 33 ? 'Mid' : 'Small', left: 'SMALL S TRANSFERS', right: 'FULL L PRINTS', cardStyle: sliderCard, labelStyle: kicker, footStyle: 'display:flex;justify-content:space-between;font-family:JetBrains Mono,monospace;font-size:9px;color:' + t.sub, onChange: e => this.setState({ loud: parseInt(e.target.value, 10) }) },
+      { label: 'HOW MUCH', raw: s.density, value: s.density > 66 ? 'Loaded' : s.density > 33 ? 'Balanced' : 'Minimal', left: 'ONE MARK', right: 'STACKED UP', cardStyle: sliderCard, labelStyle: kicker, footStyle: 'display:flex;justify-content:space-between;font-family:JetBrains Mono,monospace;font-size:9px;color:' + t.sub, onChange: e => this.setState({ density: parseInt(e.target.value, 10) }) }
+    ];
+    v.tasteCtaLabel = s.interests.length ? 'See my matches' : 'Skip — show everything';
+    v.toMatches = () => this.setState({ step: 'matches' });
+
+    // ---- matches ----
+    const rank = this.ranked();
+    const shown = s.matchView === 'matched' ? rank.filter(r => s.interests.length === 0 || r.score > 20).slice(0, 12) : rank;
+    v.matchCount = String(shown.length);
+    v.recap = s.interests.map(i => i.toUpperCase()).concat([(s.loud > 66 ? 'BIG' : s.loud > 33 ? 'MID' : 'SMALL') + ' SCALE']).map(label => ({
+      label, style: 'display:inline-flex;align-items:center;white-space:nowrap;font-family:JetBrains Mono,monospace;font-size:10px;color:' + t.sub + ';border:1px solid ' + t.line + ';border-radius:999px;padding:5px 11px'
+    }));
+    v.viewTabs = [['matched','Best fit'],['all','All ' + s.designs.length]].map(([k, l]) => ({ label: l, style: seg(s.matchView === k), onClick: () => this.setState({ matchView: k }) }));
+    v.matchCards = shown.map((r, i) => {
+      const d = r.d, g = this.groundOf(d), st = this.stockOf(d), on = s.place.some(p => p.code === d.code);
+      return {
+        name: d.name, code: d.code, price: money(this.priceOf(d)), why: r.why, rank: String(i + 1).padStart(2, '0'), icon: this.iconOf(d),
+        wrapStyle: 'display:flex;flex-direction:column;overflow:hidden;border:' + edge + ';border-radius:' + R + 'px;background:' + t.card + ';color:' + t.fg + ';animation:vIn .44s ' + Math.min(0.42, i * 0.035) + 's ' + E + ' forwards',
+        artStyle: 'position:relative;display:grid;place-items:center;aspect-ratio:1;background:' + g.bg + ';color:' + g.fg,
+        iconStyle: 'font-size:clamp(28px,4vw,44px);opacity:.92',
+        rankStyle: 'position:absolute;top:9px;left:11px;font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;opacity:.75',
+        codeStyle: 'position:absolute;bottom:9px;right:11px;font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;opacity:.75',
+        bodyStyle: 'padding:11px 12px 12px;display:flex;flex-direction:column;gap:7px',
+        whyStyle: 'font-family:JetBrains Mono,monospace;font-size:9px;color:' + t.sub + ';line-height:1.45',
+        stockLabel: st <= 0 ? 'SOLD OUT' : st + ' LEFT · ' + this.cmOf(d) + 'CM',
+        stockStyle: st <= 0 ? pill(t.sunk, t.sub, false) : st <= 5 ? pill(t.hot, t.ink, false) : pill('transparent', t.sub, true),
+        addIcon: on ? 'check' : 'add',
+        addStyle: 'display:grid;place-items:center;width:38px;height:38px;flex:0 0 auto;border:none;border-radius:999px;background:' + (st <= 0 ? t.sunk : on ? t.blue : t.hot) + ';color:' + (st <= 0 ? t.sub : on ? t.onBlue : t.ink) + ';cursor:' + (st <= 0 ? 'not-allowed' : 'pointer'),
+        onAdd: () => this.addDesign(d)
+      };
+    });
+    v.shuffleTee = () => this.compose(Math.floor(Math.random() * 100000));
+    v.shuffleIconStyle = 'font-size:24px;transition:transform .52s ' + E + (s.spinning ? ';transform:rotate(180deg)' : ';transform:none');
+
+    // ---- studio ----
+    v.studioGridStyle = 'flex:1 1 auto;min-height:0;display:grid;grid-template-columns:' + (narrow ? '1fr' : 'minmax(0,1.05fr) minmax(0,.95fr)') + ';grid-template-rows:' + (narrow ? 'minmax(0,1fr) minmax(0,1fr)' : '1fr');
+    v.stageStyle = 'position:relative;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:clamp(10px,2vmin,20px);background:' + t.sunk + ';overflow:hidden';
+    v.sideChips = [['front','Front'],['back','Back']].map(([k, l]) => ({ label: l, style: seg(s.side === k), reviewStyle: seg(s.side === k), onClick: () => this.setState({ side: k, sel: null }) }));
+    v.reshuffleStyle = 'display:flex;align-items:center;gap:8px;background:' + t.hot + ';color:' + t.ink + ';border:none;border-radius:999px;padding:0 16px;min-height:44px;font-family:Eina,sans-serif;font-weight:700;font-size:12px;cursor:pointer';
+    v.reshuffle = () => this.compose(Math.floor(Math.random() * 100000));
+    const dark = s.color === 'Black';
+    const mockBg = dark ? '#1B1B1D' : '#E9E5DB';
+    v.mockStyle = 'position:relative;flex:0 1 auto;height:min(84%,' + (narrow ? '320px' : '450px') + ');max-width:88%;width:auto;aspect-ratio:3/4;border-radius:18px;background:' + mockBg;
+    v.mockReviewStyle = 'position:relative;width:min(100%,' + (narrow ? '260px' : '320px') + ');aspect-ratio:3/4;border-radius:18px;background:' + mockBg;
+    v.collarStyle = 'position:absolute;top:0;left:50%;transform:translateX(-50%);width:28%;height:6%;border-bottom-left-radius:999px;border-bottom-right-radius:999px;background:' + (dark ? '#101011' : '#D5D0C2');
+    const paLine = dark ? 'rgba(247,245,241,.26)' : 'rgba(15,15,16,.24)';
+    v.printAreaStyle = 'position:absolute;left:19%;top:15%;width:62%;aspect-ratio:28/35;border:1px dashed ' + paLine + ';border-radius:8px;touch-action:none';
+    v.printAreaStaticStyle = 'position:absolute;left:19%;top:15%;width:62%;aspect-ratio:28/35;border:1px dashed ' + paLine + ';border-radius:8px';
+    v.placements = s.place.filter(p => p.side === s.side).map(p => {
+      const d = this.byCode(p.code), g = this.pctOf(d), gr = this.groundOf(d), on = s.sel === p.id;
+      const geom = 'position:absolute;left:' + p.x + '%;top:' + p.y + '%;width:' + g.w + '%;height:' + g.h + '%;display:grid;place-items:center;overflow:hidden;border-radius:6px;background:' + gr.bg + ';color:' + gr.fg;
+      return {
+        icon: this.iconOf(d), code: d.code,
+        iconStyle: 'font-size:min(3.4vw,26px);opacity:.95',
+        codeStyle: 'position:absolute;bottom:2px;right:3px;font-family:JetBrains Mono,monospace;font-size:7px;font-weight:700;opacity:.7',
+        style: geom + ';transform:rotate(' + p.rot + 'deg);outline:' + (on ? '2px solid ' + t.hot : 'none') + ';outline-offset:2px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;animation:vFade .34s ' + E + ' forwards',
+        reviewStyle: geom + ';transform:rotate(' + p.rot + 'deg);animation:vFade .38s ' + E + ' forwards',
+        onDown: this.startDrag(p)
+      };
+    });
+    v.stageNoteStyle = 'position:relative;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 14px;font-family:JetBrains Mono,monospace;font-size:9px;color:' + t.sub + ';text-align:center';
+    v.studioHint = s.place.length ? 'DRAG TO MOVE · SIZE LOCKED TO THE PRE-CUT TRANSFER' : 'TAP A DESIGN TO PLACE IT';
+    v.nudgeStyle = 'position:absolute;left:14px;right:14px;bottom:14px;display:flex;align-items:center;gap:9px;background:' + t.hot + ';color:' + t.ink + ';border-radius:' + Ri + 'px;padding:12px 14px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.04em;animation:vFade .3s ' + E + ' forwards';
+    v.railColStyle = 'min-height:0;display:flex;flex-direction:column;background:' + t.field + ';border-left:1px solid ' + t.line;
+    v.railHeadStyle = 'flex:0 0 auto;padding:12px;display:flex;flex-direction:column;gap:9px;border-bottom:1px solid ' + t.line;
+    v.railLabelStyle = 'flex:0 0 auto;padding:9px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid ' + t.line;
+    v.railAllStyle = 'background:transparent;white-space:nowrap;color:' + t.fg + ';border:1px solid ' + t.line + ';border-radius:999px;padding:0 14px;min-height:44px;font-family:Eina,sans-serif;font-weight:700;font-size:10px;cursor:pointer';
+    v.garmentChips = [
+      { label: 'Black', style: seg(s.color === 'Black'), onClick: () => this.setState({ color: 'Black' }) },
+      { label: 'White', style: seg(s.color === 'White'), onClick: () => this.setState({ color: 'White' }) },
+      { label: s.fit, style: seg(false), onClick: () => this.setState(st => ({ fit: { Oversized: 'Regular', Regular: 'Crop', Crop: 'Oversized' }[st.fit] })) }
+    ];
+    v.sizeChips = ['XS','S','M','L','XL','XXL'].map(z => {
+      const na = s.fit === 'Crop' && (z === 'XL' || z === 'XXL');
+      return { label: z,
+        style: 'flex:0 0 auto;background:' + (na ? 'transparent' : s.size === z ? t.blue : t.card) + ';color:' + (na ? t.sub : s.size === z ? t.onBlue : t.fg) + ';border:' + (na ? '1px dashed ' + t.line : s.size === z ? 'none' : edge) + ';border-radius:999px;padding:0 17px;min-height:48px;font-family:Eina,sans-serif;font-weight:700;font-size:12px;cursor:' + (na ? 'not-allowed' : 'pointer'),
+        onClick: () => na ? this.nudge('CROP ' + z + ' NOT CONFIRMED YET') : this.setState({ size: z }) };
+    });
+    v.chartBtnStyle = 'flex:0 0 auto;white-space:nowrap;display:inline-flex;align-items:center;gap:7px;background:transparent;color:' + t.fg + ';border:' + edge + ';border-radius:999px;padding:0 16px;min-height:48px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;cursor:pointer';
+    v.railCards = rank.slice(0, 14).map((r, i) => {
+      const d = r.d, g = this.groundOf(d);
+      return { code: d.code, cm: this.cmOf(d) + 'cm', icon: this.iconOf(d),
+        wrapStyle: 'display:flex;flex-direction:column;align-items:stretch;padding:0;margin:0;font:inherit;color:' + t.fg + ';text-align:left;cursor:pointer;overflow:hidden;background:' + t.card + ';border:' + edge + ';border-radius:' + Ri + 'px;animation:vIn .4s ' + Math.min(0.34, i * 0.025) + 's ' + E + ' forwards',
+        artStyle: 'display:grid;place-items:center;height:78px;background:' + g.bg + ';color:' + g.fg,
+        iconStyle: 'font-size:28px;opacity:.92',
+        footStyle: 'display:flex;align-items:center;justify-content:space-between;gap:4px;padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700',
+        onClick: () => this.addDesign(d) };
+    });
+    const selP = s.place.find(p => p.id === s.sel);
+    v.selectedLabel = selP ? selP.code + ' · ' + this.cmOf(this.byCode(selP.code)) + 'cm' : null;
+    v.selBarStyle = 'flex:0 0 auto;border-top:1px solid ' + t.line + ';padding:10px 12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:' + t.fg;
+    v.rotValue = selP ? selP.rot : 0;
+    v.rotLabel = selP ? Math.round(selP.rot) + '°' : '';
+    v.onRotate = e => { const r = parseFloat(e.target.value); this.setState(st => ({ place: st.place.map(p => p.id === st.sel ? Object.assign({}, p, { rot: r }) : p) })); };
+    v.removeStyle = 'display:flex;align-items:center;gap:6px;background:transparent;color:' + t.hot + ';border:1px solid ' + t.hot + ';border-radius:999px;padding:0 13px;min-height:44px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;cursor:pointer';
+    v.removeSelected = () => this.setState(st => ({ place: st.place.filter(p => p.id !== st.sel), sel: null }));
+    v.toMatchesFromStudio = () => this.setState({ step: 'matches', matchView: 'all' });
+    v.studioCtaLabel = s.place.length ? 'Review · ' + money(this.total()) : 'Place a transfer first';
+    v.studioCtaStyle = 'flex:0 0 auto;background:' + (s.place.length ? t.blue : t.sunk) + ';color:' + (s.place.length ? t.onBlue : t.sub) + ';border:none;border-radius:0;min-height:70px;font-family:Eina,sans-serif;font-weight:700;font-size:clamp(17px,2.4vmin,22px);letter-spacing:-0.02em;cursor:' + (s.place.length ? 'pointer' : 'not-allowed');
+    v.toReview = () => s.place.length ? this.setState({ step: 'review' }) : this.nudge('TAP A DESIGN TO PLACE IT');
+
+    // ---- review ----
+    v.reviewPageStyle = 'flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:clamp(16px,3.2vmin,32px);display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:clamp(16px,3vmin,32px);align-content:start';
+    v.garmentLabel = s.color + ' · ' + s.fit + ' · SIZE ' + s.size;
+    v.reviewCardStyle = 'border:' + edge + ';border-radius:' + R + 'px;overflow:hidden;background:' + t.card + ';color:' + t.fg;
+    v.reviewLines = [{ icon: 'apparel', title: s.color + ' ' + s.fit + ' tee', sub: 'Size ' + s.size + ' · TEE-' + s.color.slice(0, 2).toUpperCase() + '-' + s.fit.slice(0, 3).toUpperCase() + '-' + s.size, price: money(this.garmentPrice()) }]
+      .concat(s.place.map(p => { const d = this.byCode(p.code); return { icon: this.iconOf(d), title: p.code + ' · ' + d.name, sub: p.side + ' · ' + this.cmOf(d) + '×' + this.cmOf(d) + 'cm · ' + Math.round(p.rot) + '°', price: money(this.priceOf(d)) }; }))
+      .map(l => Object.assign(l, {
+        rowStyle: 'display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-bottom:1px solid ' + t.line,
+        iconWrapStyle: 'display:grid;place-items:center;width:36px;height:36px;flex:0 0 auto;border-radius:999px;background:' + t.hot + ';color:' + t.ink,
+        subStyle: 'display:block;font-family:JetBrains Mono,monospace;font-size:9px;color:' + t.sub + ';margin-top:3px'
+      }));
+    v.totalRowStyle = 'display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;background:' + t.blue + ';color:' + t.onBlue;
+    v.ghostBigStyle = 'display:flex;align-items:center;justify-content:center;gap:9px;background:transparent;color:' + t.fg + ';border:1px solid ' + t.line + ';border-radius:999px;min-height:62px;font-family:Eina,sans-serif;font-weight:700;font-size:13px;cursor:pointer';
+    v.hotBigStyle = 'display:flex;align-items:center;justify-content:center;gap:10px;background:' + t.hot + ';color:' + t.ink + ';border:none;border-radius:999px;min-height:62px;padding:0 24px;font-family:Eina,sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.01em;cursor:pointer';
+    v.backToStudio = () => this.setState({ step: 'studio' });
+    v.makeTicket = this.makeTicket;
+
+    // ---- ticket ----
+    v.ticketPageStyle = 'flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:clamp(18px,3.2vmin,34px);display:flex;flex-direction:column;align-items:center;gap:clamp(14px,2.4vmin,22px);position:relative';
+    v.ticketCardStyle = 'position:relative;background:' + t.blue + ';color:' + t.onBlue + ';border-radius:26px;padding:24px 28px;text-align:center;animation:vIn .5s .06s ' + E + ' forwards';
+    v.ticketNotchStyle = notch(t.field);
+    v.qrStyle = 'width:112px;height:112px;margin:14px auto 0;border-radius:10px;background-image:repeating-linear-gradient(45deg,' + t.onBlue + ' 0 4px,' + t.blue + ' 4px 8px)';
+    v.ticketCode = s.ticket ? s.ticket.code : '————';
+    v.pressSheetStyle = 'width:100%;max-width:430px;border:' + (paper ? edge : '1px solid ' + t.line) + ';border-radius:' + R + 'px;padding:17px;animation:vIn .54s .12s ' + E + ' forwards';
+    v.hrStyle = 'height:1px;background:' + t.line + ';margin:13px 0';
+    v.ticketLines = s.place.map(p => { const d = this.byCode(p.code); return p.code + ' · ' + p.side + ' · x ' + Math.round(p.x) + '% y ' + Math.round(p.y) + '% · ' + Math.round(p.rot) + '° · ' + this.cmOf(d) + '×' + this.cmOf(d) + 'cm'; });
+    v.ticketExpiry = s.ticket ? Math.max(0, 30 - Math.floor((Date.now() - s.ticket.at) / 60000)) + ' MIN' : '30 MIN';
+    v.reset = () => this.setState({ step: 'attract', place: [], sel: null, ticket: null, interests: [] });
+
+    // ---- size chart ----
+    const chartFit = s.chartFit || s.fit;
+    const chartData = {
+      Oversized: { XS: [21, 26, 20], S: [22, 27, 21], M: [23, 28, 22], L: [24, 29, 23], XL: [25, 30, 24], XXL: [26, 31, 25] },
+      Regular: { XS: [18, 25, 16], S: [19, 26, 17], M: [20, 27, 18], L: [21, 28, 19], XL: [22, 29, 20], XXL: [23, 30, 21] },
+      Crop: { XS: [18, 17, 15], S: [19, 18, 16], M: [20, 19, 17], L: [21, 20, 18] }
+    };
+    v.chartOpen = s.chart;
+    v.openChart = () => this.setState({ chart: true, chartFit: s.fit });
+    v.closeChart = () => this.setState({ chart: false });
+    v.sheetStyle = 'display:block;width:100%;max-width:600px;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:' + t.field + ';color:' + t.fg + ';border-radius:26px 26px 0 0;padding:22px 20px 26px;animation:vSheet .38s ' + E + ' forwards';
+    v.closeBtnStyle = 'display:grid;place-items:center;width:44px;height:44px;background:' + t.hot + ';color:' + t.ink + ';border:none;border-radius:999px;cursor:pointer';
+    v.chartFitLabel = chartFit.toUpperCase() + ' FIT';
+    v.chartFitChips = ['Oversized','Regular','Crop'].map(f => ({ label: f, style: seg(chartFit === f), onClick: () => this.setState({ chartFit: f }) }));
+    v.chartHead = ['SIZE','CHEST','LENGTH','SHOULDER'];
+    v.chartTableStyle = 'border:' + (paper ? edge : '1px solid ' + t.line) + ';border-radius:' + R + 'px;overflow:hidden;margin-top:14px';
+    v.chartHeadStyle = 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;background:' + t.card + ';color:' + t.fg;
+    v.chartRows = Object.keys(chartData[chartFit]).map(z => {
+      const [c, l, sh] = chartData[chartFit][z];
+      const on = s.size === z && s.fit === chartFit;
+      return { size: z, chest: c + '"', length: l + '"', shoulder: sh + '"',
+        style: 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;align-items:center;width:100%;padding:0;margin:0;font:inherit;text-align:left;border:none;border-top:1px solid ' + t.line + ';border-radius:0;min-height:54px;cursor:pointer;background:' + (on ? t.blue : 'transparent') + ';color:' + (on ? t.onBlue : t.fg),
+        sizeStyle: 'display:inline-flex;align-items:center;padding-left:11px;font-family:Eina,sans-serif;font-weight:700;font-size:13px;color:inherit',
+        onClick: () => this.setState({ fit: chartFit, size: z, chart: false, toast: chartFit.toUpperCase() + ' · ' + z + ' SELECTED' }) };
+    });
+    v.chartNote = 'Measurements are indicative and pending the supplier spec sheet. Oversized runs one size loose by design — if you are between sizes on a Regular, size up.';
+
+    return v;
+  }
+}
+</script>
+</body>
+</html>

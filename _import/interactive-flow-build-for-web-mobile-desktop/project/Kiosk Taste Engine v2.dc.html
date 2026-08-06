@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap" rel="stylesheet" />
+<style>
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-Light.ttf') format('truetype'); font-weight: 300; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-RegularItalic.ttf') format('truetype'); font-weight: 400; font-style: italic; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-SemiBold.ttf') format('truetype'); font-weight: 600; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-BoldItalic.ttf') format('truetype'); font-weight: 700; font-style: italic; font-display: swap }
+</style>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #2E0BA0; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  body { font-family: Eina, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #1FD819; text-decoration: underline; text-underline-offset: 2px; }
+  a:hover { color: #1FD819; }
+  button { font: inherit; touch-action: manipulation; user-select: none; -webkit-user-select: none; border-radius: 10px; transition: transform .14s cubic-bezier(.34,1.4,.64,1), box-shadow .14s ease, background .16s ease, color .16s ease; }
+  button:active { transform: scale(.96); }
+  input, select { font: inherit; -webkit-appearance: none; appearance: none; border-radius: 10px; }
+  input[type="range"] { background: transparent; height: 46px; touch-action: none; accent-color: #1FD819; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: #333; border-radius: 999px }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -11px; border-radius: 999px; background: #1FD819; border: 2px solid #F7F5F1 }
+  .msi { font-family: 'Material Symbols Sharp'; font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; direction: ltr; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
+  ::-webkit-scrollbar { width: 9px; height: 9px }
+  ::-webkit-scrollbar-track { background: rgba(0,0,0,.06) }
+  ::-webkit-scrollbar-thumb { background: #1FD819; border-radius: 9px }
+  @keyframes kRise { from { transform: translateY(18px); opacity: 0 } to { transform: none; opacity: 1 } }
+  @keyframes kPop { 0% { transform: scale(.4) rotate(-6deg); opacity: 0 } 65% { transform: scale(1.1) rotate(2deg) } 100% { transform: scale(1) rotate(0); opacity: 1 } }
+  @keyframes kFloat { 0%,100% { transform: translateY(0) rotate(var(--r,0deg)) } 50% { transform: translateY(-13px) rotate(var(--r,0deg)) } }
+  @keyframes kMarquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+  @keyframes kHalftone { from { background-position: 0 0 } to { background-position: 80px 80px } }
+  @keyframes kSheen { 0% { transform: translateX(-140%) skewX(-18deg) } 60%,100% { transform: translateX(320%) skewX(-18deg) } }
+  @keyframes kWiggle { 0%,100% { transform: rotate(-3deg) } 50% { transform: rotate(3deg) scale(1.05) } }
+  @keyframes kStamp { 0% { transform: rotate(-1.5deg) scale(1.6); opacity: 0 } 55% { transform: rotate(-1.5deg) scale(.94) } 100% { transform: rotate(-1.5deg) scale(1); opacity: 1 } }
+  @keyframes kSpin { to { transform: rotate(360deg) } }
+  @keyframes kPulseRing { 0% { box-shadow: 0 0 0 0 rgba(232,85,42,.55) } 100% { box-shadow: 0 0 0 26px rgba(232,85,42,0) } }
+  @keyframes kFade { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes kSheet { from { transform: translateY(46px) scale(.985); opacity: .4 } to { transform: none; opacity: 1 } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+</style>
+</helmet>
+
+<div style="height:100dvh;min-height:0;display:flex;flex-direction:column;background:#2E0BA0;color:#F7F5F1;overflow:hidden;touch-action:manipulation">
+
+  <div style="flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 12px;background:#101010;border-bottom:1px solid #2a2a2a">
+    <span class="msi" style="font-size:18px;color:#1FD819">tablet_mac</span>
+    <span style="font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.18em;color:#8a8a8a">CUSTOMER KIOSK · TASTE ENGINE</span>
+    <div style="flex:1 1 40px"></div>
+    <sc-for list="{{ stepTabs }}" as="t" hint-placeholder-count="6">
+      <button onClick="{{ t.onClick }}" style="{{ t.style }}"><span class="msi" style="font-size:14px;vertical-align:-2px;margin-right:5px">{{ t.icon }}</span>{{ t.label }}</button>
+    </sc-for>
+  </div>
+
+  <div style="flex:1 1 auto;min-height:0;display:flex;justify-content:center;background:#101010">
+    <div style="{{ shellStyle }}">
+
+      <sc-if value="{{ isAttract }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ start }}" style="all:unset;cursor:pointer;flex:1 1 auto;min-height:0;position:relative;overflow:hidden;display:flex;flex-direction:column;background:#2E0BA0">
+          <div style="position:absolute;inset:-40px;background-image:radial-gradient(#F7F5F1 1px,transparent 1.2px);background-size:9px 9px;opacity:.07;animation:kHalftone 22s linear infinite"></div>
+          <div style="position:absolute;top:12px;left:12px;width:22px;height:22px;border-top:2px solid rgba(247,245,241,.34);border-left:2px solid rgba(247,245,241,.34);opacity:1"></div>
+          <div style="position:absolute;bottom:12px;right:12px;width:22px;height:22px;border-bottom:2px solid rgba(247,245,241,.34);border-right:2px solid rgba(247,245,241,.34);opacity:1"></div>
+          <div style="position:relative;flex:1 1 auto;min-height:0;display:grid;grid-template-columns:{{ attractCols }};align-items:center;gap:22px;padding:clamp(14px,3.4vmin,44px);overflow:hidden">
+            <div style="display:flex;flex-direction:column;gap:clamp(6px,1.5vmin,14px);min-width:0;min-height:0">
+              <div style="display:flex;align-items:center;gap:9px;animation:kRise .5s ease-out forwards">
+                <span class="msi" style="font-size:17px;color:#1FD819">recommend</span>
+                <span style="font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.22em;color:#1FD819">CRFTD × AQUATERRA</span>
+              </div>
+              <div style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(30px,8.4vmin,88px);line-height:0.9;letter-spacing:-0.01em;animation:kRise .55s .05s ease-out forwards">PICK WHAT<br />YOU LIKE</div>
+              <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;animation:kRise .6s .1s ease-out forwards">
+                <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(30px,8.4vmin,88px);line-height:0.9;color:#1FD819">WE BUILD IT</span>
+              </div>
+              <div style="height:6px;width:min(280px,60%);background:#1FD819;border-radius:999px;margin-top:10px;margin-bottom:6px;animation:kRise .65s .16s ease-out forwards"></div>
+              <div style="font-size:clamp(13px,1.9vmin,17px);line-height:1.5;max-width:38ch;opacity:.92;animation:kRise .7s .2s ease-out forwards">Pick a few interests. We rank 200 transfers against your taste, then build a whole tee for you. Change anything you like.</div>
+              <div style="display:flex;align-items:center;gap:11px;margin-top:clamp(4px,1.4vmin,14px);animation:kRise .75s .26s ease-out forwards">
+                <span style="display:grid;place-items:center;width:clamp(44px,7vmin,58px);height:clamp(44px,7vmin,58px);flex:0 0 auto;background:#1FD819;color:#111"><span class="msi" style="font-size:clamp(22px,3.6vmin,28px)">touch_app</span></span>
+                <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(18px,3.4vmin,28px)">TAP TO START</span>
+              </div>
+            </div>
+            <div style="{{ attractArtStyle }}">
+              <sc-for list="{{ attractTiles }}" as="t" hint-placeholder-count="4">
+                <span style="{{ t.style }}">
+                  <span style="{{ t.artStyle }}">
+                    <span style="{{ t.motifStyle }}"></span>
+                    <span style="{{ t.wordStyle }}">{{ t.word }}</span>
+                    <span style="{{ t.codeStyle }}">{{ t.code }}</span>
+                  </span>
+                </span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:relative;flex:0 0 auto;background:#101010;border-top:2px solid #F7F5F1;overflow:hidden;padding:9px 0">
+            <span style="display:flex;width:200%;animation:kMarquee 26s linear infinite">
+              <sc-for list="{{ marquee }}" as="m" hint-placeholder-count="8">
+                <span style="flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:0 20px;font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.16em;color:{{ m.color }};white-space:nowrap"><span class="msi" style="font-size:13px">{{ m.icon }}</span>{{ m.label }}</span>
+              </sc-for>
+            </span>
+          </div>
+        </button>
+      </sc-if>
+
+      <sc-if value="{{ inApp }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:12px 18px;background:#2E0BA0;color:#F7F5F1;border-bottom:1px solid rgba(247,245,241,.16)">
+          <button onClick="{{ back }}" style="{{ backStyle }}"><span class="msi" style="font-size:20px">arrow_back</span></button>
+          <div style="min-width:0;flex:1 1 auto">
+            <div style="font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.18em;opacity:.8">{{ stepKicker }}</div>
+            <div style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(19px,2.6vw,27px);line-height:1.05;letter-spacing:0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ stepTitle }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <sc-for list="{{ progressDots }}" as="d" hint-placeholder-count="4">
+              <span style="{{ d.style }}"></span>
+            </sc-for>
+          </div>
+          <div style="text-align:right;padding-left:6px">
+            <div style="font-family:Eina,sans-serif;font-weight:700;font-size:8px;letter-spacing:0.16em;opacity:.8">TOTAL</div>
+            <div style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(20px,2.6vw,27px);line-height:1">{{ totalLabel }}</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTaste }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#2E0BA0;color:#F7F5F1;padding:clamp(16px,3vw,30px);display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;animation:kRise .4s ease-out forwards">
+            <div>
+              <div style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(30px,5vw,52px);line-height:0.95">PICK YOUR <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;color:#1FD819">flavours</span></div>
+              <div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#555;margin-top:5px">{{ tasteHint }}</div>
+            </div>
+            <button onClick="{{ surprise }}" style="display:flex;align-items:center;gap:9px;background:#1FD819;color:#F7F5F1;border:none;border-radius:999px;padding:0 22px;min-height:54px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.12em;cursor:pointer;box-shadow:none"><span class="msi" style="font-size:19px">casino</span>SURPRISE ME</button>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(130px,20vw,190px),1fr));gap:clamp(8px,1.4vw,14px)">
+            <sc-for list="{{ interestCards }}" as="c" hint-placeholder-count="10">
+              <button onClick="{{ c.onClick }}" style="{{ c.style }}">
+                <span style="{{ c.iconWrapStyle }}"><span class="msi" style="font-size:26px">{{ c.icon }}</span></span>
+                <span style="display:flex;flex-direction:column;min-width:0">
+                  <span style="display:block;font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(16px,2vw,21px);line-height:1.1;text-align:left">{{ c.label }}</span>
+                  <span style="display:block;font-family:JetBrains Mono,monospace;font-size:10px;opacity:.7;text-align:left;margin-top:2px">{{ c.count }}</span>
+                </span>
+                <span style="{{ c.tickStyle }}"><span class="msi" style="font-size:16px">check</span></span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">
+            <sc-for list="{{ vibeSliders }}" as="v" hint-placeholder-count="2">
+              <div style="border:none;border-radius:16px;background:#fff;padding:15px;display:flex;flex-direction:column;gap:9px;box-shadow:none">
+                <div style="display:flex;align-items:center;gap:9px">
+                  <span class="msi" style="font-size:19px;color:#1FD819">{{ v.icon }}</span>
+                  <span style="font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.14em">{{ v.label }}</span>
+                  <span style="flex:1 1 auto"></span>
+                  <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:19px;color:#1FD819">{{ v.value }}</span>
+                </div>
+                <input type="range" min="0" max="100" step="1" value="{{ v.raw }}" onChange="{{ v.onChange }}" style="width:100%" />
+                <div style="display:flex;justify-content:space-between;font-family:JetBrains Mono,monospace;font-size:10px;color:#666"><span>{{ v.left }}</span><span>{{ v.right }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+
+          <button onClick="{{ toMatches }}" style="{{ tasteCtaStyle }}">
+            <span style="display:flex;align-items:center;justify-content:center;gap:11px"><span class="msi" style="font-size:23px">arrow_forward</span>{{ tasteCtaLabel }}</span>
+          </button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMatches }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#2E0BA0;color:#F7F5F1;padding:clamp(16px,3vw,30px);display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            <div>
+              <div style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(26px,4.4vw,44px);line-height:0.98">YOUR <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;color:#1FD819">{{ matchCount }}</span> MATCHES</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                <sc-for list="{{ tasteRecap }}" as="t" hint-placeholder-count="3">
+                  <span style="display:inline-flex;align-items:center;gap:5px;background:#F7F5F1;color:#2E0BA0;border-radius:999px;padding:5px 12px;font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.1em"><span class="msi" style="font-size:12px">{{ t.icon }}</span>{{ t.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ matchViewTabs }}" as="t" hint-placeholder-count="2">
+                <button onClick="{{ t.onClick }}" style="{{ t.style }}"><span class="msi" style="font-size:15px;vertical-align:-3px;margin-right:5px">{{ t.icon }}</span>{{ t.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(140px,21vw,200px),1fr));gap:clamp(10px,1.5vw,16px)">
+            <sc-for list="{{ matchCards }}" as="m" hint-placeholder-count="8">
+              <div style="{{ m.wrapStyle }}" style-hover="transform:translateY(-5px);box-shadow:none">
+                <span style="{{ m.artStyle }}">
+                  <span style="{{ m.motifStyle }}"></span>
+                  <span style="{{ m.wordStyle }}">{{ m.word }}</span>
+                  <span style="{{ m.codeStyle }}">{{ m.code }}</span>
+                  <span style="{{ m.rankStyle }}">{{ m.rank }}</span>
+                </span>
+                <span style="padding:10px 11px 11px;display:flex;flex-direction:column;gap:7px">
+                  <span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+                    <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:16px;line-height:1.1">{{ m.name }}</span>
+                    <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:17px;color:#1FD819;white-space:nowrap">{{ m.price }}</span>
+                  </span>
+                  <span style="display:flex;align-items:center;gap:6px;font-family:JetBrains Mono,monospace;font-size:10px;color:#555"><span class="msi" style="font-size:13px;color:#1FD819">insights</span>{{ m.why }}</span>
+                  <span style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <span style="{{ m.stockStyle }}">{{ m.stockLabel }}</span>
+                    <button onClick="{{ m.onAdd }}" style="{{ m.addStyle }}"><span class="msi" style="font-size:17px">{{ m.addIcon }}</span></button>
+                  </span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+
+          <button onClick="{{ shuffleTee }}" style="{{ shuffleCtaStyle }}">
+            <span style="display:flex;align-items:center;justify-content:center;gap:12px"><span class="msi" style="{{ shuffleIconStyle }}">shuffle</span>BUILD ME A WHOLE TEE</span>
+          </button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStudio }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1 1 auto;min-height:0;display:grid;grid-template-columns:{{ studioCols }};grid-template-rows:{{ studioRows }};background:#F7F5F1;color:#111">
+          <div style="position:relative;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:clamp(10px,2vw,20px);background:#101010;overflow:hidden">
+            <div style="position:absolute;inset:-30px;background-image:radial-gradient(#F7F5F1 1px,transparent 1.2px);background-size:12px 12px;opacity:.06;animation:kHalftone 30s linear infinite"></div>
+            <div style="position:relative;display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+              <sc-for list="{{ sideChips }}" as="s" hint-placeholder-count="2">
+                <button onClick="{{ s.onClick }}" style="{{ s.style }}"><span class="msi" style="font-size:15px;vertical-align:-3px;margin-right:5px">{{ s.icon }}</span>{{ s.label }}</button>
+              </sc-for>
+              <button onClick="{{ reshuffle }}" style="display:flex;align-items:center;gap:7px;background:#1FD819;color:#111;border:none;border-radius:999px;padding:0 16px;min-height:44px;font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.1em;cursor:pointer"><span class="msi" style="{{ shuffleIconStyle }}">casino</span>RESHUFFLE</button>
+            </div>
+            <div style="{{ mockStyle }}">
+              <div style="{{ collarStyle }}"></div>
+              <div ref="{{ paRef }}" style="{{ printAreaStyle }}">
+                <sc-for list="{{ placements }}" as="p" hint-placeholder-count="0">
+                  <div onPointerDown="{{ p.onDown }}" style="{{ p.style }}">
+                    <span style="{{ p.motifStyle }}"></span>
+                    <span style="{{ p.wordStyle }}">{{ p.word }}</span>
+                    <span style="{{ p.codeStyle }}">{{ p.code }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="position:relative;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px 14px;font-family:JetBrains Mono,monospace;font-size:10px;color:#8a8a8a;text-align:center">
+              <span style="display:inline-flex;align-items:center;gap:6px"><span class="msi" style="font-size:13px">straighten</span>PRINT AREA 28 × 35 cm · TRUE SCALE</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span class="msi" style="font-size:13px">drag_pan</span>{{ studioHint }}</span>
+            </div>
+            <sc-if value="{{ nudge }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;left:14px;right:14px;bottom:14px;display:flex;align-items:center;gap:9px;background:#1FD819;color:#111;border-radius:20px;padding:12px 14px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.08em;animation:kRise .2s ease-out;box-shadow:none"><span class="msi" style="font-size:19px">block</span>{{ nudge }}</div>
+            </sc-if>
+          </div>
+
+          <div style="min-height:0;display:flex;flex-direction:column;background:#2E0BA0;border-left:1px solid rgba(247,245,241,.16)">
+            <div style="flex:0 0 auto;padding:12px;display:flex;flex-direction:column;gap:9px;border-bottom:1px solid rgba(247,245,241,.16)">
+              <div style="display:flex;gap:8px;align-items:center">
+                <sc-for list="{{ garmentChips }}" as="g" hint-placeholder-count="3">
+                  <button onClick="{{ g.onClick }}" style="{{ g.style }}">{{ g.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
+                <sc-for list="{{ sizeChips }}" as="z" hint-placeholder-count="6">
+                  <button onClick="{{ z.onClick }}" style="{{ z.style }}"><span>{{ z.label }}</span><span style="display:block;font-family:JetBrains Mono,monospace;font-size:8px;font-weight:400;letter-spacing:0;opacity:.7">{{ z.note }}</span></button>
+                </sc-for>
+                <button onClick="{{ openChart }}" style="flex:0 0 auto;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#fff;border:1.5px dashed #1FD819;color:#1FD819;border-radius:12px;padding:0 11px;min-height:52px;font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.08em;cursor:pointer"><span class="msi" style="font-size:17px">straighten</span>SIZE CHART</button>
+              </div>
+            </div>
+            <div style="flex:0 0 auto;padding:9px 12px;display:flex;align-items:center;gap:9px;border-bottom:1px solid rgba(247,245,241,.16);background:#3A0DB2">
+              <span class="msi" style="font-size:17px;color:#1FD819">recommend</span>
+              <span style="font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.14em;flex:1 1 auto;color:#F7F5F1">PICKED FOR YOU</span>
+              <button onClick="{{ toMatchesFromStudio }}" style="background:transparent;color:#F7F5F1;border:1px solid rgba(247,245,241,.34);border-radius:999px;padding:0 13px;min-height:36px;font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.1em;cursor:pointer">ALL DESIGNS</button>
+            </div>
+            <div style="flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));grid-auto-rows:118px;gap:10px;align-content:start">
+              <sc-for list="{{ railCards }}" as="r" hint-placeholder-count="8">
+                <button onClick="{{ r.onClick }}" style="{{ r.wrapStyle }}" style-hover="box-shadow:none">
+                  <span style="{{ r.artStyle }}">
+                    <span style="{{ r.motifStyle }}"></span>
+                    <span style="{{ r.wordStyle }}">{{ r.word }}</span>
+                  </span>
+                  <span style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:5px 6px 6px">
+                    <span style="font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700">{{ r.code }}</span>
+                    <span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#666">{{ r.cm }}</span>
+                  </span>
+                </button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ selectedLabel }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:0 0 auto;border-top:1px solid rgba(247,245,241,.16);background:#fff;padding:9px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:15px;white-space:nowrap">{{ selectedLabel }}</span>
+                <label style="flex:1 1 120px;display:flex;align-items:center;gap:8px;min-width:0">
+                  <span class="msi" style="font-size:17px;color:#1FD819">rotate_right</span>
+                  <input type="range" min="-180" max="180" step="1" value="{{ rotValue }}" onChange="{{ onRotate }}" style="flex:1 1 0;min-width:60px" />
+                  <span style="font-family:JetBrains Mono,monospace;font-size:10px;width:38px;text-align:right">{{ rotLabel }}</span>
+                </label>
+                <button onClick="{{ removeSelected }}" style="display:flex;align-items:center;gap:5px;background:none;border:1.5px solid #1FD819;color:#1FD819;border-radius:999px;padding:0 14px;min-height:44px;font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.1em;cursor:pointer"><span class="msi" style="font-size:15px">delete</span>REMOVE</button>
+              </div>
+            </sc-if>
+            <button onClick="{{ toReview }}" style="{{ studioCtaStyle }}"><span class="msi" style="font-size:23px">check_circle</span>{{ studioCtaLabel }}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#2E0BA0;color:#F7F5F1;padding:clamp(16px,3vw,30px);display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(16px,2.5vw,28px);align-content:start">
+          <div style="display:flex;flex-direction:column;gap:12px;align-items:center;animation:kRise .3s ease-out forwards">
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ sideChips }}" as="s" hint-placeholder-count="2">
+                <button onClick="{{ s.onClick }}" style="{{ s.reviewStyle }}"><span class="msi" style="font-size:15px;vertical-align:-3px;margin-right:5px">{{ s.icon }}</span>{{ s.label }}</button>
+              </sc-for>
+            </div>
+            <div style="{{ mockReviewStyle }}">
+              <div style="{{ collarStyle }}"></div>
+              <div style="{{ printAreaStaticStyle }}">
+                <sc-for list="{{ placements }}" as="p" hint-placeholder-count="0">
+                  <div style="{{ p.reviewStyle }}">
+                    <span style="{{ p.motifStyle }}"></span>
+                    <span style="{{ p.wordStyle }}">{{ p.word }}</span>
+                    <span style="{{ p.codeStyle }}">{{ p.code }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#555">{{ garmentLabel }}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;animation:kRise .38s ease-out forwards">
+            <div style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(28px,4.4vw,46px);line-height:0.98">THIS IS <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;color:#1FD819">yours</span></div>
+            <div style="border:none;border-radius:22px;overflow:hidden;background:#4611C4;color:#F7F5F1">
+              <sc-for list="{{ reviewLines }}" as="l" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:11px;padding:12px 14px;border-bottom:1px solid rgba(247,245,241,.16)">
+                  <span style="display:flex;align-items:center;gap:11px;min-width:0">
+                    <span class="msi" style="font-size:19px;color:#1FD819">{{ l.icon }}</span>
+                    <span style="min-width:0">
+                      <span style="display:block;font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:16px;line-height:1.15">{{ l.title }}</span>
+                      <span style="display:block;font-family:JetBrains Mono,monospace;font-size:10px;color:#666;margin-top:2px">{{ l.sub }}</span>
+                    </span>
+                  </span>
+                  <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:18px;white-space:nowrap">{{ l.price }}</span>
+                </div>
+              </sc-for>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:11px;padding:15px;background:#1FD819;color:#F7F5F1">
+                <span style="display:flex;align-items:center;gap:9px;font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.14em"><span class="msi" style="font-size:19px">local_mall</span>TOTAL</span>
+                <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(28px,3.6vw,38px);line-height:1">{{ totalLabel }}</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;background:#152B86;color:#F7F5F1;border-radius:20px;padding:15px;font-size:12px;line-height:1.6">
+              <span class="msi" style="font-size:18px;color:#1FD819;flex:0 0 auto">volunteer_activism</span>
+              <span>Hand wash recommended · transfers rated 10–15 washes minimum. Every tee funds AquaTerra welfare work.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+              <button onClick="{{ backToStudio }}" style="display:flex;align-items:center;justify-content:center;gap:9px;background:transparent;border:1px solid rgba(247,245,241,.34);border-radius:999px;min-height:64px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.1em;cursor:pointer"><span class="msi" style="font-size:20px">tune</span>KEEP EDITING</button>
+              <button onClick="{{ makeTicket }}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#1FD819;color:#F7F5F1;border:none;border-radius:999px;min-height:64px;font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:21px;cursor:pointer;box-shadow:none"><span class="msi" style="font-size:24px">confirmation_number</span>GET TICKET</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTicket }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#2E0BA0;color:#F7F5F1;padding:clamp(18px,3vw,34px);display:flex;flex-direction:column;align-items:center;gap:18px">
+          <div style="display:flex;align-items:center;gap:9px;animation:kRise .3s ease-out forwards">
+            <span class="msi" style="font-size:19px;color:#1FD819">point_of_sale</span>
+            <span style="font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.2em">SHOW THIS AT THE TILL</span>
+          </div>
+          <div style="background:#1FD819;color:#F7F5F1;border-radius:26px;padding:24px 28px;text-align:center;animation:kStamp .5s cubic-bezier(.3,1.5,.6,1) forwards;box-shadow:none">
+            <div style="font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.18em;color:#1FD819">TICKET CODE</div>
+            <div style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(54px,13vw,92px);letter-spacing:0.1em;line-height:1">{{ ticketCode }}</div>
+            <div style="width:118px;height:118px;margin:10px auto 0;border-radius:4px;background-image:repeating-linear-gradient(45deg,#F7F5F1 0 4px,#1FD819 4px 8px)"></div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:6px;font-family:JetBrains Mono,monospace;font-size:9px;color:#555;margin-top:8px"><span class="msi" style="font-size:12px">wifi_off</span>QR carries the full payload — works offline</div>
+          </div>
+          <div style="width:100%;max-width:440px;background:rgba(13,13,13,.72);border:1px solid rgba(244,240,230,.4);border-radius:20px;padding:15px;animation:kRise .5s .12s ease-out forwards">
+            <div style="display:flex;align-items:center;gap:8px;font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.16em;color:#1FD819"><span class="msi" style="font-size:15px">print</span>PRESS SHEET · PLACEMENT LIST</div>
+            <sc-for list="{{ ticketLines }}" as="l" hint-placeholder-count="2">
+              <div style="font-family:JetBrains Mono,monospace;font-size:11px;margin-top:6px;opacity:.92">{{ l }}</div>
+            </sc-for>
+            <div style="height:1px;background:rgba(244,240,230,.4);margin:12px 0"></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:22px"><span>QUOTED</span><span>{{ totalLabel }}</span></div>
+            <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#b9b9b9;margin-top:7px">Quote only · expires in {{ ticketExpiry }}. Nothing is reserved until the volunteer charges.</div>
+          </div>
+          <button onClick="{{ reset }}" style="display:flex;align-items:center;gap:10px;background:#1FD819;color:#111;border:none;border-radius:999px;padding:0 26px;min-height:60px;font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:21px;cursor:pointer"><span class="msi" style="font-size:24px">restart_alt</span>START AGAIN</button>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <sc-if value="{{ chartOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeChart }}" style="position:fixed;inset:0;z-index:70;background:rgba(8,8,8,.62);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);display:flex;align-items:flex-end;justify-content:center;animation:kFade .22s ease-out">
+      <div style="width:100%;max-width:620px;background:#3A0DB2;color:#F7F5F1;border-radius:24px 24px 0 0;padding:22px 20px 26px;display:flex;flex-direction:column;gap:14px;animation:kSheet .34s cubic-bezier(.22,1,.36,1) forwards;box-shadow:none;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+        <div style="width:46px;height:5px;border-radius:999px;background:rgba(247,245,241,.34);margin:0 auto"></div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(24px,4vmin,34px);line-height:1">SIZE <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;color:#1FD819">chart</span></div>
+            <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#666;margin-top:3px">{{ chartFitLabel }} · measurements in inches, garment flat</div>
+          </div>
+          <button onClick="{{ closeChart }}" style="display:grid;place-items:center;width:46px;height:46px;background:#111;color:#F7F5F1;border:none;border-radius:999px;cursor:pointer"><span class="msi" style="font-size:22px">close</span></button>
+        </div>
+        <div style="flex:0 0 auto;display:flex;gap:7px;overflow-x:auto;padding-bottom:2px">
+          <sc-for list="{{ chartFitChips }}" as="c" hint-placeholder-count="3">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+        <div style="flex:0 0 auto;border:none;border-radius:22px;overflow:hidden;background:#4611C4;color:#F7F5F1">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;background:#111;color:#F7F5F1">
+            <sc-for list="{{ chartHead }}" as="h" hint-placeholder-count="4">
+              <div style="padding:10px 8px;font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.12em">{{ h }}</div>
+            </sc-for>
+          </div>
+          <sc-for list="{{ chartRows }}" as="r" hint-placeholder-count="6">
+            <button onClick="{{ r.onClick }}" style="{{ r.style }}">
+              <span style="{{ r.sizeStyle }}">{{ r.size }}</span>
+              <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:17px">{{ r.chest }}</span>
+              <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:17px">{{ r.length }}</span>
+              <span style="font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:17px">{{ r.shoulder }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="flex:0 0 auto;display:flex;align-items:flex-start;gap:10px;background:#152B86;color:#F7F5F1;border-radius:20px;padding:15px;font-size:12px;line-height:1.6">
+          <span class="msi" style="font-size:18px;color:#1FD819;flex:0 0 auto">info</span>
+          <span>{{ chartNote }}</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;background:#111;color:#F7F5F1;border-radius:999px;padding:12px 18px;font-family:Eina,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.1em;animation:kRise .2s ease-out;pointer-events:none;box-shadow:2px 2px 0 #1FD819;max-width:92vw">
+      <span class="msi" style="font-size:17px;color:#1FD819">bolt</span>{{ toast }}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;maxPicks&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:1,&quot;max&quot;:5,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Engine&quot;},&quot;showWhy&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Engine&quot;}}">
+class Component extends DCLogic {
+  paRef = React.createRef();
+  state = this.seed();
+
+  seed() {
+    const D = (code, size, name, word, tags) => ({ code, size, name, word, tags, stock: 3 + (this.hash(code) % 22) });
+    const designs = [
+      D('S-004','S','Ramen Ghost','RAMEN',['anime','food']),
+      D('S-011','S','Static Bloom','STATIC',['abstract','space']),
+      D('S-014','S','No Signal','NO SIGNAL',['typography','humour']),
+      D('S-023','S','Tape Deck','TAPE',['music','retro']),
+      D('S-031','S','Koi Fragment','KOI',['anime','nature']),
+      D('S-038','S','Second Sun','SUN',['space','abstract']),
+      D('S-042','S','Chai Break','CHAI',['food','humour']),
+      D('M-002','M','Feedback Loop','FEEDBACK',['typography','abstract','music']),
+      D('M-009','M','Riot Season','RIOT',['band','typography']),
+      D('M-014','M','Deep Field','DEEP FIELD',['space','abstract']),
+      D('M-018','M','Hand Wash Only','HAND WASH',['typography','humour']),
+      D('M-027','M','Monsoon Grid','MONSOON',['abstract','nature']),
+      D('M-033','M','Kaiju Payslip','KAIJU',['anime','humour']),
+      D('M-041','M','Analog Heart','ANALOG',['retro','music']),
+      D('M-052','M','Night Shift','NIGHT SHIFT',['typography','band']),
+      D('M-061','M','Wet Concrete','CONCRETE',['abstract','nature']),
+      D('L-001','L','Cassette Sun','CASSETTE',['retro','music']),
+      D('L-006','L','Eclipse Type','ECLIPSE',['typography','space']),
+      D('L-014','L','Deep Field XL','DEEP FIELD',['space','abstract']),
+      D('L-019','L','Mecha Study','MECHA',['anime','abstract']),
+      D('L-022','L','Terracotta Wave','TERRACOTTA',['nature','retro']),
+      D('L-030','L','Band Practice','PRACTICE',['band','music']),
+      D('L-037','L','Loud Enough','LOUD',['typography','band']),
+      D('L-044','L','Slow Monsoon','SLOW',['nature','abstract'])
+    ];
+    return {
+      step: 'attract', vw: 1024, vh: 768,
+      interests: [], loud: 55, density: 45,
+      designs, matchView: 'matched',
+      color: 'Black', fit: 'Oversized', size: 'M',
+      place: [], sel: null, side: 'front',
+      seed: 7, spinning: false,
+      ticket: null, nudge: '', toast: null,
+      chart: false, chartFit: null
+    };
+  }
+
+  hash(str) { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0x7fffffff; return h; }
+  rng(seed) { let a = seed >>> 0; return () => { a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  componentDidMount() {
+    this.onResize();
+    window.addEventListener('resize', this.onResize);
+    this.tick = setInterval(() => this.setState(s => s.step === 'ticket' ? { toast: s.toast } : {}), 30000);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); clearInterval(this.tick); clearTimeout(this.toastT); clearTimeout(this.nudgeT); clearTimeout(this.spinT); }
+  onResize = () => this.setState({ vw: window.innerWidth, vh: window.innerHeight });
+
+  flash(msg) { this.setState({ toast: msg }); clearTimeout(this.toastT); this.toastT = setTimeout(() => this.setState({ toast: null }), 2400); }
+  nudge(msg) { this.setState({ nudge: msg }); clearTimeout(this.nudgeT); this.nudgeT = setTimeout(() => this.setState({ nudge: '' }), 2300); }
+
+  // pricing — indicative until PRD §5 lands
+  priceOf(d) { return { S: 79, M: 129, L: 199 }[d.size]; }
+  garmentPrice() { return { Oversized: 749, Regular: 699, Crop: 649 }[this.state.fit]; }
+  cmOf(d) { return { S: 6, M: 12, L: 22 }[d.size]; }
+  money(v) { return v === null || isNaN(v) ? '₹—' : '₹' + Number(Math.round(v)).toLocaleString('en-IN'); }
+  total() { return this.garmentPrice() + this.state.place.reduce((a, p) => a + this.priceOf(this.byCode(p.code)), 0); }
+  byCode(c) { return this.state.designs.find(d => d.code === c); }
+  stockOf(d) { return d.stock - this.state.place.filter(p => p.code === d.code).length; }
+
+  // ---- art system: deterministic, on-brand ----
+  hues = ['#1FD819','#F7F5F1','#8FA6F5','#152B86','#C9D4FB'];
+  art(d) {
+    const h = this.hash(d.code);
+    const ground = this.hues[h % this.hues.length];
+    const ink = (ground === '#1FD819' || ground === '#152B86') ? '#F7F5F1' : '#2E0BA0';
+    const motif = ['circle','diamond','bar','rings'][(h >> 3) % 4];
+    return { ground, ink, motif };
+  }
+  hueFor(i) { return this.hues[i % this.hues.length]; }
+  motifStyle(d, scale) {
+    const { ink, motif } = this.art(d);
+    const base = 'position:absolute;pointer-events:none;opacity:.24;background:' + ink + ';';
+    if (motif === 'circle') return base + 'width:74%;aspect-ratio:1;border-radius:999px;top:12%;left:13%';
+    if (motif === 'diamond') return base + 'width:62%;aspect-ratio:1;top:19%;left:19%;transform:rotate(45deg)';
+    if (motif === 'bar') return base + 'width:120%;height:26%;top:37%;left:-10%;transform:rotate(-14deg)';
+    return 'position:absolute;pointer-events:none;opacity:.3;inset:8%;border-radius:999px;border:' + Math.max(2, 4 * scale) + 'px solid ' + ink + ';background:transparent';
+  }
+  artTile(d, opts) {
+    const { ground, ink } = this.art(d);
+    const o = opts || {};
+    return {
+      artStyle: 'position:relative;flex:0 0 auto;display:grid;place-items:center;overflow:hidden;container-type:inline-size;background:' + ground + ';color:' + ink + ';' + (o.wrap || 'aspect-ratio:1;border-bottom:1.5px solid #111'),
+      motifStyle: this.motifStyle(d, o.scale || 1),
+      wordStyle: 'position:relative;font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:' + (o.word || '15cqw') + ';line-height:.94;letter-spacing:-0.01em;text-align:center;padding:0 9%;overflow-wrap:anywhere;hyphens:auto;text-wrap:balance;color:' + ink,
+      codeStyle: 'position:absolute;bottom:5%;right:6%;font-family:JetBrains Mono,monospace;font-size:' + (o.code || '7cqw') + ';font-weight:700;opacity:.72;color:' + ink
+    };
+  }
+
+  // ---- engine ----
+  related = { anime: ['abstract','humour'], typography: ['band','humour'], band: ['music','typography'], retro: ['music','nature'], space: ['abstract'], nature: ['abstract','retro'], humour: ['typography'], abstract: ['space','nature'], music: ['band','retro'], food: ['humour','anime'] };
+  score(d) {
+    const s = this.state, ints = s.interests;
+    let sc = 0, why = [];
+    const direct = d.tags.filter(t => ints.includes(t));
+    if (direct.length) { sc += direct.length * 24; why.push(direct.join(' + ')); }
+    const adj = d.tags.filter(t => !direct.includes(t) && ints.some(i => (this.related[i] || []).includes(t)));
+    if (adj.length) { sc += adj.length * 9; if (!why.length) why.push('near ' + adj[0]); }
+    const bigness = { S: 0, M: 50, L: 100 }[d.size];
+    const loudFit = 100 - Math.abs(bigness - s.loud);
+    sc += loudFit * 0.22;
+    if (loudFit > 82) why.push(s.loud > 60 ? 'big and loud' : 'quiet scale');
+    sc += Math.min(10, this.stockOf(d)) * 0.6;
+    sc += (this.hash(d.code + s.seed) % 12);
+    return { score: sc, why: why.slice(0, 2).join(' · ') || 'wildcard pick' };
+  }
+  ranked() {
+    return this.state.designs.map(d => Object.assign({ d }, this.score(d))).sort((a, b) => b.score - a.score);
+  }
+
+  // ---- placement ----
+  pctOf(d) { const cm = this.cmOf(d); return { w: cm / 28 * 100, h: cm / 35 * 100 }; }
+  boxOf(p) { const g = this.pctOf(this.byCode(p.code)); return { x1: p.x, y1: p.y, x2: p.x + g.w, y2: p.y + g.h }; }
+  clashes(p, list) {
+    const A = this.boxOf(p);
+    return list.some(o => { if (o.id === p.id || o.side !== p.side) return false; const B = this.boxOf(o); return A.x1 < B.x2 && A.x2 > B.x1 && A.y1 < B.y2 && A.y2 > B.y1; });
+  }
+  freeSlot(d, list, side, rand) {
+    const g = this.pctOf(d), maxX = Math.max(0, 100 - g.w), maxY = Math.max(0, 100 - g.h);
+    const cand = [];
+    for (let yi = 0; yi <= 9; yi++) for (let xi = 0; xi <= 4; xi++) {
+      cand.push({ x: Math.min(maxX, Math.max(0, maxX / 2 + (xi - 2) * 17)), y: Math.min(maxY, yi * 11) });
+    }
+    if (rand) cand.sort(() => rand() - 0.5);
+    return cand.find(c => !this.clashes({ id: 'x', code: d.code, side, x: c.x, y: c.y }, list)) || null;
+  }
+  addDesign = (d) => {
+    if (this.stockOf(d) <= 0) return this.nudge('SOLD OUT — ASK A VOLUNTEER');
+    const slot = this.freeSlot(d, this.state.place, this.state.side);
+    if (!slot) return this.nudge('NO ROOM ON THIS SIDE — TRY THE BACK');
+    const p = { id: 'p' + Date.now() + Math.random(), code: d.code, side: this.state.side, x: slot.x, y: slot.y, rot: 0 };
+    this.setState(s => ({ place: s.place.concat([p]), sel: p.id, step: s.step === 'matches' ? 'studio' : s.step }));
+  };
+
+  startDrag = (p) => (e) => {
+    e.preventDefault();
+    const pa = this.paRef.current; if (!pa) return;
+    const r = pa.getBoundingClientRect();
+    this.drag = { id: p.id, prev: { x: p.x, y: p.y }, ox: e.clientX - (r.left + p.x / 100 * r.width), oy: e.clientY - (r.top + p.y / 100 * r.height), r };
+    this.setState({ sel: p.id });
+    window.addEventListener('pointermove', this.onDrag);
+    window.addEventListener('pointerup', this.endDrag);
+  };
+  onDrag = (e) => {
+    const d = this.drag; if (!d) return;
+    const r = d.r;
+    this.setState(s => ({ place: s.place.map(p => {
+      if (p.id !== d.id) return p;
+      const g = this.pctOf(this.byCode(p.code));
+      let x = (e.clientX - d.ox - r.left) / r.width * 100;
+      let y = (e.clientY - d.oy - r.top) / r.height * 100;
+      return Object.assign({}, p, { x: Math.max(0, Math.min(100 - g.w, x)), y: Math.max(0, Math.min(100 - g.h, y)) });
+    }) }));
+  };
+  endDrag = () => {
+    window.removeEventListener('pointermove', this.onDrag);
+    window.removeEventListener('pointerup', this.endDrag);
+    const d = this.drag; this.drag = null; if (!d) return;
+    const cur = this.state.place.find(p => p.id === d.id);
+    if (cur && this.clashes(cur, this.state.place)) {
+      this.setState(s => ({ place: s.place.map(p => p.id === d.id ? Object.assign({}, p, d.prev) : p) }));
+      this.nudge('TRANSFERS CANNOT OVERLAP — SNAPPED BACK');
+    }
+  };
+
+  // ---- generative composition ----
+  compose = (newSeed) => {
+    const seed = newSeed === undefined ? this.state.seed : newSeed;
+    const rand = this.rng(seed * 2654435761 % 2147483647);
+    const pool = this.ranked().filter(r => this.stockOf(r.d) > 0).slice(0, 12);
+    const n = 1 + Math.floor(rand() * 3);
+    const picked = [];
+    const place = [];
+    for (let i = 0; i < n && pool.length; i++) {
+      const idx = Math.floor(Math.pow(rand(), 1.7) * pool.length);
+      const d = pool.splice(idx, 1)[0].d;
+      const slot = this.freeSlot(d, place, 'front', rand);
+      if (!slot) continue;
+      picked.push(d);
+      place.push({ id: 'g' + i + seed, code: d.code, side: 'front', x: slot.x, y: slot.y, rot: Math.round((rand() - 0.5) * 14) });
+    }
+    const fits = ['Oversized','Regular','Crop'];
+    this.setState({
+      seed, place, sel: place.length ? place[0].id : null, side: 'front',
+      color: rand() > (this.state.loud > 60 ? 0.35 : 0.6) ? 'Black' : 'White',
+      fit: fits[Math.floor(rand() * (this.state.density > 60 ? 3 : 2))],
+      size: ['S','M','L','XL'][1 + Math.floor(rand() * 2)],
+      step: 'studio', spinning: true,
+      toast: picked.length + ' TRANSFER' + (picked.length === 1 ? '' : 'S') + ' PICKED FOR YOUR TASTE'
+    });
+    clearTimeout(this.spinT); clearTimeout(this.toastT);
+    this.spinT = setTimeout(() => this.setState({ spinning: false }), 620);
+    this.toastT = setTimeout(() => this.setState({ toast: null }), 2400);
+  };
+
+  makeTicket = () => {
+    const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = ''; for (let i = 0; i < 4; i++) code += A[Math.floor(Math.random() * A.length)];
+    this.setState({ ticket: { code, at: Date.now(), total: this.total() }, step: 'ticket' });
+  };
+
+  renderVals() {
+    const s = this.state, money = v => this.money(v);
+    const narrow = s.vw < 780;
+    const pill = (on, extra) => 'display:inline-flex;align-items:center;justify-content:center;background:' + (on ? '#F7F5F1' : 'transparent') + ';color:' + (on ? '#2E0BA0' : '#F7F5F1') + ';border:1px solid ' + (on ? '#F7F5F1' : 'rgba(247,245,241,.34)') + ';border-radius:999px;padding:0 17px;min-height:46px;font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.1em;cursor:pointer;white-space:nowrap;' + (extra || '');
+    const darkPill = (on) => 'display:inline-flex;align-items:center;background:' + (on ? '#F7F5F1' : 'transparent') + ';color:' + (on ? '#111' : '#8a8a8a') + ';border:1px solid ' + (on ? '#F7F5F1' : '#333') + ';border-radius:999px;padding:6px 12px;font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.1em;cursor:pointer;white-space:nowrap';
+
+    const v = {
+      shellStyle: 'width:100%;max-width:' + (s.step === 'studio' ? 1200 : 1080) + 'px;height:100%;min-height:0;display:flex;flex-direction:column;background:#F7F5F1;overflow:hidden;border-radius:' + (s.vw > 1120 ? '20px' : '0') + ';box-shadow:0 0 0 1px #000;transition:max-width .4s cubic-bezier(.22,1,.36,1)',
+      isAttract: s.step === 'attract', isTaste: s.step === 'taste', isMatches: s.step === 'matches', isStudio: s.step === 'studio', isReview: s.step === 'review', isTicket: s.step === 'ticket',
+      inApp: s.step !== 'attract',
+      toast: s.toast, nudge: s.nudge, paRef: this.paRef,
+      totalLabel: money(this.total())
+    };
+
+    const steps = [['attract','START','play_arrow'],['taste','TASTE','favorite'],['matches','MATCHES','recommend'],['studio','STUDIO','draw'],['review','REVIEW','fact_check'],['ticket','TICKET','confirmation_number']];
+    v.stepTabs = steps.map(([k, l, icon]) => ({ label: l, icon, style: darkPill(s.step === k), onClick: () => this.setState({ step: k }) }));
+    v.stepKicker = { taste: 'STEP 1 OF 4', matches: 'STEP 2 OF 4', studio: 'STEP 3 OF 4', review: 'STEP 4 OF 4', ticket: 'DONE' }[s.step] || '';
+    v.stepTitle = { taste: 'WHAT ARE YOU INTO?', matches: 'PICKED FOR YOU', studio: 'ARRANGE IT', review: 'CHECK IT OVER', ticket: 'TAKE IT TO THE TILL' }[s.step] || '';
+    v.progressDots = ['taste','matches','studio','review'].map(k => {
+      const on = steps.findIndex(x => x[0] === k) <= steps.findIndex(x => x[0] === s.step);
+      return { style: 'width:' + (k === s.step ? 22 : 8) + 'px;height:8px;border-radius:999px;background:' + (on ? '#F7F5F1' : 'rgba(244,240,230,.35)') + ';transition:width .25s ease,background .25s ease' };
+    });
+    const order = ['attract','taste','matches','studio','review','ticket'];
+    v.back = () => this.setState({ step: order[Math.max(0, order.indexOf(s.step) - 1)] });
+    v.backStyle = 'display:grid;place-items:center;width:46px;height:46px;flex:0 0 auto;background:rgba(244,240,230,.14);color:#F7F5F1;border:1px solid rgba(244,240,230,.45);border-radius:999px;cursor:pointer';
+
+    // attract
+    v.start = () => this.setState({ step: 'taste' });
+    v.attractCols = narrow ? '1fr' : 'minmax(0,1.15fr) minmax(0,.85fr)';
+    v.attractArtStyle = 'display:' + (narrow ? 'none' : 'grid') + ';grid-template-columns:1fr 1fr;gap:14px;min-width:0';
+    const featured = ['M-014','L-037','S-004','M-041'];
+    v.attractTiles = featured.map((c, i) => {
+      const d = this.byCode(c), t = this.artTile(d, { wrap: 'aspect-ratio:1;border-radius:4px', word: '14cqw' });
+      return Object.assign({ word: d.word, code: d.code,
+        style: 'display:block;border-radius:20px;overflow:hidden;animation:kPop .42s ' + (0.1 * i) + 's cubic-bezier(.34,1.4,.64,1) forwards'
+      }, t);
+    });
+    v.marquee = [].concat(['200 DESIGNS','TRUE SCALE','NO SURPRISES','FUNDS AQUATERRA'], ['200 DESIGNS','TRUE SCALE','NO SURPRISES','FUNDS AQUATERRA']).map((label, i) => ({
+      label, icon: ['grid_view','straighten','visibility','volunteer_activism'][i % 4], color: i % 2 ? '#1FD819' : '#F7F5F1'
+    }));
+
+    // taste
+    const tagDefs = [['anime','Anime','animation'],['typography','Typography','format_size'],['band','Band','album'],['music','Music','graphic_eq'],['retro','Retro','radio'],['space','Space','blur_on'],['nature','Nature','water_drop'],['abstract','Abstract','deblur'],['humour','Humour','mood'],['food','Food','ramen_dining']];
+    v.interestCards = tagDefs.map(([k, label, icon], i) => {
+      const on = s.interests.includes(k);
+      const count = s.designs.filter(d => d.tags.includes(k)).length;
+      const hue = '#1FD819', onInk = '#F7F5F1';
+      return { label, icon, count: count + ' designs',
+        style: 'position:relative;display:flex;align-items:center;gap:13px;padding:16px;min-height:106px;background:' + (on ? hue : '#4611C4') + ';color:' + (on ? onInk : '#F7F5F1') + ';border:none;border-radius:22px;cursor:pointer;text-align:left',
+        iconWrapStyle: 'display:grid;place-items:center;width:44px;height:44px;flex:0 0 auto;border-radius:999px;background:' + (on ? 'rgba(10,10,10,.15)' : hue) + ';color:' + (on ? onInk : '#2E0BA0'),
+        tickStyle: 'position:absolute;top:12px;right:12px;display:' + (on ? 'grid' : 'none') + ';place-items:center;width:22px;height:22px;border-radius:999px;background:#2E0BA0;color:' + hue,
+        onClick: () => this.setState(st => ({ interests: st.interests.includes(k) ? st.interests.filter(x => x !== k) : st.interests.concat([k]) }))
+      };
+    });
+    v.tasteHint = s.interests.length === 0 ? 'Pick two or three. Or hit surprise me.' : s.interests.length + ' picked · ' + this.ranked().filter(r => r.score > 20).length + ' designs match so far';
+    v.surprise = () => {
+      const rand = this.rng(Date.now() % 100000);
+      const picks = tagDefs.map(t => t[0]).sort(() => rand() - 0.5).slice(0, 3);
+      this.setState({ interests: picks, loud: Math.round(rand() * 100), density: Math.round(rand() * 100) });
+      this.flash('TASTE RANDOMISED · ' + picks.join(' + ').toUpperCase());
+    };
+    v.vibeSliders = [
+      { label: 'SCALE', icon: 'zoom_out_map', raw: s.loud, value: s.loud > 66 ? 'BIG' : s.loud > 33 ? 'MID' : 'SMALL', left: 'small S transfers', right: 'full L prints', onChange: e => this.setState({ loud: parseInt(e.target.value, 10) }) },
+      { label: 'HOW MUCH', icon: 'layers', raw: s.density, value: s.density > 66 ? 'LOADED' : s.density > 33 ? 'BALANCED' : 'MINIMAL', left: 'one mark', right: 'stacked up', onChange: e => this.setState({ density: parseInt(e.target.value, 10) }) }
+    ];
+    v.tasteCtaLabel = s.interests.length ? 'SEE MY MATCHES' : 'SKIP — SHOW ME EVERYTHING';
+    v.tasteCtaStyle = 'position:relative;overflow:hidden;display:block;width:100%;background:#1FD819;color:#F7F5F1;border:none;border-radius:22px;min-height:74px;font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(20px,2.6vw,26px);letter-spacing:0.02em;cursor:pointer;box-shadow:none';
+    v.toMatches = () => this.setState({ step: 'matches' });
+
+    // matches
+    const rank = this.ranked();
+    const shown = s.matchView === 'matched' ? rank.filter(r => s.interests.length === 0 || r.score > 20).slice(0, 12) : rank;
+    v.matchCount = String(shown.length);
+    v.tasteRecap = [].concat(
+      s.interests.map(i => ({ label: i.toUpperCase(), icon: (tagDefs.find(t => t[0] === i) || [,, 'label'])[2] })),
+      [{ label: (s.loud > 66 ? 'BIG' : s.loud > 33 ? 'MID' : 'SMALL') + ' SCALE', icon: 'zoom_out_map' }]
+    );
+    v.matchViewTabs = [['matched','BEST FIT','recommend'],['all','ALL ' + s.designs.length,'grid_view']].map(([k, l, icon]) => ({ label: l, icon, style: pill(s.matchView === k), onClick: () => this.setState({ matchView: k }) }));
+    v.matchCards = shown.map((r, i) => {
+      const d = r.d, t = this.artTile(d, { wrap: 'aspect-ratio:1;border-bottom:1.5px solid #111', word: '14cqw' });
+      const st = this.stockOf(d);
+      const on = s.place.some(p => p.code === d.code);
+      return Object.assign({
+        word: d.word, code: d.code, name: d.name, price: money(this.priceOf(d)), why: r.why,
+        rank: '#' + (i + 1),
+        rankStyle: 'position:absolute;top:7px;left:7px;background:#F7F5F1;color:#111;border-radius:999px;padding:3px 9px;font-family:Eina,sans-serif;font-weight:700;font-size:9px;letter-spacing:0.08em',
+        wrapStyle: 'display:flex;flex-direction:column;overflow:hidden;background:#4611C4;color:#F7F5F1;border:none;border-radius:22px;animation:kRise .46s ' + Math.min(0.5, i * 0.045) + 's cubic-bezier(.22,1,.36,1) forwards;transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s ease',
+        stockLabel: st <= 0 ? 'SOLD OUT' : st + ' left · ' + this.cmOf(d) + 'cm',
+        stockStyle: 'font-family:JetBrains Mono,monospace;font-size:9px;padding:4px 8px;border-radius:999px;background:' + (st <= 0 ? '#1FD819' : st <= 5 ? '#fdece7' : '#efe9d8') + ';color:' + (st <= 5 ? '#a5310f' : '#444'),
+        addIcon: on ? 'done' : 'add',
+        addStyle: 'display:grid;place-items:center;width:42px;height:42px;flex:0 0 auto;border:none;border-radius:999px;background:' + (st <= 0 ? '#e4dfd0' : on ? '#111' : '#1FD819') + ';color:' + (st <= 0 ? '#999' : on ? '#F7F5F1' : '#111') + ';cursor:' + (st <= 0 ? 'not-allowed' : 'pointer'),
+        onAdd: () => this.addDesign(d)
+      }, t);
+    });
+    v.shuffleTee = () => this.compose(Math.floor(Math.random() * 100000));
+    v.shuffleCtaStyle = 'position:relative;overflow:hidden;display:block;width:100%;background:#F7F5F1;color:#2E0BA0;border:none;border-radius:22px;min-height:78px;font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(20px,2.8vw,28px);cursor:pointer;box-shadow:none';
+    v.shuffleIconStyle = 'font-size:26px' + (s.spinning ? ';animation:kSpin .6s cubic-bezier(.4,0,.3,1)' : '');
+
+    // studio
+    v.studioCols = narrow ? '1fr' : 'minmax(0,1.05fr) minmax(0,.95fr)';
+    v.studioRows = narrow ? 'minmax(0,1fr) minmax(0,1fr)' : '1fr';
+    v.sideChips = [['front','FRONT','arrow_upward'],['back','BACK','arrow_downward']].map(([k, l, icon]) => ({
+      label: l, icon,
+      style: 'display:inline-flex;align-items:center;background:' + (s.side === k ? '#F7F5F1' : 'transparent') + ';color:' + (s.side === k ? '#111' : '#F7F5F1') + ';border:1.5px solid #F7F5F1;border-radius:999px;padding:0 16px;min-height:44px;font-family:Eina,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.1em;cursor:pointer',
+      reviewStyle: pill(s.side === k),
+      onClick: () => this.setState({ side: k, sel: null })
+    }));
+    v.reshuffle = () => this.compose(Math.floor(Math.random() * 100000));
+    const dark = s.color === 'Black';
+    v.mockStyle = 'position:relative;flex:0 1 auto;height:min(88%,' + (narrow ? '340px' : '470px') + ');max-width:88%;width:auto;aspect-ratio:3/4;border-radius:16px;background:' + (dark ? '#3A0DB2' : '#eae4d5') + ';box-shadow:inset 0 0 0 1px rgba(244,240,230,.14)';
+    v.mockReviewStyle = 'position:relative;width:min(100%,' + (narrow ? '270px' : '330px') + ');aspect-ratio:3/4;border-radius:16px;background:' + (dark ? '#3A0DB2' : '#eae4d5') + ';box-shadow:inset 0 0 0 1px rgba(17,17,17,.12)';
+    v.collarStyle = 'position:absolute;top:0;left:50%;transform:translateX(-50%);width:30%;height:7%;border-bottom-left-radius:999px;border-bottom-right-radius:999px;background:' + (dark ? '#0f0f0f' : '#d6d0be');
+    v.printAreaStyle = 'position:absolute;left:19%;top:15%;width:62%;aspect-ratio:28/35;border:1px dashed ' + (dark ? 'rgba(244,240,230,.35)' : 'rgba(17,17,17,.3)') + ';border-radius:20px;touch-action:none';
+    v.printAreaStaticStyle = 'position:absolute;left:19%;top:15%;width:62%;aspect-ratio:28/35;border:1px dashed ' + (dark ? 'rgba(244,240,230,.35)' : 'rgba(17,17,17,.3)') + ';border-radius:20px';
+    v.placements = s.place.filter(p => p.side === s.side).map(p => {
+      const d = this.byCode(p.code), g = this.pctOf(d), t = this.artTile(d, { wrap: '', word: '16cqw', code: '8cqw', scale: 0.6 });
+      const on = s.sel === p.id;
+      const geom = 'position:absolute;left:' + p.x + '%;top:' + p.y + '%;width:' + g.w + '%;height:' + g.h + '%;display:grid;place-items:center;overflow:hidden;container-type:inline-size;border-radius:16px;background:' + this.art(d).ground + ';color:' + this.art(d).ink;
+      return {
+        word: d.word, code: d.code, motifStyle: t.motifStyle, wordStyle: t.wordStyle, codeStyle: t.codeStyle,
+        style: geom + ';transform:rotate(' + p.rot + 'deg)' + (on ? ' scale(1.03)' : '') + ';box-shadow:' + (on ? '0 0 0 2px #1FD819,0 0 0 7px rgba(232,85,42,.3)' : '0 6px 14px -8px rgba(0,0,0,.7)') + ';cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;animation:kPop .3s cubic-bezier(.34,1.5,.64,1);transition:box-shadow .15s ease',
+        reviewStyle: geom + ';transform:rotate(' + p.rot + 'deg);box-shadow:0 6px 14px -8px rgba(0,0,0,.6);animation:kPop .34s cubic-bezier(.34,1.5,.64,1)',
+        onDown: this.startDrag(p)
+      };
+    });
+    v.studioHint = s.place.length ? 'Drag to move · size is locked to the pre-cut transfer' : 'Tap a design on the right to place it';
+    v.garmentChips = [['Black','#111'],['White','#fff'],[s.fit,'']].map((x, i) => i < 2
+      ? { label: x[0].toUpperCase(), style: pill(s.color === x[0]), onClick: () => this.setState({ color: x[0] }) }
+      : { label: s.fit.toUpperCase(), style: pill(false, 'background:#3A0DB2'), onClick: () => this.setState(st => ({ fit: { Oversized: 'Regular', Regular: 'Crop', Crop: 'Oversized' }[st.fit] })) });
+    v.sizeChips = ['XS','S','M','L','XL','XXL'].map(z => {
+      const na = s.fit === 'Crop' && (z === 'XL' || z === 'XXL');
+      return { label: z, note: na ? 'n/a' : 'in stock',
+        style: na ? 'flex:0 0 auto;background:#e4dfd0;color:#a9a9a9;border:1.5px dashed #c3bda9;border-radius:999px;padding:0 15px;min-height:52px;font-family:Eina,sans-serif;font-weight:700;font-size:12px;cursor:not-allowed'
+          : 'flex:0 0 auto;background:' + (s.size === z ? '#1FD819' : '#fff') + ';color:' + (s.size === z ? '#F7F5F1' : '#111') + ';border:none;border-radius:999px;padding:0 15px;min-height:52px;font-family:Eina,sans-serif;font-weight:700;font-size:12px;cursor:pointer',
+        onClick: () => na ? this.nudge('CROP ' + z + ' NOT CONFIRMED YET') : this.setState({ size: z }) };
+    });
+    v.railCards = rank.slice(0, 14).map((r, i) => {
+      const d = r.d, t = this.artTile(d, { wrap: 'height:86px;border-bottom:1px solid #111;border-top-left-radius:5px;border-top-right-radius:5px', word: '14cqw' });
+      return Object.assign({ word: d.word, code: d.code, cm: this.cmOf(d) + 'cm',
+        wrapStyle: 'display:flex;flex-direction:column;align-items:stretch;padding:0;margin:0;font:inherit;color:#2E0BA0;text-align:left;cursor:pointer;overflow:hidden;background:#F7F5F1;border:none;border-radius:16px;animation:kRise .34s ' + Math.min(0.4, i * 0.03) + 's ease-out forwards',
+        onClick: () => this.addDesign(d) }, t);
+    });
+    const selP = s.place.find(p => p.id === s.sel);
+    v.selectedLabel = selP ? selP.code + ' · ' + this.cmOf(this.byCode(selP.code)) + 'cm' : null;
+    v.rotValue = selP ? selP.rot : 0;
+    v.rotLabel = selP ? Math.round(selP.rot) + '°' : '';
+    v.onRotate = e => { const r = parseFloat(e.target.value); this.setState(st => ({ place: st.place.map(p => p.id === st.sel ? Object.assign({}, p, { rot: r }) : p) })); };
+    v.removeSelected = () => this.setState(st => ({ place: st.place.filter(p => p.id !== st.sel), sel: null }));
+    v.toMatchesFromStudio = () => this.setState({ step: 'matches', matchView: 'all' });
+    v.studioCtaLabel = s.place.length ? 'REVIEW · ' + money(this.total()) : 'PLACE A TRANSFER FIRST';
+    v.studioCtaStyle = 'display:flex;align-items:center;justify-content:center;gap:11px;flex:0 0 auto;background:' + (s.place.length ? '#1FD819' : '#3A0DB2') + ';color:' + (s.place.length ? '#F7F5F1' : '#5e5e5e') + ';border:none;border-radius:0;min-height:74px;font-family:Eina,sans-serif;font-weight:700;letter-spacing:-0.02em;font-size:clamp(19px,2.4vw,24px);cursor:' + (s.place.length ? 'pointer' : 'not-allowed');
+    v.toReview = () => s.place.length ? this.setState({ step: 'review' }) : this.nudge('TAP A DESIGN TO PLACE IT');
+
+    // size chart — indicative until real spec sheet arrives
+    const chartFit = s.chartFit || s.fit;
+    const chartData = {
+      Oversized: { XS: [21, 26, 20], S: [22, 27, 21], M: [23, 28, 22], L: [24, 29, 23], XL: [25, 30, 24], XXL: [26, 31, 25] },
+      Regular: { XS: [18, 25, 16], S: [19, 26, 17], M: [20, 27, 18], L: [21, 28, 19], XL: [22, 29, 20], XXL: [23, 30, 21] },
+      Crop: { XS: [18, 17, 15], S: [19, 18, 16], M: [20, 19, 17], L: [21, 20, 18] }
+    };
+    v.chartOpen = s.chart;
+    v.openChart = () => this.setState({ chart: true, chartFit: s.fit });
+    v.closeChart = () => this.setState({ chart: false });
+    v.chartFitLabel = chartFit.toUpperCase() + ' FIT';
+    v.chartFitChips = ['Oversized','Regular','Crop'].map(f => ({ label: f.toUpperCase(), style: pill(chartFit === f, 'flex:0 0 auto'), onClick: () => this.setState({ chartFit: f }) }));
+    v.chartHead = ['SIZE','CHEST','LENGTH','SHOULDER'];
+    v.chartRows = Object.keys(chartData[chartFit]).map(z => {
+      const [c, l, sh] = chartData[chartFit][z];
+      const on = s.size === z && s.fit === chartFit;
+      return { size: z, chest: c + '"', length: l + '"', shoulder: sh + '"',
+        style: 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;align-items:center;width:100%;padding:0;margin:0;font:inherit;color:inherit;text-align:left;border:none;border-top:1px solid rgba(247,245,241,.16);border-radius:0;min-height:54px;cursor:pointer;background:' + (on ? '#1FD819' : 'transparent') + ';color:' + (on ? '#F7F5F1' : '#F7F5F1'),
+        sizeStyle: 'display:inline-flex;align-items:center;gap:7px;padding-left:10px;font-family:Eina,sans-serif;font-weight:700;font-size:12px;letter-spacing:0.08em;color:inherit',
+        onClick: () => this.setState({ fit: chartFit, size: z, chart: false, toast: chartFit.toUpperCase() + ' · ' + z + ' SELECTED' }) };
+    });
+    v.chartNote = 'Measurements are indicative and pending the supplier spec sheet. Oversized runs one size loose by design — if you are between sizes on a Regular, size up.';
+
+    // review
+    v.garmentLabel = s.color + ' · ' + s.fit + ' · size ' + s.size;
+    v.reviewLines = [{ icon: 'apparel', title: s.color + ' ' + s.fit + ' tee', sub: 'Size ' + s.size + ' · TEE-' + s.color.slice(0, 2).toUpperCase() + '-' + s.fit.slice(0, 3).toUpperCase() + '-' + s.size, price: money(this.garmentPrice()) }]
+      .concat(s.place.map(p => { const d = this.byCode(p.code); return { icon: 'style', title: p.code + ' · ' + d.name, sub: p.side + ' · ' + this.cmOf(d) + '×' + this.cmOf(d) + 'cm · ' + Math.round(p.rot) + '°', price: money(this.priceOf(d)) }; }));
+    v.backToStudio = () => this.setState({ step: 'studio' });
+    v.makeTicket = this.makeTicket;
+
+    // ticket
+    v.ticketCode = s.ticket ? s.ticket.code : '————';
+    v.ticketLines = s.place.map(p => { const d = this.byCode(p.code); return p.code + ' · ' + p.side + ' · x ' + Math.round(p.x) + '% y ' + Math.round(p.y) + '% · ' + Math.round(p.rot) + '° · ' + this.cmOf(d) + '×' + this.cmOf(d) + 'cm'; });
+    v.ticketExpiry = s.ticket ? Math.max(0, 30 - Math.floor((Date.now() - s.ticket.at) / 60000)) + ' min' : '30 min';
+    v.reset = () => this.setState({ step: 'attract', place: [], sel: null, ticket: null, interests: [] });
+
+    return v;
+  }
+}
+</script>
+</body>
+</html>

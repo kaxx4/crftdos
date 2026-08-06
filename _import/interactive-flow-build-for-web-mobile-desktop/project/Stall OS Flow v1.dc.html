@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Eina&amp;family=JetBrains+Mono:wght@400;700&amp;family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap" rel="stylesheet" />
+<style>.msi { font-family: 'Material Symbols Sharp'; font-weight: normal; font-style: normal; line-height: 1; display: inline-block; white-space: nowrap; font-feature-settings: 'liga' }</style>
+<style>
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-Light.ttf') format('truetype'); font-weight: 300; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-SemiBold.ttf') format('truetype'); font-weight: 600; font-style: normal; font-display: swap }
+  @font-face { font-family: 'Eina'; src: url('uploads/eina/Eina01-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #0F0F10; }
+  body { font-family: 'Eina', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #C6302B; text-decoration: none; border-bottom: 1px solid currentColor; }
+  a:hover { color: #1B4DF5; }
+  button { font: inherit; }
+  input, select, textarea { font: inherit; }
+  input, select, textarea { border-radius: 10px !important; }
+  @keyframes stallPulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
+  @keyframes stallRise { from { transform: translateY(10px); opacity: 0 } to { transform: none; opacity: 1 } }
+  @keyframes stallDrift { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+  @keyframes stallPop { 0% { transform: scale(.5); opacity: 0 } 70% { transform: scale(1.08) } 100% { transform: scale(1); opacity: 1 } }
+  @keyframes stallWiggle { 0%,100% { transform: rotate(-2.5deg) } 50% { transform: rotate(2.5deg) scale(1.04) } }
+  @keyframes stallSlideIn { from { transform: translateX(14px); opacity: 0 } to { transform: none; opacity: 1 } }
+  @keyframes stallStamp { 0% { transform: rotate(-1deg) scale(1.5); opacity: 0 } 60% { transform: rotate(-1deg) scale(.95) } 100% { transform: rotate(-1deg) scale(1); opacity: 1 } }
+  @keyframes stallBand { from { background-position: 0 0 } to { background-position: 24px 0 } }
+  html, body { -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  button { touch-action: manipulation; user-select: none; -webkit-user-select: none; transition: transform .12s ease, background .14s ease, color .14s ease; }
+  button:active { transform: scale(.97); }
+  input, select, textarea { -webkit-appearance: none; appearance: none; border-radius: 8px; }
+  button { border-radius: 14px; }
+  input[type="range"] { -webkit-appearance: none; appearance: none; height: 44px; background: transparent; touch-action: none; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 6px; background: #0F0F10; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 34px; height: 34px; margin-top: -14px; background: #C6302B; border: 2px solid #111; cursor: grab; }
+  ::-webkit-scrollbar { width: 8px; height: 8px }
+  ::-webkit-scrollbar-thumb { background: #1B4DF5 }
+</style>
+</helmet>
+
+<div style="height:100dvh;min-height:0;display:flex;flex-direction:column;background:#0F0F10;color:#F7F5F1;touch-action:manipulation;-webkit-text-size-adjust:100%">
+
+  <div style="flex:0 0 auto;background:#0F0F10;border-bottom:2px solid #333;padding:8px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px">
+    <div style="display:flex;align-items:baseline;gap:8px">
+      <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:19px;letter-spacing:0.04em;color:#F7F5F1"><span style="display:inline-flex;align-items:baseline;gap:2px;font-style:italic;transform:skewX(-6deg)">CRFT<span style="color:#C6302B;font-style:normal;transform:skewX(6deg);display:inline-block">★</span>O</span></span>
+      <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.18em;color:#777">STALL OS · PROTOTYPE</span>
+    </div>
+    <div style="display:flex;gap:2px;border:1px solid #444">
+      <sc-for list="{{ surfaceTabs }}" as="t" hint-placeholder-count="3">
+        <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+      </sc-for>
+    </div>
+    <div style="flex:1 1 120px"></div>
+    <button onClick="{{ toggleOnline }}" style="{{ onlineStyle }}">{{ onlineLabel }}</button>
+    <div style="{{ outboxStyle }}">OUTBOX {{ outbox }}</div>
+  </div>
+
+  <div style="flex:0 0 auto;background:#1a1a1a;padding:6px 12px;display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #2b2b2b">
+    <sc-for list="{{ screenTabs }}" as="t" hint-placeholder-count="6">
+      <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+    </sc-for>
+  </div>
+
+  <div style="flex:1 1 auto;min-height:0;display:flex;justify-content:center;background:#0F0F10;padding:0">
+
+    <sc-if value="{{ isPos }}" hint-placeholder-val="{{ true }}">
+      <div style="width:100%;max-width:480px;height:100%;background:#F7F5F1;color:#0F0F10;display:flex;flex-direction:column;min-height:0;box-shadow:0 0 0 1px #000">
+
+        <div style="position:relative;background:#1B4DF5;color:#F7F5F1;padding:12px 14px 10px">
+          <div style="position:absolute;top:4px;left:4px;width:10px;height:10px;border-top:2px solid #F7F5F1;border-left:2px solid #F7F5F1;opacity:.7"></div>
+          <div style="position:absolute;top:4px;right:4px;width:10px;height:10px;border-top:2px solid #F7F5F1;border-right:2px solid #F7F5F1;opacity:.7"></div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px">
+            <div>
+              <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.2em;opacity:.75">{{ posKicker }}</div>
+              <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:26px;line-height:1.05;letter-spacing:0.02em">{{ posTitle }}</div>
+            </div>
+            <div style="text-align:right;font-family:JetBrains Mono,monospace;font-size:10px;line-height:1.5;opacity:.85">{{ posMeta }}</div>
+          </div>
+        </div>
+
+        <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#C6302B;color:#0F0F10;padding:8px 14px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.12em;display:flex;justify-content:space-between;gap:8px">
+            <span>OFFLINE — SALES QUEUED LOCALLY</span>
+            <span>{{ outbox }} UNSYNCED</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ pricesPending }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#0F0F10;color:#F7F5F1;padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em;color:#C6302B">PRICES PENDING · PRD §5</span>
+            <span style="font-family:'Eina',sans-serif;font-size:12px;opacity:.8;flex:1 1 120px">Totals render ₹— until the matrix is filled.</span>
+            <button onClick="{{ fillPrices }}" style="background:#F7F5F1;color:#0F0F10;border:2px solid #F7F5F1;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em;padding:7px 10px;cursor:pointer">FILL DEMO PRICES</button>
+          </div>
+        </sc-if>
+
+        <div style="flex:1 1 auto;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:14px">
+
+          <sc-if value="{{ s_pin }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:16px;padding:20px 0">
+              <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.16em">ENTER STALL PIN</div>
+              <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:44px;letter-spacing:0.3em;min-height:56px;border-bottom:3px solid #111">{{ pinMask }}</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <sc-for list="{{ pinKeys }}" as="k" hint-placeholder-count="12">
+                  <button onClick="{{ k.onClick }}" style="{{ k.style }}">{{ k.label }}</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ pinErr }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#C6302B;color:#0F0F10;padding:10px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em">{{ pinErr }}</div>
+              </sc-if>
+              <div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#555;border:1px dashed #999;padding:10px">Demo PINs — stall 1111 · admin 1234 · kiosk 2222</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_shiftopen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ shiftFields }}" as="f" hint-placeholder-count="4">
+                <label style="display:flex;flex-direction:column;gap:5px">
+                  <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">{{ f.label }}</span>
+                  <input value="{{ f.value }}" onChange="{{ f.onChange }}" style="border:2px solid #0F0F10;background:#fff;padding:12px;font-size:16px;min-height:48px" />
+                </label>
+              </sc-for>
+              <div style="border:2px solid #0F0F10;background:#fff;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+                <div>
+                  <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">PRESS ON SITE</div>
+                  <div style="font-size:13px;color:#444;max-width:26ch">{{ pressHint }}</div>
+                </div>
+                <button onClick="{{ togglePress }}" style="{{ pressToggleStyle }}">{{ pressToggleLabel }}</button>
+              </div>
+              <button onClick="{{ openShift }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:'Eina',sans-serif;font-weight:700;font-size:20px;letter-spacing:0.04em;min-height:56px;cursor:pointer">OPEN SHIFT</button>
+              <div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#555">Allocates receipt block CR/26-27/000142–000241 to this device.</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_sell }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+
+              <div style="border:2px solid #1B4DF5;background:#fff;padding:10px;display:flex;flex-direction:column;gap:8px">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em;color:#1B4DF5">LOAD DESIGN TICKET</div>
+                <div style="display:flex;gap:8px">
+                  <input value="{{ ticketCode }}" onChange="{{ onTicketCode }}" placeholder="A7K2" style="flex:1 1 auto;border:2px solid #0F0F10;padding:12px;font-family:'Eina',sans-serif;font-weight:700;font-size:22px;letter-spacing:0.2em;text-transform:uppercase;min-height:48px;min-width:0" />
+                  <button onClick="{{ redeemTicket }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;padding:0 14px;min-height:48px;cursor:pointer">LOAD</button>
+                </div>
+                <sc-if value="{{ ticketErr }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#C6302B;color:#0F0F10;padding:8px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.1em">{{ ticketErr }}</div>
+                </sc-if>
+                <sc-if value="{{ openTicketCount }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#555">Open tickets: {{ openTicketList }}</div>
+                </sc-if>
+              </div>
+
+              <div style="border:2px solid #0F0F10;background:#fff">
+                <div style="background:#0F0F10;color:#F7F5F1;padding:7px 10px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em;display:flex;justify-content:space-between">
+                  <span>CART</span><span>{{ cartCountLabel }}</span>
+                </div>
+                <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ true }}">
+                  <div style="padding:18px 10px;text-align:center;font-size:14px;color:#666">Nothing in cart. Add a garment below or load a ticket.</div>
+                </sc-if>
+                <sc-for list="{{ cartView }}" as="c" hint-placeholder-count="0">
+                  <div style="{{ c.style }}">
+                    <div onClick="{{ c.onSelect }}" style="display:flex;justify-content:space-between;gap:8px;cursor:pointer">
+                      <div>
+                        <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:17px;letter-spacing:0.02em">{{ c.title }}</div>
+                        <div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#555">{{ c.sub }}</div>
+                      </div>
+                      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                        <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:17px">{{ c.total }}</div>
+                        <button onClick="{{ c.onRemove }}" style="background:none;border:1px solid #C6302B;color:#C6302B;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.1em;padding:4px 6px;cursor:pointer">REMOVE</button>
+                      </div>
+                    </div>
+                    <sc-for list="{{ c.stickers }}" as="st" hint-placeholder-count="0">
+                      <div style="display:flex;justify-content:space-between;gap:8px;border-top:1px dashed #bbb;padding-top:6px;margin-top:6px;font-size:13px">
+                        <span style="font-family:JetBrains Mono,monospace">{{ st.label }}</span>
+                        <span style="display:flex;gap:8px;align-items:center"><span>{{ st.price }}</span><button onClick="{{ st.onRemove }}" style="background:none;border:none;color:#C6302B;font-weight:700;cursor:pointer;font-size:15px">×</button></span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="border:2px solid #0F0F10;background:#fff;padding:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">ADD GARMENT</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ colorChips }}" as="c" hint-placeholder-count="2">
+                    <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ fitChips }}" as="c" hint-placeholder-count="3">
+                    <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:6px">
+                  <sc-for list="{{ sizeChips }}" as="c" hint-placeholder-count="6">
+                    <button onClick="{{ c.onClick }}" style="{{ c.style }}"><span>{{ c.label }}</span><span style="display:block;font-family:JetBrains Mono,monospace;font-size:9px;font-weight:400;letter-spacing:0">{{ c.stock }}</span></button>
+                  </sc-for>
+                </div>
+                <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#777">Crop XL/XXL hidden — awaiting answer to PRD §16.3.</div>
+              </div>
+
+              <div style="border:2px solid #0F0F10;background:#fff;padding:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+                  <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">ADD STICKER</div>
+                  <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#777">{{ stickerTargetLabel }}</div>
+                </div>
+                <input value="{{ stickerQuery }}" onChange="{{ onStickerQuery }}" placeholder="14, m14, ramen, anime…" style="border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ sizeFilterChips }}" as="c" hint-placeholder-count="4">
+                    <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ recentCount }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.14em;color:#777">RECENT</div>
+                    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
+                      <sc-for list="{{ recentView }}" as="r" hint-placeholder-count="0">
+                        <button onClick="{{ r.onClick }}" style="flex:0 0 auto;background:#F7F5F1;border:2px solid #0F0F10;font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700;padding:9px 10px;min-height:44px;cursor:pointer">{{ r.code }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="display:flex;flex-direction:column;gap:6px;max-height:270px;overflow-y:auto">
+                  <sc-for list="{{ stickerResults }}" as="d" hint-placeholder-count="4">
+                    <button onClick="{{ d.onClick }}" style="{{ d.style }}">
+                      <span style="{{ d.thumbStyle }}">{{ d.code }}</span>
+                      <span style="flex:1 1 auto;text-align:left;min-width:0">
+                        <span style="display:block;font-family:'Eina',sans-serif;font-weight:700;font-size:15px">{{ d.code }} · {{ d.name }}</span>
+                        <span style="display:block;font-family:JetBrains Mono,monospace;font-size:10px;color:#555">{{ d.meta }}</span>
+                      </span>
+                      <span style="{{ d.stockStyle }}">{{ d.stockLabel }}</span>
+                    </button>
+                  </sc-for>
+                  <sc-if value="{{ noStickerResults }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:14px;text-align:center;font-size:13px;color:#666">No match. Try a code like <strong>14</strong> or <strong>m14</strong>.</div>
+                  </sc-if>
+                </div>
+                <button onClick="{{ addCustom }}" style="background:#F7F5F1;border:2px dashed #111;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em;min-height:48px;cursor:pointer">+ CUSTOM STICKER (NEXT C-####)</button>
+              </div>
+
+              <div style="border:2px solid #0F0F10;background:#fff;padding:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">DISCOUNT</div>
+                <div style="display:flex;gap:8px">
+                  <input value="{{ discountAmt }}" onChange="{{ onDiscountAmt }}" placeholder="₹ amount" style="flex:1 1 0;min-width:0;border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+                  <input value="{{ discountPct }}" onChange="{{ onDiscountPct }}" placeholder="% off" style="flex:1 1 0;min-width:0;border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+                </div>
+                <select value="{{ discountReason }}" onChange="{{ onDiscountReason }}" style="border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px;background:#fff">
+                  <sc-for list="{{ discountReasons }}" as="r" hint-placeholder-count="3">
+                    <option value="{{ r.value }}">{{ r.label }}</option>
+                  </sc-for>
+                </select>
+                <sc-if value="{{ discountWarn }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#C6302B;color:#0F0F10;padding:9px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.1em">{{ discountWarn }}</div>
+                </sc-if>
+              </div>
+
+              <div style="border:2px solid #0F0F10;background:#fff;padding:10px;display:flex;flex-direction:column;gap:10px">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">PAYMENT</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+                  <sc-for list="{{ payChips }}" as="p" hint-placeholder-count="4">
+                    <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ isSplit }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:8px">
+                    <div style="display:flex;gap:8px">
+                      <input value="{{ cashAmt }}" onChange="{{ onCashAmt }}" placeholder="Cash ₹" style="flex:1 1 0;min-width:0;border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+                      <input value="{{ upiAmt }}" onChange="{{ onUpiAmt }}" placeholder="UPI ₹" style="flex:1 1 0;min-width:0;border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+                    </div>
+                    <div style="{{ splitStyle }}">{{ splitLabel }}</div>
+                  </div>
+                </sc-if>
+                <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#777">Single TerraRoots UPI destination — reference optional.</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_receipt }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="position:relative;background:#F7F5F1;border:2px solid #0F0F10;padding:0">
+                <div style="position:absolute;top:5px;left:5px;width:12px;height:12px;border-top:2px solid #111;border-left:2px solid #111"></div>
+                <div style="position:absolute;top:5px;right:5px;width:12px;height:12px;border-top:2px solid #111;border-right:2px solid #111"></div>
+                <div style="position:absolute;bottom:5px;left:5px;width:12px;height:12px;border-bottom:2px solid #111;border-left:2px solid #111"></div>
+                <div style="position:absolute;bottom:5px;right:5px;width:12px;height:12px;border-bottom:2px solid #111;border-right:2px solid #111"></div>
+                <div style="padding:20px 18px 8px;text-align:center">
+                  <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:40px;letter-spacing:0.06em;line-height:1;background-image:radial-gradient(#1B4DF5 1.1px, transparent 1.2px);background-size:5px 5px;-webkit-background-clip:text;background-clip:text;color:transparent">CRFTO</div>
+                  <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.2em;margin-top:4px">TERRAROOTS FOUNDATION · LEGAL NAME PENDING</div>
+                </div>
+                <div style="height:8px;background:#1B4DF5;margin:8px 18px"></div>
+                <div style="padding:2px 18px 18px;display:flex;flex-direction:column;gap:10px">
+                  <div style="display:flex;justify-content:space-between;font-family:JetBrains Mono,monospace;font-size:11px">
+                    <span>{{ receiptNoLabel }}</span><span>{{ receiptTime }}</span>
+                  </div>
+                  <div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#444">{{ receiptShift }}</div>
+                  <sc-if value="{{ receiptCollect }}" hint-placeholder-val="{{ false }}">
+                    <div style="border:3px solid #C6302B;padding:10px;text-align:center">
+                      <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">COLLECT ON</div>
+                      <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:30px">{{ receiptCollect }}</div>
+                    </div>
+                  </sc-if>
+                  <div style="border-top:2px solid #111;border-bottom:2px solid #111;padding:8px 0;display:flex;flex-direction:column;gap:8px">
+                    <sc-for list="{{ receiptLines }}" as="l" hint-placeholder-count="2">
+                      <div style="display:flex;flex-direction:column;gap:2px">
+                        <div style="display:flex;justify-content:space-between;gap:8px;font-size:14px">
+                          <span style="font-weight:700">{{ l.title }}</span><span style="font-family:'Eina',sans-serif;font-weight:700;font-size:16px">{{ l.total }}</span>
+                        </div>
+                        <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#555">{{ l.sub }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:4px;font-size:13px">
+                    <sc-for list="{{ receiptTotals }}" as="t" hint-placeholder-count="3">
+                      <div style="{{ t.style }}"><span>{{ t.label }}</span><span>{{ t.value }}</span></div>
+                    </sc-for>
+                  </div>
+                  <div style="background:#1B4DF5;color:#F7F5F1;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+                    <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.14em;max-width:14ch">RAISED FOR AQUATERRA</span>
+                    <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:24px">{{ receiptRaised }}</span>
+                  </div>
+                  <div style="font-size:11px;color:#444;line-height:1.5">Proceeds support AquaTerra welfare work. Hand wash recommended. DTF transfers rated 10–15 washes minimum. No change-of-mind returns.</div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div style="width:52px;height:52px;flex:0 0 auto;background-image:repeating-linear-gradient(45deg,#111 0 3px,#F7F5F1 3px 6px);border:2px solid #0F0F10"></div>
+                    <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#555">QR → @CRFTO (handle pending, PRD §16.6)</div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <button onClick="{{ sendWhatsapp }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:52px;cursor:pointer">SEND ON WHATSAPP</button>
+                <button onClick="{{ sendEmail }}" style="background:#F7F5F1;color:#0F0F10;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:52px;cursor:pointer">EMAIL</button>
+              </div>
+              <button onClick="{{ backToSell }}" style="background:none;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:52px;cursor:pointer">NEXT CUSTOMER</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_orders }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;gap:4px">
+                <sc-for list="{{ orderTabs }}" as="t" hint-placeholder-count="3">
+                  <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+                </sc-for>
+              </div>
+              <sc-for list="{{ orderList }}" as="o" hint-placeholder-count="2">
+                <div style="{{ o.style }}">
+                  <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+                    <div>
+                      <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:17px">{{ o.receipt }}</div>
+                      <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#555">{{ o.sub }}</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:18px">{{ o.total }}</div>
+                      <div style="{{ o.chipStyle }}">{{ o.chip }}</div>
+                    </div>
+                  </div>
+                  <sc-if value="{{ o.showSheet }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:8px;border:1px dashed #1B4DF5;padding:8px;background:#F7F5F1">
+                      <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.14em;color:#1B4DF5">PRESS SHEET</div>
+                      <sc-for list="{{ o.placements }}" as="p" hint-placeholder-count="1">
+                        <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#333">{{ p }}</div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                    <sc-for list="{{ o.actions }}" as="a" hint-placeholder-count="1">
+                      <button onClick="{{ a.onClick }}" style="{{ a.style }}">{{ a.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ ordersEmpty }}" hint-placeholder-val="{{ true }}">
+                <div style="border:2px dashed #999;padding:20px;text-align:center;font-size:14px;color:#666">Nothing here yet.</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_holds }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ holdList }}" as="h" hint-placeholder-count="2">
+                <div style="{{ h.style }}">
+                  <div style="display:flex;justify-content:space-between;gap:8px">
+                    <div>
+                      <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:17px">{{ h.title }}</div>
+                      <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#555">{{ h.sub }}</div>
+                    </div>
+                    <div style="{{ h.timerStyle }}">{{ h.timer }}</div>
+                  </div>
+                  <div style="display:flex;gap:6px;margin-top:8px">
+                    <button onClick="{{ h.onConvert }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.1em;padding:0 12px;min-height:44px;cursor:pointer">CONVERT TO SALE</button>
+                    <button onClick="{{ h.onRelease }}" style="background:none;border:2px solid #C6302B;color:#C6302B;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.1em;padding:0 12px;min-height:44px;cursor:pointer">RELEASE</button>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ holdsEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="border:2px dashed #999;padding:20px;text-align:center;font-size:14px;color:#666">No active holds.</div>
+              </sc-if>
+              <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#777">Held units leave <strong>available</strong>, stay in <strong>on-hand</strong>.</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_stickers }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <input value="{{ stockQuery }}" onChange="{{ onStockQuery }}" placeholder="Filter code, name, bin…" style="border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+              <sc-for list="{{ stickerStock }}" as="d" hint-placeholder-count="5">
+                <div style="{{ d.style }}">
+                  <span style="{{ d.thumbStyle }}">{{ d.code }}</span>
+                  <span style="flex:1 1 auto;min-width:0">
+                    <span style="display:block;font-family:'Eina',sans-serif;font-weight:700;font-size:15px">{{ d.code }} · {{ d.name }}</span>
+                    <span style="display:block;font-family:JetBrains Mono,monospace;font-size:10px;color:#555">{{ d.bin }}</span>
+                  </span>
+                  <span style="display:flex;align-items:center;gap:4px">
+                    <button onClick="{{ d.onMinus }}" style="width:40px;height:44px;border:2px solid #0F0F10;background:#F7F5F1;font-family:'Eina',sans-serif;font-weight:700;font-size:18px;cursor:pointer">–</button>
+                    <input value="{{ d.stock }}" onChange="{{ d.onStock }}" style="width:52px;height:44px;border:2px solid #0F0F10;text-align:center;font-family:'Eina',sans-serif;font-weight:700;font-size:17px" />
+                    <button onClick="{{ d.onPlus }}" style="width:40px;height:44px;border:2px solid #0F0F10;background:#F7F5F1;font-family:'Eina',sans-serif;font-weight:700;font-size:18px;cursor:pointer">+</button>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_products }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ productMatrix }}" as="row" hint-placeholder-count="3">
+                <div style="border:2px solid #0F0F10;background:#fff">
+                  <div style="background:#0F0F10;color:#F7F5F1;padding:6px 9px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">{{ row.label }}</div>
+                  <div style="display:grid;grid-template-columns:repeat(6,1fr)">
+                    <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="6">
+                      <div style="{{ c.style }}">
+                        <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.1em">{{ c.size }}</div>
+                        <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:19px">{{ c.onHand }}</div>
+                        <div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#555">av {{ c.available }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#777">Big number = on-hand. <strong>av</strong> = available after holds. Orange = below par.</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_waste }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="border:2px solid #C6302B;background:#fff;padding:12px;display:flex;flex-direction:column;gap:10px">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em;color:#C6302B">LOG A FAILED PRESS</div>
+                <sc-for list="{{ wasteFields }}" as="f" hint-placeholder-count="3">
+                  <label style="display:flex;flex-direction:column;gap:5px">
+                    <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em">{{ f.label }}</span>
+                    <input value="{{ f.value }}" onChange="{{ f.onChange }}" placeholder="{{ f.hint }}" style="border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+                  </label>
+                </sc-for>
+                <select value="{{ wasteReason }}" onChange="{{ onWasteReason }}" style="border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px;background:#fff">
+                  <sc-for list="{{ wasteReasons }}" as="r" hint-placeholder-count="6">
+                    <option value="{{ r.value }}">{{ r.label }}</option>
+                  </sc-for>
+                </select>
+                <button onClick="{{ submitWaste }}" style="background:#C6302B;color:#0F0F10;border:2px solid #0F0F10;font-family:'Eina',sans-serif;font-weight:700;font-size:19px;min-height:52px;cursor:pointer">LOG WASTE</button>
+              </div>
+              <sc-for list="{{ wasteList }}" as="w" hint-placeholder-count="0">
+                <div style="border:1px solid #111;background:#fff;padding:9px;display:flex;justify-content:space-between;gap:8px;font-family:JetBrains Mono,monospace;font-size:11px">
+                  <span>{{ w.left }}</span><span style="color:#C6302B">{{ w.right }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_returns }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="background:#0F0F10;color:#F7F5F1;padding:10px;font-size:12px;line-height:1.5">Replace or refund on genuine defects. No change-of-mind returns. DTF rated 10–15 washes, hand wash recommended.</div>
+              <div style="border:2px solid #0F0F10;background:#fff;padding:12px;display:flex;flex-direction:column;gap:10px">
+                <label style="display:flex;flex-direction:column;gap:5px">
+                  <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em">ORIGINAL ORDER</span>
+                  <input value="{{ returnRef }}" onChange="{{ onReturnRef }}" placeholder="Receipt no, phone or order no" style="border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+                </label>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ returnActions }}" as="a" hint-placeholder-count="4">
+                    <button onClick="{{ a.onClick }}" style="{{ a.style }}">{{ a.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;border:2px solid #0F0F10;padding:10px">
+                  <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em">STOCK RESALEABLE</span>
+                  <button onClick="{{ toggleResaleable }}" style="{{ resaleableStyle }}">{{ resaleableLabel }}</button>
+                </div>
+                <button onClick="{{ submitReturn }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:'Eina',sans-serif;font-weight:700;font-size:19px;min-height:52px;cursor:pointer">RECORD RETURN</button>
+                <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#777">Exchanges create a linked ₹0 replacement order.</div>
+              </div>
+              <sc-for list="{{ returnList }}" as="r" hint-placeholder-count="0">
+                <div style="border:1px solid #111;background:#fff;padding:9px;font-family:JetBrains Mono,monospace;font-size:11px">{{ r }}</div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_more }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ moreLinks }}" as="m" hint-placeholder-count="5">
+                <button onClick="{{ m.onClick }}" style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:2px solid #0F0F10;padding:0 14px;min-height:56px;font-family:'Eina',sans-serif;font-weight:700;font-size:19px;letter-spacing:0.02em;cursor:pointer;text-align:left">
+                  <span>{{ m.label }}</span><span style="font-family:JetBrains Mono,monospace;font-size:11px;color:#666">{{ m.meta }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ s_close }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <sc-if value="{{ summaryReady }}" hint-placeholder-val="{{ false }}">
+                <div style="position:relative;background:#1B4DF5;color:#F7F5F1;padding:22px 18px">
+                  <div style="position:absolute;top:6px;left:6px;width:12px;height:12px;border-top:2px solid #F7F5F1;border-left:2px solid #F7F5F1"></div>
+                  <div style="position:absolute;bottom:6px;right:6px;width:12px;height:12px;border-bottom:2px solid #F7F5F1;border-right:2px solid #F7F5F1"></div>
+                  <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.2em;opacity:.8">SHIFT SUMMARY</div>
+                  <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:30px;line-height:1.05;margin-top:4px">{{ summaryTitle }}</div>
+                  <div style="height:6px;background:#F7F5F1;margin:14px 0"></div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <sc-for list="{{ summaryStats }}" as="s" hint-placeholder-count="4">
+                      <div>
+                        <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.14em;opacity:.75">{{ s.label }}</div>
+                        <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:26px">{{ s.value }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="margin-top:16px;border-top:2px solid #F7F5F1;padding-top:10px">
+                    <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.14em;opacity:.75">RAISED FOR AQUATERRA</div>
+                    <div style="font-family:'Eina',sans-serif;font-style:italic;font-weight:700;font-size:42px;line-height:1">{{ summaryRaised }}</div>
+                  </div>
+                </div>
+                <button onClick="{{ shareSummary }}" style="background:#0F0F10;color:#F7F5F1;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:52px;cursor:pointer">SHARE TO TEAM GROUP</button>
+              </sc-if>
+              <sc-if value="{{ closeBlocked }}" hint-placeholder-val="{{ false }}">
+                <div style="border:3px solid #C6302B;background:#fff;padding:14px">
+                  <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.12em;color:#C6302B">CANNOT CLOSE</div>
+                  <div style="font-size:14px;margin-top:6px;line-height:1.5">{{ closeBlocked }}</div>
+                </div>
+              </sc-if>
+              <div style="border:2px solid #0F0F10;background:#fff;padding:12px;display:flex;flex-direction:column;gap:10px">
+                <label style="display:flex;flex-direction:column;gap:5px">
+                  <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em">COUNTED CASH</span>
+                  <input value="{{ countedCash }}" onChange="{{ onCountedCash }}" placeholder="₹" style="border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+                </label>
+                <div style="display:flex;justify-content:space-between;font-family:JetBrains Mono,monospace;font-size:12px"><span>Expected</span><span>{{ expectedCash }}</span></div>
+                <div style="{{ varianceStyle }}"><span>Variance</span><span>{{ variance }}</span></div>
+                <button onClick="{{ closeShift }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:'Eina',sans-serif;font-weight:700;font-size:20px;min-height:56px;cursor:pointer">CLOSE SHIFT</button>
+                <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#777">Unused receipt numbers {{ unusedBlock }} voided automatically.</div>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <sc-if value="{{ showTotalBar }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:0 0 auto;border-top:3px solid #111;background:#F7F5F1;padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">TOTAL</span>
+              <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:36px;line-height:1">{{ cartTotal }}</span>
+            </div>
+            <button onClick="{{ charge }}" style="background:#1B4DF5;color:#F7F5F1;border:3px solid #0F0F10;font-family:'Eina',sans-serif;font-weight:700;font-size:24px;letter-spacing:0.04em;min-height:60px;cursor:pointer">CHARGE</button>
+          </div>
+        </sc-if>
+
+        <div style="flex:0 0 auto;background:#0F0F10;display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid #000">
+          <sc-for list="{{ tabBar }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.onClick }}" style="{{ t.style }}">
+              <span style="display:block;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.1em">{{ t.label }}</span>
+              <span style="display:block;font-family:JetBrains Mono,monospace;font-size:9px;opacity:.65">{{ t.badge }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isKiosk }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%;max-width:900px;height:100%;background:#F7F5F1;color:#0F0F10;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden">
+
+        <sc-if value="{{ k_attract }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ kStart }}" style="all:unset;cursor:pointer;flex:1 1 auto;display:flex;flex-direction:column;background:#1B4DF5;color:#F7F5F1;position:relative;overflow:hidden;padding:0">
+            <div style="position:absolute;inset:0;background-image:radial-gradient(#F7F5F1 1px, transparent 1.2px);background-size:9px 9px;opacity:.18"></div>
+            <div style="position:absolute;top:10px;left:10px;width:20px;height:20px;border-top:3px solid #F7F5F1;border-left:3px solid #F7F5F1"></div>
+            <div style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-top:3px solid #F7F5F1;border-right:3px solid #F7F5F1"></div>
+            <div style="position:absolute;bottom:10px;left:10px;width:20px;height:20px;border-bottom:3px solid #F7F5F1;border-left:3px solid #F7F5F1"></div>
+            <div style="position:absolute;bottom:10px;right:10px;width:20px;height:20px;border-bottom:3px solid #F7F5F1;border-right:3px solid #F7F5F1"></div>
+            <div style="position:absolute;top:26px;right:-42px;background:#C6302B;color:#F7F5F1;transform:rotate(6deg);padding:6px 54px;font-family:'Eina',sans-serif;font-weight:700;font-size:10px;letter-spacing:0.18em;box-shadow:0 3px 0 rgba(0,0,0,.25);z-index:2">FOR AQUATERRA ✳</div>
+            <div style="position:relative;flex:1 1 auto;display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:center;padding:40px 34px">
+              <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.24em;color:#C6302B">CRFTO × AQUATERRA</div>
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:clamp(48px,10vw,110px);line-height:0.86;letter-spacing:0.01em">BUILD</div>
+                <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+                  <span style="font-family:'Eina',sans-serif;font-style:italic;font-weight:700;font-size:clamp(44px,9vw,100px);line-height:0.86;color:#C6302B">yours</span>
+                  <span style="background:#F7F5F1;color:#1B4DF5;font-family:'Eina',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.16em;padding:7px 11px;animation:stallWiggle 2.8s ease-in-out infinite">TAP ANYWHERE</span>
+                </div>
+                <div style="height:10px;background:#F7F5F1;max-width:280px;margin-top:10px"></div>
+                <div style="font-family:'Eina',sans-serif;font-size:15px;max-width:34ch;opacity:.9;margin-top:4px">Pick a best-seller or arrange your own transfers. Every tee funds AquaTerra welfare work.</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <sc-for list="{{ kHeroTiles }}" as="t" hint-placeholder-count="4">
+                  <span style="{{ t.style }}"><span style="{{ t.notchStyle }}"></span><span class="msi" style="{{ t.iconStyle }}">{{ t.icon }}</span><span style="{{ t.codeStyle }}">{{ t.code }}</span></span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="position:relative;display:flex;gap:0;border-top:3px solid #F7F5F1;background:#111">
+              <sc-for list="{{ attractStrip }}" as="a" hint-placeholder-count="4">
+                <span style="{{ a.style }}">{{ a.label }}</span>
+              </sc-for>
+            </div>
+          </button>
+        </sc-if>
+
+        <sc-if value="{{ kInApp }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:0 0 auto;background:#1B4DF5;color:#F7F5F1;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div style="display:flex;align-items:baseline;gap:10px">
+              <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:22px;letter-spacing:0.05em"><span style="display:inline-flex;align-items:baseline;gap:2px;font-style:italic;transform:skewX(-6deg)">CRFT<span style="color:#C6302B;font-style:normal;transform:skewX(6deg);display:inline-block">★</span>O</span></span>
+              <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.18em;opacity:.75">{{ kStepLabel }}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="text-align:right">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:8px;letter-spacing:0.16em;opacity:.75">RUNNING TOTAL</div>
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:24px;line-height:1">{{ kTotal }}</div>
+              </div>
+              <button onClick="{{ kExit }}" style="background:none;border:2px solid #F7F5F1;color:#F7F5F1;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em;padding:8px 9px;cursor:pointer">EXIT · PIN</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ k_presets }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1 1 auto;overflow-y:auto;padding:20px">
+            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+              <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:34px;line-height:1">BEST SELLERS</span>
+              <span style="font-family:'Eina',sans-serif;font-style:italic;font-weight:700;font-size:26px;color:#C6302B">three taps</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px">
+              <sc-for list="{{ presetList }}" as="p" hint-placeholder-count="4">
+                <button onClick="{{ p.onClick }}" style="all:unset;cursor:pointer;display:flex;flex-direction:column;border:3px solid #0F0F10;background:#fff">
+                  <span style="{{ p.artStyle }}">{{ p.artLabel }}</span>
+                  <span style="padding:10px;display:flex;flex-direction:column;gap:3px">
+                    <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:19px;line-height:1.1">{{ p.name }}</span>
+                    <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#555">{{ p.codes }}</span>
+                    <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:20px;color:#1B4DF5">{{ p.price }}</span>
+                  </span>
+                </button>
+              </sc-for>
+            </div>
+            <button onClick="{{ kGoCanvas }}" style="margin-top:20px;width:100%;background:#0F0F10;color:#F7F5F1;border:3px solid #0F0F10;font-family:'Eina',sans-serif;font-weight:700;font-size:24px;letter-spacing:0.03em;min-height:70px;cursor:pointer">BUILD FROM SCRATCH →</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ k_product }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1 1 auto;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:18px">
+            <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:32px">PICK YOUR TEE</div>
+            <sc-for list="{{ kPickerGroups }}" as="g" hint-placeholder-count="3">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.16em">{{ g.label }}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+                    <button onClick="{{ o.onClick }}" style="{{ o.style }}"><span>{{ o.label }}</span><span style="display:block;font-family:JetBrains Mono,monospace;font-size:9px;font-weight:400;letter-spacing:0;opacity:.7">{{ o.note }}</span></button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <button onClick="{{ kToCanvas }}" style="{{ kToCanvasStyle }}">{{ kToCanvasLabel }}</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ k_canvas }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1 1 auto;min-height:0;display:grid;grid-template-columns:{{ kCanvasCols }};gap:0;animation:stallSlideIn .22s ease-out">
+            <div style="position:relative;background:#0F0F10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:10px;overflow:hidden">
+              <div style="display:flex;gap:6px">
+                <sc-for list="{{ kSideChips }}" as="s" hint-placeholder-count="2">
+                  <button onClick="{{ s.onClick }}" style="{{ s.style }}">{{ s.label }}</button>
+                </sc-for>
+              </div>
+              <div style="{{ kMockStyle }}">
+                <div ref="{{ paRef }}" style="{{ kPrintAreaStyle }}">
+                  <sc-for list="{{ kPlacements }}" as="p" hint-placeholder-count="0">
+                    <div onPointerDown="{{ p.onDown }}" onClick="{{ p.onSelect }}" style="{{ p.style }}">{{ p.code }}</div>
+                  </sc-for>
+                  <div style="position:absolute;bottom:-19px;left:0;font-family:JetBrains Mono,monospace;font-size:9px;color:#888;letter-spacing:0.04em">PRINT AREA 28 × 35 cm</div>
+                </div>
+              </div>
+              <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#888;text-align:center;max-width:34ch">{{ kMockNote }}</div>
+              <sc-if value="{{ kNudge }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;left:16px;right:16px;bottom:16px;background:#C6302B;color:#0F0F10;border:2px solid #0F0F10;padding:11px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;animation:stallRise .18s ease-out">{{ kNudge }}</div>
+              </sc-if>
+            </div>
+            <div style="background:#F7F5F1;display:flex;flex-direction:column;min-height:0;border-left:3px solid #111">
+              <div style="flex:0 0 auto;padding:12px;display:flex;flex-direction:column;gap:8px;border-bottom:2px solid #111">
+                <input value="{{ kQuery }}" onChange="{{ onKQuery }}" placeholder="Search code, name or tag" style="border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+                <div style="display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
+                  <sc-for list="{{ kTagChips }}" as="c" hint-placeholder-count="6">
+                    <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="flex:1 1 0;min-height:190px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;align-content:start">
+                <sc-for list="{{ kCatalogue }}" as="d" hint-placeholder-count="8">
+                  <button onClick="{{ d.onClick }}" style="all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;border:2px solid #0F0F10;background:#fff;padding:5px">
+                    <span style="{{ d.thumbStyle }}">{{ d.code }}</span>
+                    <span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#333;text-align:center">{{ d.sizeLabel }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ kSelected }}" hint-placeholder-val="{{ false }}">
+                <div style="flex:0 0 auto;border-top:2px solid #111;padding:9px 12px;display:flex;align-items:center;gap:10px;background:#fff;flex-wrap:wrap">
+                  <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:15px;white-space:nowrap">{{ kSelected }}</span>
+                  <label style="flex:1 1 130px;display:flex;align-items:center;gap:7px;min-width:0">
+                    <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em;white-space:nowrap">ROT {{ kRotLabel }}</span>
+                    <input type="range" min="-180" max="180" step="1" value="{{ kRotValue }}" onChange="{{ onKRotate }}" style="flex:1 1 0;min-width:60px;height:44px;accent-color:#C6302B;touch-action:none" />
+                  </label>
+                  <button onClick="{{ kRemovePlacement }}" style="background:none;border:2px solid #C6302B;color:#C6302B;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.1em;padding:0 10px;min-height:44px;cursor:pointer">REMOVE</button>
+                </div>
+              </sc-if>
+              <button onClick="{{ kGetTicket }}" style="{{ kTicketBtnStyle }}">{{ kTicketBtnLabel }}</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ k_review }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1 1 auto;min-height:0;overflow-y:auto;padding:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;align-content:start;-webkit-overflow-scrolling:touch">
+            <div style="display:flex;flex-direction:column;gap:12px;align-items:center;animation:stallSlideIn .26s ease-out">
+              <div style="display:flex;gap:6px">
+                <sc-for list="{{ kSideChips }}" as="s" hint-placeholder-count="2">
+                  <button onClick="{{ s.onClick }}" style="{{ s.reviewStyle }}">{{ s.label }}</button>
+                </sc-for>
+              </div>
+              <div style="{{ kMockStyle }}">
+                <div style="{{ kPrintAreaStyleStatic }}">
+                  <sc-for list="{{ kPlacements }}" as="p" hint-placeholder-count="0">
+                    <div style="{{ p.reviewStyle }}">{{ p.code }}</div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#555">Shown at true scale · {{ kReviewGarment }}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;animation:stallSlideIn .34s ease-out">
+              <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:clamp(28px,4vw,42px);line-height:1">THIS IS <span style="font-family:'Eina',sans-serif;font-style:italic;font-weight:700;color:#C6302B">yours</span></div>
+              <div style="border:3px solid #0F0F10;background:#fff">
+                <sc-for list="{{ kReviewLines }}" as="l" hint-placeholder-count="2">
+                  <div style="display:flex;justify-content:space-between;gap:10px;padding:11px 12px;border-bottom:1px solid #ddd">
+                    <span style="display:flex;flex-direction:column;gap:2px">
+                      <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:17px">{{ l.title }}</span>
+                      <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#666">{{ l.sub }}</span>
+                    </span>
+                    <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:18px;white-space:nowrap">{{ l.price }}</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 12px;background:#1B4DF5;color:#F7F5F1">
+                  <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.14em">TOTAL</span>
+                  <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:32px;line-height:1">{{ kTotal }}</span>
+                </div>
+              </div>
+              <div style="background:#0F0F10;color:#F7F5F1;padding:12px;font-size:12px;line-height:1.6">Hand wash recommended. Transfers rated 10–15 washes minimum. Every tee funds AquaTerra welfare work.</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <button onClick="{{ kBackToCanvas }}" style="background:none;border:3px solid #0F0F10;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:64px;cursor:pointer">KEEP EDITING</button>
+                <button onClick="{{ kGetTicket }}" style="background:#C6302B;color:#0F0F10;border:3px solid #0F0F10;font-family:'Eina',sans-serif;font-weight:700;font-size:22px;min-height:64px;cursor:pointer">GET TICKET</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ k_ticket }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1 1 auto;overflow-y:auto;background:#1B4DF5;color:#F7F5F1;padding:26px 20px;display:flex;flex-direction:column;align-items:center;gap:18px">
+            <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.2em">SHOW THIS AT THE TILL</div>
+            <div style="background:#F7F5F1;color:#0F0F10;border:4px solid #111;padding:20px 26px;text-align:center;transform:rotate(-1deg);animation:stallStamp .42s cubic-bezier(.3,1.5,.6,1) both">
+              <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.18em;color:#1B4DF5">TICKET CODE</div>
+              <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:clamp(56px,14vw,96px);letter-spacing:0.12em;line-height:1">{{ kTicketCode }}</div>
+              <div style="width:110px;height:110px;margin:10px auto 0;background-image:repeating-linear-gradient(45deg,#111 0 4px,#F7F5F1 4px 8px);border:3px solid #111"></div>
+              <div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#555;margin-top:7px">QR carries the full payload — works offline</div>
+            </div>
+            <div style="width:100%;max-width:420px;background:#0F0F10;border:2px solid #F7F5F1;padding:14px">
+              <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.16em;color:#C6302B">PRESS SHEET · PLACEMENT LIST</div>
+              <sc-for list="{{ kTicketLines }}" as="l" hint-placeholder-count="2">
+                <div style="font-family:JetBrains Mono,monospace;font-size:11px;margin-top:5px">{{ l }}</div>
+              </sc-for>
+              <div style="height:2px;background:#F7F5F1;margin:11px 0"></div>
+              <div style="display:flex;justify-content:space-between;font-family:'Eina',sans-serif;font-weight:700;font-size:22px"><span>QUOTED</span><span>{{ kTicketTotal }}</span></div>
+              <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#aaa;margin-top:6px">Quote only. Expires in {{ kTicketExpiry }}. Nothing is reserved until the volunteer charges.</div>
+            </div>
+            <button onClick="{{ kReset }}" style="background:#C6302B;color:#0F0F10;border:3px solid #0F0F10;font-family:'Eina',sans-serif;font-weight:700;font-size:21px;padding:0 22px;min-height:60px;cursor:pointer">START AGAIN</button>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%;height:100%;background:#F7F5F1;color:#0F0F10;display:flex;flex-direction:column;min-height:0">
+        <div style="background:#1B4DF5;color:#F7F5F1;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+          <div style="display:flex;align-items:baseline;gap:12px">
+            <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:24px;letter-spacing:0.04em"><span style="display:inline-flex;align-items:baseline;gap:2px;font-style:italic;transform:skewX(-6deg)">CRFT<span style="color:#C6302B;font-style:normal;transform:skewX(6deg);display:inline-block">★</span>O</span> <span style="font-style:normal">ADMIN</span></span>
+            <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.18em;opacity:.75">{{ adminTitle }}</span>
+          </div>
+          <div style="{{ healthStyle }}">{{ healthLabel }}</div>
+        </div>
+
+        <div style="flex:1 1 auto;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:20px">
+
+          <sc-if value="{{ a_dash }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <div style="background:#0F0F10;color:#F7F5F1;padding:26px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px">
+                <div>
+                  <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.2em;color:#C6302B">RAISED FOR AQUATERRA · THIS SHIFT</div>
+                  <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:clamp(48px,7vw,84px);line-height:1">{{ raisedTotal }}</div>
+                  <div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#999;margin-top:4px">Net of COGS. Prices pending — see Pricing.</div>
+                </div>
+                <div style="font-family:'Eina',sans-serif;font-style:italic;font-weight:700;font-size:clamp(24px,3vw,38px);color:#F7F5F1;max-width:16ch;line-height:1.05">the number the org exists for</div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">
+                <sc-for list="{{ dashCards }}" as="c" hint-placeholder-count="6">
+                  <div style="{{ c.style }}">
+                    <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.14em;color:#555">{{ c.label }}</div>
+                    <div style="{{ c.valueStyle }}">{{ c.value }}</div>
+                    <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#666">{{ c.note }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ a_pricing }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:30px">PRICE &amp; COST MATRIX</div>
+                <div style="display:flex;gap:8px">
+                  <button onClick="{{ fillPrices }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em;padding:11px 13px;cursor:pointer">FILL DEMO PRICES</button>
+                  <button onClick="{{ clearPrices }}" style="background:none;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em;padding:11px 13px;cursor:pointer">CLEAR TO ₹—</button>
+                </div>
+              </div>
+              <div style="border:2px solid #0F0F10;background:#fff;overflow-x:auto">
+                <div style="min-width:640px">
+                  <div style="display:grid;grid-template-columns:170px repeat(6,1fr) 90px;background:#0F0F10;color:#F7F5F1">
+                    <sc-for list="{{ priceHead }}" as="h" hint-placeholder-count="8">
+                      <div style="padding:8px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em">{{ h }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-for list="{{ priceRows }}" as="r" hint-placeholder-count="6">
+                    <div style="display:grid;grid-template-columns:170px repeat(6,1fr) 90px;border-top:1px solid #ddd">
+                      <div style="padding:9px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.1em;display:flex;align-items:center">{{ r.label }}</div>
+                      <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                        <div style="border-left:1px solid #eee;padding:3px">
+                          <input value="{{ c.value }}" onChange="{{ c.onChange }}" placeholder="₹—" disabled="{{ c.disabled }}" style="{{ c.style }}" />
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="border:2px solid #0F0F10;background:#fff;overflow-x:auto">
+                <div style="min-width:560px">
+                  <div style="display:grid;grid-template-columns:110px repeat(4,1fr);background:#0F0F10;color:#F7F5F1">
+                    <sc-for list="{{ stickerPriceHead }}" as="h" hint-placeholder-count="5">
+                      <div style="padding:8px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em">{{ h }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-for list="{{ stickerPriceRows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:grid;grid-template-columns:110px repeat(4,1fr);border-top:1px solid #ddd">
+                      <div style="padding:9px;font-family:'Eina',sans-serif;font-weight:700;font-size:19px">{{ r.label }}</div>
+                      <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="4">
+                        <div style="border-left:1px solid #eee;padding:3px">
+                          <input value="{{ c.value }}" onChange="{{ c.onChange }}" placeholder="{{ c.hint }}" style="{{ c.style }}" />
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="background:#0F0F10;color:#F7F5F1;padding:12px;font-family:JetBrains Mono,monospace;font-size:11px;line-height:1.6">Print size in cm is required — the kiosk canvas renders true scale from it. Prices snapshot onto the order line at sale; editing here never rewrites history.</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ a_b2b }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:30px">B2B PIPELINE</div>
+                <div style="display:flex;gap:18px;flex-wrap:wrap">
+                  <sc-for list="{{ b2bHeadline }}" as="h" hint-placeholder-count="2">
+                    <div>
+                      <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.14em;color:#555">{{ h.label }}</div>
+                      <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:26px">{{ h.value }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px">
+                <sc-for list="{{ b2bColumns }}" as="col" hint-placeholder-count="8">
+                  <div style="flex:0 0 195px;display:flex;flex-direction:column;gap:8px">
+                    <div style="background:#0F0F10;color:#F7F5F1;padding:7px 9px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em;display:flex;justify-content:space-between"><span>{{ col.label }}</span><span>{{ col.count }}</span></div>
+                    <sc-for list="{{ col.cards }}" as="c" hint-placeholder-count="1">
+                      <button onClick="{{ c.onClick }}" style="{{ c.style }}">
+                        <span style="display:block;font-family:'Eina',sans-serif;font-weight:700;font-size:16px;line-height:1.15">{{ c.org }}</span>
+                        <span style="display:block;font-family:JetBrains Mono,monospace;font-size:10px;color:#555;margin-top:3px">{{ c.meta }}</span>
+                        <span style="{{ c.marginStyle }}">{{ c.margin }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="border:2px solid #0F0F10;background:#fff;padding:16px;display:flex;flex-direction:column;gap:12px;max-width:620px">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:22px">NEW ENQUIRY</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+                  <sc-for list="{{ b2bFields }}" as="f" hint-placeholder-count="6">
+                    <label style="display:flex;flex-direction:column;gap:4px">
+                      <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em">{{ f.label }}</span>
+                      <input value="{{ f.value }}" onChange="{{ f.onChange }}" placeholder="{{ f.hint }}" style="border:2px solid #0F0F10;padding:10px;font-size:15px;min-height:44px" />
+                    </label>
+                  </sc-for>
+                </div>
+                <div style="{{ marginBoxStyle }}">
+                  <div>
+                    <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.14em">MARGIN</div>
+                    <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:34px;line-height:1">{{ marginLabel }}</div>
+                  </div>
+                  <div style="font-family:'Eina',sans-serif;font-size:13px;max-width:30ch;line-height:1.4">{{ marginNote }}</div>
+                </div>
+                <sc-if value="{{ b2bPinNeeded }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <input value="{{ b2bPin }}" onChange="{{ onB2bPin }}" placeholder="Admin PIN" style="border:2px solid #C6302B;padding:10px;font-size:15px;min-height:44px;width:130px" />
+                    <span style="font-family:JetBrains Mono,monospace;font-size:11px;color:#C6302B">Override required below 10%.</span>
+                  </div>
+                </sc-if>
+                <button onClick="{{ saveB2b }}" style="{{ b2bSaveStyle }}">{{ b2bSaveLabel }}</button>
+                <sc-if value="{{ b2bErr }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#C6302B;color:#0F0F10;padding:10px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em">{{ b2bErr }}</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ a_catalogue }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center">
+                <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:30px">CATALOGUE</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button onClick="{{ autoTag }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em;padding:11px 13px;cursor:pointer">RUN AUTO-TAG</button>
+                  <button onClick="{{ qrSheet }}" style="background:none;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em;padding:11px 13px;cursor:pointer">GENERATE QR LABEL SHEET</button>
+                </div>
+              </div>
+              <div style="border:2px solid #0F0F10;background:#fff;overflow-x:auto">
+                <div style="min-width:760px">
+                  <div style="display:grid;grid-template-columns:96px 1.4fr 1.6fr 90px 1.2fr 110px;background:#0F0F10;color:#F7F5F1">
+                    <sc-for list="{{ catHead }}" as="h" hint-placeholder-count="6">
+                      <div style="padding:8px;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em">{{ h }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-for list="{{ catRows }}" as="r" hint-placeholder-count="8">
+                    <div style="display:grid;grid-template-columns:96px 1.4fr 1.6fr 90px 1.2fr 110px;border-top:1px solid #e4e4e4;align-items:center">
+                      <div style="padding:8px;font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700">{{ r.code }}</div>
+                      <div style="padding:8px;font-size:14px">{{ r.name }}</div>
+                      <div style="padding:8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#555">{{ r.tags }}</div>
+                      <div style="{{ r.stockStyle }}">{{ r.stock }}</div>
+                      <div style="padding:8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#555">{{ r.bin }}</div>
+                      <div style="padding:8px"><button onClick="{{ r.onToggle }}" style="{{ r.toggleStyle }}">{{ r.toggleLabel }}</button></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;background:#0F0F10;color:#F7F5F1;border:2px solid #F7F5F1;padding:12px 16px;display:flex;align-items:center;gap:14px;animation:stallRise .18s ease-out;max-width:92vw;pointer-events:none">
+      <span style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em">{{ toast }}</span>
+      <sc-if value="{{ undoLeft }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ undo }}" style="background:#C6302B;color:#0F0F10;border:none;font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;padding:8px 10px;cursor:pointer;pointer-events:auto">UNDO {{ undoLeft }}s</button>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pinModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:70;background:rgba(17,17,17,.86);display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#F7F5F1;color:#0F0F10;border:3px solid #0F0F10;padding:20px;width:100%;max-width:330px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.14em;color:#C6302B">{{ pinModal }}</div>
+        <input value="{{ modalPin }}" onChange="{{ onModalPin }}" placeholder="Admin PIN" style="border:2px solid #0F0F10;padding:12px;font-family:'Eina',sans-serif;font-weight:700;font-size:24px;letter-spacing:0.2em;min-height:52px" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onClick="{{ cancelModal }}" style="background:none;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:48px;cursor:pointer">CANCEL</button>
+          <button onClick="{{ confirmModal }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:48px;cursor:pointer">APPROVE</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ swapOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:70;background:rgba(17,17,17,.86);display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#F7F5F1;color:#0F0F10;border:3px solid #C6302B;padding:20px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'Eina',sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.14em;color:#C6302B">SOLD OUT SINCE THE TICKET WAS MADE</div>
+        <div style="font-family:'Eina',sans-serif;font-weight:700;font-size:26px;line-height:1.1">{{ swapOpen }}</div>
+        <div style="font-size:14px;line-height:1.5">The kiosk showed last-known stock. Swap it or remove it before charging.</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ swapOptions }}" as="o" hint-placeholder-count="2">
+            <button onClick="{{ o.onClick }}" style="background:#fff;border:2px solid #0F0F10;padding:12px;font-family:JetBrains Mono,monospace;font-size:13px;text-align:left;cursor:pointer;min-height:48px">{{ o.label }}</button>
+          </sc-for>
+          <button onClick="{{ swapRemove }}" style="background:#C6302B;color:#0F0F10;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:48px;cursor:pointer">REMOVE FROM ORDER</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ customerSheet }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:65;background:rgba(17,17,17,.72);display:flex;align-items:flex-end;justify-content:center">
+      <div style="background:#F7F5F1;color:#0F0F10;border-top:4px solid #111;padding:18px;width:100%;max-width:480px;display:flex;flex-direction:column;gap:11px;animation:stallRise .2s ease-out">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+          <span style="font-family:'Eina',sans-serif;font-weight:700;font-size:24px">CUSTOMER</span>
+          <span style="{{ contactReqStyle }}">{{ contactReqLabel }}</span>
+        </div>
+        <sc-for list="{{ customerFields }}" as="f" hint-placeholder-count="3">
+          <input value="{{ f.value }}" onChange="{{ f.onChange }}" placeholder="{{ f.hint }}" style="border:2px solid #0F0F10;padding:12px;font-size:16px;min-height:48px" />
+        </sc-for>
+        <button onClick="{{ toggleConsent }}" style="{{ consentStyle }}">{{ consentLabel }}</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onClick="{{ skipCustomer }}" style="{{ skipStyle }}">{{ skipLabel }}</button>
+          <button onClick="{{ saveCustomer }}" style="background:#1B4DF5;color:#F7F5F1;border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:52px;cursor:pointer">SAVE &amp; RECEIPT</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;pressOnSite&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Shift&quot;},&quot;showTicketHelper&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prototype&quot;}}">
+class Component extends DCLogic {
+  paRef = React.createRef();
+  state = this.seed();
+
+  seed() {
+    const D = (code, size, name, tags, stock, bin, group) => ({ id: code, code, size, name, tags, stock, bin, group, price: null, cost: null, kiosk: true });
+    const designs = [
+      D('S-004','S','Ramen Ghost',['anime','food'],18,'Box 1 / Tab S / 001-010'),
+      D('S-011','S','Static Bloom',['abstract'],24,'Box 1 / Tab S / 011-020'),
+      D('S-014','S','No Signal',['typography'],9,'Box 1 / Tab S / 011-020'),
+      D('S-023','S','Tape Deck',['music','retro'],31,'Box 1 / Tab S / 021-030'),
+      D('S-031','S','Koi Fragment',['anime','nature'],12,'Box 1 / Tab S / 031-040'),
+      D('M-002','M','Feedback Loop',['typography','abstract'],14,'Box 2 / Tab M / 001-010'),
+      D('M-009','M','Riot Season',['band','typography'],6,'Box 2 / Tab M / 001-010'),
+      D('M-014','M','Deep Field',['space','abstract'],12,'Box 2 / Tab M / 011-020','deep-field'),
+      D('M-018','M','Hand Wash Only',['typography','humour'],21,'Box 2 / Tab M / 011-020'),
+      D('M-027','M','Monsoon Grid',['abstract','nature'],3,'Box 2 / Tab M / 021-030'),
+      D('M-033','M','Kaiju Payslip',['anime','humour'],17,'Box 2 / Tab M / 031-040'),
+      D('M-041','M','Analog Heart',['retro','music'],0,'Box 2 / Tab M / 041-050'),
+      D('L-001','L','Cassette Sun',['retro','music'],8,'Box 3 / Tab L / 001-010'),
+      D('L-006','L','Eclipse Type',['typography'],5,'Box 3 / Tab L / 001-010'),
+      D('L-014','L','Deep Field XL',['space','abstract'],4,'Box 3 / Tab L / 011-020','deep-field'),
+      D('L-019','L','Mecha Study',['anime'],7,'Box 3 / Tab L / 011-020'),
+      D('L-022','L','Terracotta Wave',['nature','abstract'],11,'Box 3 / Tab L / 021-030'),
+      D('L-030','L','Band Practice',['band'],2,'Box 3 / Tab L / 021-030')
+    ];
+    const skus = [];
+    ['Black','White'].forEach(c => ['Oversized','Regular','Crop'].forEach(f => ['XS','S','M','L','XL','XXL'].forEach((s, i) => {
+      if (f === 'Crop' && (s === 'XL' || s === 'XXL')) return;
+      skus.push({ id: c + '|' + f + '|' + s, color: c, fit: f, size: s,
+        sku: 'TEE-' + c.slice(0,2).toUpperCase() + '-' + f.slice(0,3).toUpperCase() + '-' + s,
+        stock: [6,9,14,12,7,4][i], par: 5, price: null, cost: null });
+    })));
+    const now = Date.now();
+    const b2b = [
+      { id: 'b1', org: 'Symbiosis Lit Fest', owner: 'Rachit', qty: 120, price: 540, cost: 430, stage: 'quoted' },
+      { id: 'b2', org: 'Pune Runners Collective', owner: 'Yuthika', qty: 60, price: 610, cost: 470, stage: 'confirmed' },
+      { id: 'b3', org: 'Kalyani Nagar Cafe', owner: 'Rachit', qty: 24, price: 700, cost: 505, stage: 'production' },
+      { id: 'b4', org: 'FLAME Sports Dept', owner: 'Yuthika', qty: 200, price: 495, cost: 455, stage: 'enquiry' }
+    ];
+    return {
+      surface: 'pos', screen: 'pin', online: true, outbox: 0, tick: 0,
+      pin: '', pinErr: '',
+      shift: null,
+      draft: { name: 'Paradox Day 1', event: 'Paradox 2026', venue: 'Amanora, Pune', float: '2000' },
+      pressOnSite: this.props.pressOnSite !== false,
+      designs, skus,
+      stickerPrice: { S: null, M: null, L: null },
+      stickerCost: { S: null, M: null, L: null },
+      printCm: { S: [6,6], M: [12,12], L: [22,22] },
+      cart: [], sel: 0,
+      stickerQuery: '', sizeFilter: 'all', recent: [],
+      pickColor: 'Black', pickFit: 'Oversized',
+      stockQuery: '',
+      discountAmt: '', discountPct: '', discountReason: 'volunteer_discretion',
+      pay: 'upi', cashAmt: '', upiAmt: '',
+      customerSheet: false, customer: { name: '', phone: '', email: '' }, consent: false,
+      orders: [], receiptNext: 142, blockStart: 142, blockEnd: 241,
+      lastOrder: null, toast: null, undoLeft: 0, undoOrder: null,
+      pinModal: null, modalPin: '', pinAction: null,
+      holds: [
+        { id: 'h1', title: 'Black · Oversized · L', sub: 'Aarav · 98•••4412', expires: now + 74*60000 },
+        { id: 'h2', title: 'White · Crop · S + M-018', sub: 'Ishita · 90•••1187', expires: now + 11*60000 }
+      ],
+      waste: [], returns: [],
+      wasteCode: '', wasteQty: '1', wasteSku: '', wasteReason: 'misalignment',
+      returnRef: '', returnAction: 'replace', resaleable: false,
+      orderTab: 'pending',
+      ticketCode: '', ticketErr: '', tickets: [],
+      kStep: 'attract', kSku: null, kSide: 'front', kPlace: [], kSel: null,
+      kQuery: '', kTag: 'all', kTicket: null, kNudge: '',
+      adminTab: 'dash',
+      b2b, b2bDraft: { org: '', contact: '', owner: '', qty: '', price: '', cost: '' }, b2bPin: '', b2bErr: '',
+      countedCash: '', closeErr: '', summary: null,
+      swap: null
+    };
+  }
+
+  componentDidMount() {
+    this.timer = setInterval(() => this.setState(s => ({ tick: s.tick + 1 })), 1000);
+  }
+  componentWillUnmount() { clearInterval(this.timer); clearInterval(this.undoT); clearTimeout(this.undoEndT); clearTimeout(this.toastT); }
+
+  // ---------- helpers ----------
+  money(v) { return (v === null || v === undefined || isNaN(v)) ? '₹—' : '₹' + Number(Math.round(v)).toLocaleString('en-IN'); }
+  flash(msg) { this.setState({ toast: msg }); clearTimeout(this.toastT); this.toastT = setTimeout(() => this.setState({ toast: null }), 2600); }
+  go(screen) { this.setState({ screen, kNudge: '' }); }
+
+  stickerPriceOf(d) { return d.price !== null ? d.price : this.state.stickerPrice[d.size]; }
+  stickerCostOf(d) { return d.cost !== null ? d.cost : this.state.stickerCost[d.size]; }
+  designBy(code) { return this.state.designs.find(d => d.code === code); }
+
+  lineTotal(it) {
+    const sku = this.state.skus.find(s => s.id === it.skuId);
+    let t = sku ? sku.price : null;
+    if (t === null) return null;
+    for (const st of it.stickers) {
+      const d = this.designBy(st.code);
+      const p = st.custom ? this.state.stickerPrice[st.size] : (d ? this.stickerPriceOf(d) : null);
+      if (p === null) return null;
+      t += p;
+    }
+    return t;
+  }
+  lineCost(it) {
+    const sku = this.state.skus.find(s => s.id === it.skuId);
+    let t = sku && sku.cost !== null ? sku.cost : 0;
+    for (const st of it.stickers) {
+      const d = this.designBy(st.code);
+      const c = d ? this.stickerCostOf(d) : this.state.stickerCost[st.size];
+      t += c === null ? 0 : c;
+    }
+    return t;
+  }
+  subtotal() {
+    if (!this.state.cart.length) return null;
+    let t = 0;
+    for (const it of this.state.cart) { const l = this.lineTotal(it); if (l === null) return null; t += l; }
+    return t;
+  }
+  discountValue() {
+    const sub = this.subtotal();
+    const pct = parseFloat(this.state.discountPct);
+    if (!isNaN(pct) && sub !== null) return Math.round(sub * pct / 100);
+    const amt = parseFloat(this.state.discountAmt);
+    return isNaN(amt) ? 0 : amt;
+  }
+  total() { const sub = this.subtotal(); return sub === null ? null : Math.max(0, sub - this.discountValue()); }
+  discountPctEffective() {
+    const sub = this.subtotal(); const pct = parseFloat(this.state.discountPct);
+    if (!isNaN(pct)) return pct;
+    if (sub) return this.discountValue() / sub * 100;
+    return 0;
+  }
+  pricesPending() {
+    const sp = this.state.stickerPrice;
+    return sp.S === null || this.state.skus.some(s => s.price === null);
+  }
+  availableFor(sku) {
+    const held = this.state.holds.filter(h => h.skuId === sku.id).reduce((a, h) => a + 1, 0);
+    return sku.stock - held;
+  }
+  hasCanvasOrCustom() { return this.state.cart.some(it => it.stickers.some(st => st.custom || st.pos)); }
+
+  // ---------- cart ----------
+  addProduct(sku) {
+    this.setState(s => ({ cart: s.cart.concat([{ uid: 'i' + Date.now() + Math.random(), skuId: sku.id, stickers: [] }]), sel: s.cart.length }));
+  }
+  addSticker(d) {
+    this.setState(s => {
+      if (!s.cart.length) return { toast: 'ADD A GARMENT FIRST' };
+      const cart = s.cart.slice();
+      const i = Math.min(s.sel, cart.length - 1);
+      cart[i] = Object.assign({}, cart[i], { stickers: cart[i].stickers.concat([{ code: d.code, size: d.size, side: 'front' }]) });
+      const recent = [d.code].concat(s.recent.filter(c => c !== d.code)).slice(0, 8);
+      return { cart, recent, stickerQuery: '' };
+    });
+  }
+  addCustomSticker = () => {
+    this.setState(s => {
+      if (!s.cart.length) return { toast: 'ADD A GARMENT FIRST' };
+      const n = 'C-' + String(1 + s.cart.reduce((a, it) => a + it.stickers.filter(x => x.custom).length, 0)).padStart(4, '0');
+      const cart = s.cart.slice();
+      const i = Math.min(s.sel, cart.length - 1);
+      cart[i] = Object.assign({}, cart[i], { stickers: cart[i].stickers.concat([{ code: n, size: 'M', custom: true, side: 'front' }]) });
+      return { cart, toast: n + ' ALLOCATED' };
+    });
+  };
+  removeLine(i) { this.setState(s => ({ cart: s.cart.filter((_, x) => x !== i), sel: 0 })); }
+  removeSticker(i, j) {
+    this.setState(s => { const cart = s.cart.slice(); cart[i] = Object.assign({}, cart[i], { stickers: cart[i].stickers.filter((_, x) => x !== j) }); return { cart }; });
+  }
+
+  // ---------- charge ----------
+  charge = () => {
+    const s = this.state;
+    if (!s.cart.length) return this.flash('CART IS EMPTY');
+    const oos = [];
+    s.cart.forEach(it => it.stickers.forEach(st => { const d = this.designBy(st.code); if (d && d.stock <= 0) oos.push(d.code); }));
+    if (oos.length) return this.setState({ swap: oos[0] });
+    if (s.pay === 'split') {
+      const t = this.total();
+      const sum = (parseFloat(s.cashAmt) || 0) + (parseFloat(s.upiAmt) || 0);
+      if (t !== null && Math.round(sum) !== Math.round(t)) return this.flash('SPLIT MUST TOTAL ' + this.money(t));
+    }
+    if (this.discountPctEffective() > 10) {
+      return this.setState({ pinModal: 'DISCOUNT OVER 10% NEEDS ADMIN PIN', pinAction: 'charge', modalPin: '' });
+    }
+    this.commit();
+  };
+  commit() {
+    const s = this.state;
+    const canvasish = this.hasCanvasOrCustom();
+    const fulfil = canvasish ? (s.pressOnSite ? 'pending_press' : 'collect_later') : 'handed_over';
+    const receipt = 'CR/26-27/' + String(s.receiptNext).padStart(6, '0');
+    const promised = new Date(Date.now() + 3 * 86400000);
+    const order = {
+      id: 'o' + Date.now(), receipt, no: s.receiptNext, at: Date.now(), fulfil,
+      promised: fulfil === 'collect_later' ? promised.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : null,
+      lines: s.cart.map(it => {
+        const sku = s.skus.find(x => x.id === it.skuId);
+        return { title: sku.color + ' · ' + sku.fit + ' · ' + sku.size, sku: sku.sku,
+          stickers: it.stickers.map(st => st.code + (st.pos ? ' @ ' + Math.round(st.pos.x) + '%,' + Math.round(st.pos.y) + '% ' + Math.round(st.rot || 0) + '°' : '') ),
+          total: this.lineTotal(it), cost: this.lineCost(it) };
+      }),
+      subtotal: this.subtotal(), discount: this.discountValue(), total: this.total(),
+      cost: s.cart.reduce((a, it) => a + this.lineCost(it), 0),
+      pay: s.pay, queued: !s.online,
+      customer: s.customer.name || s.customer.phone ? Object.assign({}, s.customer) : null
+    };
+    const designs = s.designs.map(d => {
+      const n = s.cart.reduce((a, it) => a + it.stickers.filter(st => st.code === d.code).length, 0);
+      return n ? Object.assign({}, d, { stock: Math.max(0, d.stock - n) }) : d;
+    });
+    const skus = s.skus.map(k => {
+      const n = s.cart.filter(it => it.skuId === k.id).length;
+      return n ? Object.assign({}, k, { stock: Math.max(0, k.stock - n) }) : k;
+    });
+    this.setState({
+      orders: [order].concat(s.orders), designs, skus, lastOrder: order,
+      receiptNext: s.receiptNext + 1, cart: [], sel: 0,
+      discountAmt: '', discountPct: '', cashAmt: '', upiAmt: '',
+      outbox: s.online ? s.outbox : s.outbox + 1,
+      undoOrder: order, undoLeft: 8,
+      toast: receipt + ' RECORDED', customerSheet: true,
+      pinModal: null, modalPin: '', pinAction: null
+    });
+    clearInterval(this.undoT);
+    clearTimeout(this.undoEndT);
+    this.undoT = setInterval(() => this.setState(st => ({ undoLeft: Math.max(0, st.undoLeft - 1) })), 1000);
+    this.undoEndT = setTimeout(() => {
+      clearInterval(this.undoT);
+      this.setState({ undoLeft: 0, undoOrder: null, toast: null });
+    }, 8200);
+  }
+  undo = () => {
+    clearInterval(this.undoT); clearTimeout(this.undoEndT);
+    this.setState(s => ({ orders: s.orders.filter(o => o.id !== s.undoOrder.id), undoOrder: null, undoLeft: 0, toast: 'SALE UNDONE', customerSheet: false, lastOrder: null, outbox: Math.max(0, s.outbox - (s.online ? 0 : 1)) }));
+  };
+
+  // ---------- kiosk ----------
+  cmFor(d) { const c = this.state.printCm[d.size]; return { w: c[0], h: c[1] }; }
+  kAdd = (d) => {
+    const cm = this.cmFor(d);
+    const wPct = cm.w / 28 * 100, hPct = cm.h / 35 * 100;
+    const base = { id: 'p' + Date.now() + Math.random(), code: d.code, size: d.size, cm, rot: 0, side: this.state.kSide };
+    const maxX = Math.max(0, 100 - wPct), maxY = Math.max(0, 100 - hPct);
+    const slots = [];
+    for (let yi = 0; yi <= 8; yi++) {
+      for (let xi = 0; xi <= 4; xi++) {
+        const y = Math.min(maxY, yi * 12), x = Math.min(maxX, Math.max(0, (100 - wPct) / 2 + (xi % 2 ? 1 : -1) * Math.ceil(xi / 2) * 18));
+        slots.push({ x, y });
+      }
+    }
+    const free = slots.find(sl => !this.overlaps(Object.assign({}, base, sl), this.state.kPlace));
+    if (!free) { this.setState({ kNudge: 'NO ROOM LEFT ON THIS SIDE — TRY THE BACK' }); setTimeout(() => this.setState({ kNudge: '' }), 2400); return; }
+    const p = Object.assign({}, base, free);
+    this.setState(s => ({ kPlace: s.kPlace.concat([p]), kSel: p.id }));
+  };
+  overlaps(p, list) {
+    const box = a => ({ x1: a.x, y1: a.y, x2: a.x + a.cm.w / 28 * 100, y2: a.y + a.cm.h / 35 * 100 });
+    const A = box(p);
+    return list.some(o => {
+      if (o.id === p.id || o.side !== p.side) return false;
+      const B = box(o);
+      return A.x1 < B.x2 && A.x2 > B.x1 && A.y1 < B.y2 && A.y2 > B.y1;
+    });
+  }
+  startDrag = (p) => (e) => {
+    e.preventDefault();
+    const pa = this.paRef.current; if (!pa) return;
+    const r = pa.getBoundingClientRect();
+    this.drag = { id: p.id, prev: { x: p.x, y: p.y }, ox: e.clientX - (r.left + p.x / 100 * r.width), oy: e.clientY - (r.top + p.y / 100 * r.height), r };
+    this.setState({ kSel: p.id });
+    window.addEventListener('pointermove', this.onDrag);
+    window.addEventListener('pointerup', this.endDrag);
+  };
+  onDrag = (e) => {
+    const d = this.drag; if (!d) return;
+    const r = d.r;
+    this.setState(s => ({ kPlace: s.kPlace.map(p => {
+      if (p.id !== d.id) return p;
+      const wPct = p.cm.w / 28 * 100, hPct = p.cm.h / 35 * 100;
+      let x = (e.clientX - d.ox - r.left) / r.width * 100;
+      let y = (e.clientY - d.oy - r.top) / r.height * 100;
+      x = Math.max(0, Math.min(100 - wPct, x));
+      y = Math.max(0, Math.min(100 - hPct, y));
+      return Object.assign({}, p, { x, y });
+    }) }));
+  };
+  endDrag = () => {
+    window.removeEventListener('pointermove', this.onDrag);
+    window.removeEventListener('pointerup', this.endDrag);
+    const d = this.drag; this.drag = null; if (!d) return;
+    const cur = this.state.kPlace.find(p => p.id === d.id);
+    if (cur && this.overlaps(cur, this.state.kPlace)) {
+      this.setState(s => ({ kPlace: s.kPlace.map(p => p.id === d.id ? Object.assign({}, p, d.prev) : p), kNudge: 'OVERLAP REFUSED — SNAPPED BACK' }));
+      setTimeout(() => this.setState({ kNudge: '' }), 2200);
+    }
+  };
+  kTotalValue() {
+    const sku = this.state.skus.find(s => s.id === this.state.kSku);
+    let t = sku && sku.price !== null ? sku.price : null;
+    if (t === null) return null;
+    for (const p of this.state.kPlace) { const d = this.designBy(p.code); const v = d ? this.stickerPriceOf(d) : null; if (v === null) return null; t += v; }
+    return t;
+  }
+  kMakeTicket = () => {
+    if (!this.state.kPlace.length) return this.setState({ kNudge: 'ADD AT LEAST ONE TRANSFER' });
+    const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = ''; for (let i = 0; i < 4; i++) code += A[Math.floor(Math.random() * A.length)];
+    const t = { code, skuId: this.state.kSku, place: this.state.kPlace.slice(), total: this.kTotalValue(), at: Date.now() };
+    this.setState(s => ({ kTicket: t, tickets: s.tickets.concat([t]), kStep: 'ticket' }));
+  };
+  redeem = () => {
+    const code = this.state.ticketCode.trim().toUpperCase();
+    const t = this.state.tickets.find(x => x.code === code);
+    if (!t) return this.setState({ ticketErr: 'NO OPEN TICKET ' + (code || '—') + ' — CHECK THE KIOSK SCREEN' });
+    const it = { uid: 'i' + Date.now(), skuId: t.skuId, stickers: t.place.map(p => ({ code: p.code, size: p.size, side: p.side, pos: { x: p.x, y: p.y }, rot: p.rot })) };
+    this.setState(s => ({ cart: s.cart.concat([it]), sel: s.cart.length, ticketCode: '', ticketErr: '', toast: 'TICKET ' + code + ' LOADED', tickets: s.tickets.filter(x => x.code !== code) }));
+  };
+
+  // ---------- pricing ----------
+  fillPrices = () => {
+    this.setState(s => ({
+      skus: s.skus.map(k => Object.assign({}, k, { price: k.fit === 'Oversized' ? 749 : k.fit === 'Crop' ? 649 : 699, cost: k.fit === 'Oversized' ? 395 : 355 })),
+      stickerPrice: { S: 79, M: 129, L: 199 }, stickerCost: { S: 22, M: 38, L: 64 },
+      toast: 'DEMO PRICES APPLIED — REPLACE WITH REAL §5 NUMBERS'
+    }));
+  };
+  clearPrices = () => {
+    this.setState(s => ({ skus: s.skus.map(k => Object.assign({}, k, { price: null, cost: null })), stickerPrice: { S: null, M: null, L: null }, stickerCost: { S: null, M: null, L: null }, toast: 'PRICES CLEARED TO ₹—' }));
+  };
+
+  // ---------- b2b ----------
+  b2bMargin(d) {
+    const p = parseFloat(d.price), c = parseFloat(d.cost);
+    if (isNaN(p) || isNaN(c) || p <= 0) return null;
+    return (p - c) / p * 100;
+  }
+  saveB2b = () => {
+    const d = this.state.b2bDraft, m = this.b2bMargin(d);
+    if (!d.org.trim()) return this.setState({ b2bErr: 'CLIENT ORGANISATION REQUIRED' });
+    if (!d.owner.trim()) return this.setState({ b2bErr: 'ACCOUNT OWNER REQUIRED — THIS FORM WILL NOT SAVE WITHOUT A NAME' });
+    if (m === null) return this.setState({ b2bErr: 'ENTER QUANTITY, UNIT PRICE AND UNIT COST' });
+    if (m < 0) return this.setState({ b2bErr: 'HARD BLOCK — NEGATIVE MARGIN CANNOT BE SAVED' });
+    if (m < 10 && this.state.b2bPin !== '1234') return this.setState({ b2bErr: 'ADMIN PIN REQUIRED BELOW 10% MARGIN' });
+    this.setState(s => ({
+      b2b: s.b2b.concat([{ id: 'b' + Date.now(), org: d.org, owner: d.owner, qty: parseFloat(d.qty) || 0, price: parseFloat(d.price), cost: parseFloat(d.cost), stage: 'enquiry' }]),
+      b2bDraft: { org: '', contact: '', owner: '', qty: '', price: '', cost: '' }, b2bPin: '', b2bErr: '', toast: 'ENQUIRY SAVED'
+    }));
+  };
+
+  // ---------- shift ----------
+  closeShift = () => {
+    const s = this.state;
+    if (s.outbox > 0) return this.setState({ closeErr: s.outbox + ' sale(s) not yet synced. Connect to wifi before closing — flip the connection switch in the top bar.' });
+    const pending = s.orders.filter(o => o.fulfil === 'pending_press').length;
+    if (pending) return this.setState({ closeErr: pending + ' item(s) still in the press queue. Press them or convert to collect-later with a promised date and a contact.' });
+    const gross = s.orders.reduce((a, o) => a + (o.total || 0), 0);
+    const cost = s.orders.reduce((a, o) => a + (o.cost || 0), 0);
+    this.setState({ closeErr: '', summary: { gross, cost, units: s.orders.reduce((a, o) => a + o.lines.length, 0), orders: s.orders.length } });
+  };
+
+  renderVals() {
+    const s = this.state, S = s.screen;
+    const money = v => this.money(v);
+    const chip = (on) => 'background:' + (on ? '#1B4DF5' : '#F7F5F1') + ';color:' + (on ? '#F7F5F1' : '#111') + ';border:2px solid #0F0F10;border-radius:8px;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;padding:0 12px;min-height:48px;cursor:pointer';
+    const darkTab = (on) => 'background:' + (on ? '#F7F5F1' : 'transparent') + ';color:' + (on ? '#111' : '#999') + ';border:1px solid ' + (on ? '#F7F5F1' : '#3a3a3a') + ';border-radius:6px;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em;padding:6px 9px;cursor:pointer';
+    const thumb = (code) => 'flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:46px;height:46px;border:2px solid #0F0F10;border-radius:6px;background-image:repeating-linear-gradient(135deg,#dcd6c4 0 5px,#F7F5F1 5px 10px);font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;color:#0F0F10';
+
+    const posScreens = [['sell','SELL'],['orders','ORDERS'],['holds','HOLDS'],['stickers','STICKERS'],['products','PRODUCTS'],['waste','WASTE'],['returns','RETURNS'],['close','CLOSE'],['pin','PIN'],['shiftopen','OPEN']];
+    const kioskScreens = [['attract','ATTRACT'],['presets','PRESETS'],['product','PICK TEE'],['canvas','CANVAS'],['review','REVIEW'],['ticket','TICKET']];
+    const adminScreens = [['dash','DASHBOARD'],['pricing','PRICING'],['b2b','B2B'],['catalogue','CATALOGUE']];
+
+    const v = {
+      surfaceTabs: [['pos','VOLUNTEER TILL'],['kiosk','CUSTOMER KIOSK'],['admin','ADMIN']].map(([k, l]) => ({
+        label: l, style: darkTab(s.surface === k),
+        onClick: () => this.setState({ surface: k, screen: k === 'pos' ? (s.shift ? 'sell' : 'pin') : s.screen })
+      })),
+      isPos: s.surface === 'pos', isKiosk: s.surface === 'kiosk', isAdmin: s.surface === 'admin',
+      onlineLabel: s.online ? 'ONLINE' : 'OFFLINE',
+      onlineStyle: 'background:' + (s.online ? '#1B4DF5' : '#C6302B') + ';color:' + (s.online ? '#F7F5F1' : '#111') + ';border:none;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em;padding:7px 10px;cursor:pointer',
+      toggleOnline: () => this.setState(st => {
+        if (!st.online && st.outbox) { setTimeout(() => this.setState({ outbox: 0, toast: 'OUTBOX FLUSHED' }), 900); return { online: true, toast: 'SYNCING…' }; }
+        return { online: !st.online, toast: st.online ? 'OFFLINE — SALES WILL QUEUE' : null };
+      }),
+      offline: !s.online, outbox: s.outbox,
+      outboxStyle: 'font-family:JetBrains Mono,monospace;font-size:10px;padding:6px 8px;border:1px solid ' + (s.outbox ? '#C6302B' : '#3a3a3a') + ';color:' + (s.outbox ? '#C6302B' : '#777'),
+      screenTabs: (s.surface === 'pos' ? posScreens : s.surface === 'kiosk' ? kioskScreens : adminScreens).map(([k, l]) => ({
+        label: l, style: darkTab(s.surface === 'kiosk' ? s.kStep === k : s.surface === 'admin' ? s.adminTab === k : S === k),
+        onClick: () => s.surface === 'kiosk' ? this.setState({ kStep: k }) : s.surface === 'admin' ? this.setState({ adminTab: k }) : this.go(k)
+      })),
+      pricesPending: this.pricesPending(), fillPrices: this.fillPrices, clearPrices: this.clearPrices,
+      toast: s.toast, undoLeft: s.undoLeft, undo: this.undo
+    };
+
+    // POS header
+    const titles = { pin: 'LOCKED', shiftopen: 'OPEN SHIFT', sell: 'SELL', receipt: 'RECEIPT', orders: 'ORDERS', holds: 'HOLDS', stickers: 'STICKER STOCK', products: 'PRODUCT STOCK', waste: 'WASTE', returns: 'RETURNS', more: 'MORE', close: 'CLOSE SHIFT' };
+    v.posTitle = titles[S] || 'SELL';
+    v.posKicker = s.shift ? s.shift.name.toUpperCase() + ' · ' + s.shift.venue.toUpperCase() : 'CRFTO STALL OS';
+    const pend = s.orders.filter(o => o.fulfil === 'pending_press');
+    v.posMeta = s.shift ? (s.pressOnSite ? 'PRESS ON SITE' : 'COLLECT LATER') + '\n' + pend.length + ' pending' : 'no shift open';
+
+    // PIN
+    v.pinMask = s.pin.replace(/./g, '•');
+    v.pinErr = s.pinErr;
+    v.pinKeys = ['1','2','3','4','5','6','7','8','9','⌫','0','↵'].map(k => ({
+      label: k,
+      style: 'background:' + (k === '↵' ? '#1B4DF5' : '#fff') + ';color:' + (k === '↵' ? '#F7F5F1' : '#111') + ';border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-size:24px;min-height:58px;cursor:pointer',
+      onClick: () => {
+        if (k === '⌫') return this.setState(st => ({ pin: st.pin.slice(0, -1), pinErr: '' }));
+        if (k === '↵') {
+          if (s.pin === '1111') return this.setState({ pin: '', pinErr: '', screen: s.shift ? 'sell' : 'shiftopen' });
+          if (s.pin === '1234') return this.setState({ pin: '', pinErr: '', surface: 'admin' });
+          if (s.pin === '2222') return this.setState({ pin: '', pinErr: '', surface: 'kiosk', kStep: 'attract' });
+          return this.setState({ pin: '', pinErr: 'WRONG PIN — 5 TRIES PER 15 MIN' });
+        }
+        this.setState(st => ({ pin: (st.pin + k).slice(0, 4), pinErr: '' }));
+      }
+    }));
+
+    // shift open
+    v.shiftFields = [['SHIFT NAME','name'],['EVENT','event'],['VENUE','venue'],['OPENING FLOAT ₹','float']].map(([label, k]) => ({
+      label, value: s.draft[k], onChange: e => { const val = e.target.value; this.setState(st => ({ draft: Object.assign({}, st.draft, { [k]: val }) })); }
+    }));
+    v.pressHint = s.pressOnSite ? 'Custom work enters a live pending queue.' : 'Custom work becomes collect-later. Contact is mandatory.';
+    v.pressToggleLabel = s.pressOnSite ? 'ON' : 'OFF';
+    v.pressToggleStyle = chip(s.pressOnSite);
+    v.togglePress = () => this.setState(st => ({ pressOnSite: !st.pressOnSite }));
+    v.openShift = () => this.setState(st => ({ shift: { name: st.draft.name, venue: st.draft.venue, event: st.draft.event, float: parseFloat(st.draft.float) || 0 }, screen: 'sell', toast: 'SHIFT OPEN · BLOCK 000142–000241' }));
+
+    Object.keys(titles).forEach(k => { v['s_' + k] = S === k; });
+    v.showTotalBar = S === 'sell' && s.surface === 'pos';
+
+    // sell
+    v.ticketCode = s.ticketCode; v.ticketErr = s.ticketErr;
+    v.onTicketCode = e => this.setState({ ticketCode: e.target.value.toUpperCase(), ticketErr: '' });
+    v.redeemTicket = this.redeem;
+    v.openTicketCount = s.tickets.length;
+    v.openTicketList = s.tickets.map(t => t.code).join(', ') || '—';
+    v.cartEmpty = !s.cart.length;
+    v.cartCountLabel = s.cart.length + ' ITEM' + (s.cart.length === 1 ? '' : 'S');
+    v.cartView = s.cart.map((it, i) => {
+      const sku = s.skus.find(x => x.id === it.skuId);
+      return {
+        title: sku.color + ' · ' + sku.fit + ' · ' + sku.size,
+        sub: sku.sku + (it.stickers.some(x => x.pos) ? ' · from kiosk ticket' : ''),
+        total: money(this.lineTotal(it)),
+        style: 'padding:10px;border-top:1px solid #ddd;background:' + (i === s.sel ? '#eef1fb' : '#fff') + ';border-left:5px solid ' + (i === s.sel ? '#1B4DF5' : 'transparent'),
+        onSelect: () => this.setState({ sel: i }),
+        onRemove: () => this.removeLine(i),
+        stickers: it.stickers.map((st, j) => {
+          const d = this.designBy(st.code);
+          return { label: st.code + (st.pos ? ' @ ' + Math.round(st.pos.x) + '%,' + Math.round(st.pos.y) + '% · ' + Math.round(st.rot || 0) + '°' : '') + (st.custom ? ' · CUSTOM' : ''),
+            price: money(st.custom ? s.stickerPrice[st.size] : (d ? this.stickerPriceOf(d) : null)),
+            onRemove: () => this.removeSticker(i, j) };
+        })
+      };
+    });
+    v.cartTotal = money(this.total());
+    v.charge = this.charge;
+
+    v.colorChips = ['Black','White'].map(c => ({ label: c.toUpperCase(), style: chip(s.pickColor === c), onClick: () => this.setState({ pickColor: c }) }));
+    v.fitChips = ['Oversized','Regular','Crop'].map(f => ({ label: f.toUpperCase(), style: chip(s.pickFit === f), onClick: () => this.setState({ pickFit: f }) }));
+    v.sizeChips = ['XS','S','M','L','XL','XXL'].map(sz => {
+      const sku = s.skus.find(k => k.color === s.pickColor && k.fit === s.pickFit && k.size === sz);
+      if (!sku) return { label: sz, stock: 'n/a', style: 'background:#e8e4d8;color:#aaa;border:2px dashed #bbb;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:12px;min-height:52px;cursor:not-allowed', onClick: () => this.flash('CROP ' + sz + ' NOT CONFIRMED — PRD §16.3') };
+      const out = sku.stock <= 0;
+      return { label: sz, stock: out ? 'out' : sku.stock + ' left',
+        style: 'background:' + (out ? '#e8e4d8' : '#fff') + ';color:' + (out ? '#888' : '#111') + ';border:2px solid ' + (out ? '#bbb' : '#111') + ';font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:13px;letter-spacing:0.06em;min-height:52px;cursor:pointer',
+        onClick: () => { if (out) this.flash('OUT OF STOCK — CONFIRM TO OVERSELL'); this.addProduct(sku); } };
+    });
+
+    v.stickerQuery = s.stickerQuery;
+    v.onStickerQuery = e => this.setState({ stickerQuery: e.target.value });
+    v.sizeFilterChips = ['all','S','M','L'].map(f => ({ label: f === 'all' ? 'ALL' : f, style: chip(s.sizeFilter === f), onClick: () => this.setState({ sizeFilter: f }) }));
+    v.stickerTargetLabel = s.cart.length ? 'onto line ' + (Math.min(s.sel, s.cart.length - 1) + 1) : 'add a garment first';
+    const match = (d, q) => {
+      if (!q) return true;
+      q = q.trim().toLowerCase();
+      const m = q.match(/^([sml])?[- ]?0*(\d+)$/);
+      if (m) {
+        const num = String(parseInt(m[2], 10)).padStart(3, '0');
+        if (m[1]) return d.code.toLowerCase() === m[1] + '-' + num;
+        return d.code.slice(2) === num;
+      }
+      return (d.code + ' ' + d.name + ' ' + d.tags.join(' ')).toLowerCase().includes(q);
+    };
+    const results = s.designs.filter(d => (s.sizeFilter === 'all' || d.size === s.sizeFilter) && match(d, s.stickerQuery)).slice(0, 12);
+    v.stickerResults = results.map(d => ({
+      code: d.code, name: d.name, meta: d.bin,
+      thumbStyle: thumb(d.code),
+      stockLabel: d.stock <= 0 ? 'OUT' : d.stock + ' left',
+      stockStyle: 'flex:0 0 auto;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.06em;padding:5px 7px;border:2px solid ' + (d.stock <= 0 ? '#C6302B' : d.stock <= 5 ? '#C6302B' : '#111') + ';color:' + (d.stock <= 5 ? '#C6302B' : '#111'),
+      style: 'display:flex;align-items:center;gap:10px;background:#fff;border:2px solid #0F0F10;border-radius:10px;padding:7px;min-height:56px;cursor:pointer;text-align:left',
+      onClick: () => this.addSticker(d)
+    }));
+    v.noStickerResults = !results.length;
+    v.recentCount = s.recent.length;
+    v.recentView = s.recent.map(c => ({ code: c, onClick: () => { const d = this.designBy(c); if (d) this.addSticker(d); } }));
+    v.addCustom = this.addCustomSticker;
+
+    v.discountAmt = s.discountAmt; v.discountPct = s.discountPct; v.discountReason = s.discountReason;
+    v.onDiscountAmt = e => this.setState({ discountAmt: e.target.value, discountPct: '' });
+    v.onDiscountPct = e => this.setState({ discountPct: e.target.value, discountAmt: '' });
+    v.onDiscountReason = e => this.setState({ discountReason: e.target.value });
+    v.discountReasons = [['volunteer_discretion','Volunteer discretion'],['freebie','Freebie'],['bulk','Bulk'],['damaged_item','Damaged item'],['price_match','Price match'],['other','Other']].map(([value, label]) => ({ value, label }));
+    v.discountWarn = this.discountPctEffective() > 10 ? 'OVER 10% — ADMIN PIN REQUIRED AT CHARGE' : '';
+
+    v.payChips = [['upi','UPI'],['cash','CASH'],['split','SPLIT'],['pending','PENDING']].map(([k, l]) => ({ label: l, style: chip(s.pay === k), onClick: () => this.setState({ pay: k }) }));
+    v.isSplit = s.pay === 'split';
+    v.cashAmt = s.cashAmt; v.upiAmt = s.upiAmt;
+    v.onCashAmt = e => this.setState({ cashAmt: e.target.value });
+    v.onUpiAmt = e => this.setState({ upiAmt: e.target.value });
+    const sum = (parseFloat(s.cashAmt) || 0) + (parseFloat(s.upiAmt) || 0);
+    const tot = this.total();
+    const ok = tot !== null && Math.round(sum) === Math.round(tot);
+    v.splitLabel = tot === null ? 'Total is ₹— until prices are set' : ok ? 'MATCHES ' + money(tot) : 'SPLIT ' + money(sum) + ' OF ' + money(tot);
+    v.splitStyle = 'font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.1em;padding:8px;background:' + (ok ? '#1B4DF5' : '#C6302B') + ';color:' + (ok ? '#F7F5F1' : '#111');
+
+    // receipt
+    const lo = s.lastOrder;
+    v.receiptNoLabel = lo ? lo.receipt : 'CR/26-27/——————';
+    v.receiptTime = lo ? new Date(lo.at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    v.receiptShift = s.shift ? s.shift.name + ' · ' + s.shift.venue + ' · sold by Rachit' : '';
+    v.receiptCollect = lo && lo.promised ? lo.promised : '';
+    v.receiptLines = lo ? lo.lines.map(l => ({ title: l.title, sub: l.sku + (l.stickers.length ? ' · ' + l.stickers.join(' · ') : ''), total: money(l.total) })) : [];
+    const rowStyle = (bold) => 'display:flex;justify-content:space-between;gap:8px' + (bold ? ';font-family:Eina,sans-serif;font-weight:700;font-size:22px;border-top:2px solid #111;padding-top:6px' : '');
+    v.receiptTotals = lo ? [
+      { label: 'Subtotal', value: money(lo.subtotal), style: rowStyle(false) },
+      { label: 'Discount', value: lo.discount ? '−' + money(lo.discount) : '—', style: rowStyle(false) },
+      { label: 'Paid · ' + lo.pay.toUpperCase(), value: money(lo.total), style: rowStyle(true) }
+    ] : [];
+    v.receiptRaised = lo ? money(lo.total === null ? null : lo.total - lo.cost) : '₹—';
+    v.sendWhatsapp = () => this.flash('WA.ME DEEP LINK OPENED · PNG ATTACHED');
+    v.sendEmail = () => this.flash(s.customer.email ? 'QUEUED VIA RESEND' : 'NO EMAIL CAPTURED');
+    v.backToSell = () => this.go('sell');
+
+    // orders
+    const tabs = [['pending', s.pressOnSite ? 'PENDING PRESS' : 'COLLECTIONS'],['all','SHIFT LOG'],['void','VOIDS']];
+    v.orderTabs = tabs.map(([k, l]) => ({ label: l + (k === 'pending' ? ' ' + s.orders.filter(o => o.fulfil !== 'handed_over').length : ''), style: chip(s.orderTab === k), onClick: () => this.setState({ orderTab: k }) }));
+    const list = s.orderTab === 'pending' ? s.orders.filter(o => o.fulfil === 'pending_press' || o.fulfil === 'collect_later')
+      : s.orderTab === 'void' ? s.orders.filter(o => o.void) : s.orders;
+    v.orderList = list.map(o => {
+      const mins = Math.floor((Date.now() - o.at) / 60000), secs = Math.floor((Date.now() - o.at) / 1000) % 60;
+      const late = mins >= 12;
+      return {
+        receipt: o.receipt,
+        sub: o.lines.map(l => l.title).join(' + ') + (o.queued ? ' · QUEUED' : ''),
+        total: money(o.total),
+        chip: o.void ? 'VOID' : o.fulfil === 'pending_press' ? mins + 'm ' + String(secs).padStart(2, '0') + 's' : o.fulfil === 'collect_later' ? 'COLLECT ' + o.promised : 'HANDED OVER',
+        chipStyle: 'font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.08em;padding:4px 6px;margin-top:4px;display:inline-block;background:' + (o.void || late ? '#C6302B' : o.fulfil === 'handed_over' ? '#111' : '#1B4DF5') + ';color:' + (o.void || late ? '#111' : '#F7F5F1'),
+        style: 'border:2px solid ' + (o.fulfil === 'pending_press' ? '#1B4DF5' : '#111') + ';border-radius:12px;background:#fff;padding:10px',
+        showSheet: o.lines.some(l => l.stickers.some(x => x.indexOf('@') > -1)),
+        placements: o.lines.flatMap(l => l.stickers.filter(x => x.indexOf('@') > -1)),
+        actions: [].concat(
+          o.fulfil === 'pending_press' ? [{ label: 'PRESSED', style: chip(false), onClick: () => this.setState(st => ({ orders: st.orders.map(x => x.id === o.id ? Object.assign({}, x, { fulfil: 'handed_over' }) : x), toast: 'HANDED OVER' })) }] : [],
+          o.fulfil === 'collect_later' ? [{ label: 'COLLECTED', style: chip(false), onClick: () => this.setState(st => ({ orders: st.orders.map(x => x.id === o.id ? Object.assign({}, x, { fulfil: 'handed_over' }) : x), toast: 'COLLECTED' })) }] : [],
+          o.void ? [] : [{ label: 'VOID', style: 'background:none;border:2px solid #C6302B;color:#C6302B;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.1em;padding:0 12px;min-height:44px;cursor:pointer', onClick: () => this.setState(st => ({ orders: st.orders.map(x => x.id === o.id ? Object.assign({}, x, { void: true, fulfil: 'handed_over' }) : x), toast: o.receipt + ' VOIDED — NUMBER KEPT' })) }]
+        )
+      };
+    });
+    v.ordersEmpty = !list.length;
+
+    // holds
+    v.holdList = s.holds.map(h => {
+      const left = Math.max(0, h.expires - Date.now());
+      const m = Math.floor(left / 60000), sec = Math.floor(left / 1000) % 60;
+      const soon = left < 15 * 60000;
+      return { title: h.title, sub: h.sub, timer: m + 'm ' + String(sec).padStart(2, '0') + 's',
+        timerStyle: 'font-family:Eina,sans-serif;font-weight:700;font-size:22px;color:' + (soon ? '#C6302B' : '#1B4DF5'),
+        style: 'border:2px solid ' + (soon ? '#C6302B' : '#111') + ';border-radius:12px;background:#fff;padding:10px',
+        onConvert: () => this.setState(st => ({ holds: st.holds.filter(x => x.id !== h.id), toast: 'HOLD CONVERTED — ADD TO CART' })),
+        onRelease: () => this.setState(st => ({ holds: st.holds.filter(x => x.id !== h.id), toast: 'HOLD RELEASED — AVAILABILITY RETURNED' })) };
+    });
+    v.holdsEmpty = !s.holds.length;
+
+    // sticker stock
+    v.stockQuery = s.stockQuery;
+    v.onStockQuery = e => this.setState({ stockQuery: e.target.value });
+    const setStock = (code, n) => this.setState(st => ({ designs: st.designs.map(d => d.code === code ? Object.assign({}, d, { stock: Math.max(0, n) }) : d) }));
+    v.stickerStock = s.designs.filter(d => !s.stockQuery || (d.code + d.name + d.bin).toLowerCase().includes(s.stockQuery.toLowerCase())).map(d => ({
+      code: d.code, name: d.name, bin: d.bin, stock: String(d.stock), thumbStyle: thumb(d.code),
+      style: 'display:flex;align-items:center;gap:10px;border:2px solid ' + (d.stock <= 5 ? '#C6302B' : '#111') + ';border-radius:10px;background:#fff;padding:7px',
+      onMinus: () => setStock(d.code, d.stock - 1),
+      onPlus: () => setStock(d.code, d.stock + 1),
+      onStock: e => setStock(d.code, parseInt(e.target.value, 10) || 0)
+    }));
+
+    // product matrix
+    v.productMatrix = ['Black','White'].flatMap(c => ['Oversized','Regular','Crop'].map(f => ({
+      label: (c + ' · ' + f).toUpperCase(),
+      cells: ['XS','S','M','L','XL','XXL'].map(sz => {
+        const k = s.skus.find(x => x.color === c && x.fit === f && x.size === sz);
+        if (!k) return { size: sz, onHand: '—', available: '—', style: 'padding:8px;text-align:center;border-left:1px solid #eee;background:#f0ece0;color:#aaa' };
+        const low = k.stock <= k.par;
+        return { size: sz, onHand: String(k.stock), available: String(this.availableFor(k)),
+          style: 'padding:8px;text-align:center;border-left:1px solid #eee;color:' + (low ? '#C6302B' : '#111') };
+      })
+    })));
+
+    // waste
+    v.wasteFields = [['TRANSFER CODE','wasteCode','M-014'],['QTY','wasteQty','1'],['PRODUCT SKU (IF RUINED)','wasteSku','TEE-BL-OVE-L']].map(([label, k, hint]) => ({
+      label, hint, value: s[k], onChange: e => this.setState({ [k]: e.target.value })
+    }));
+    v.wasteReason = s.wasteReason;
+    v.onWasteReason = e => this.setState({ wasteReason: e.target.value });
+    v.wasteReasons = [['misalignment','Misalignment'],['peel_failure','Peel failure'],['temperature','Temperature'],['print_defect','Print defect'],['garment_defect','Garment defect'],['other','Other']].map(([value, label]) => ({ value, label }));
+    v.submitWaste = () => {
+      if (!s.wasteCode.trim()) return this.flash('TRANSFER CODE REQUIRED');
+      const q = parseInt(s.wasteQty, 10) || 1;
+      this.setState(st => ({
+        waste: [{ left: st.wasteCode.toUpperCase() + ' ×' + q + (st.wasteSku ? ' + ' + st.wasteSku.toUpperCase() : ''), right: st.wasteReason.replace('_', ' ').toUpperCase() }].concat(st.waste),
+        designs: st.designs.map(d => d.code === st.wasteCode.toUpperCase() ? Object.assign({}, d, { stock: Math.max(0, d.stock - q) }) : d),
+        wasteCode: '', wasteSku: '', wasteQty: '1', toast: 'WASTE LOGGED · MOVEMENT REASON DAMAGE'
+      }));
+    };
+    v.wasteList = s.waste;
+
+    // returns
+    v.returnRef = s.returnRef;
+    v.onReturnRef = e => this.setState({ returnRef: e.target.value });
+    v.returnActions = [['replace','REPLACE'],['refund','REFUND'],['exchange','EXCHANGE'],['reject','REJECT']].map(([k, l]) => ({ label: l, style: chip(s.returnAction === k), onClick: () => this.setState({ returnAction: k }) }));
+    v.resaleableLabel = s.resaleable ? 'YES · RESTOCK' : 'NO · WRITE OFF';
+    v.resaleableStyle = chip(s.resaleable);
+    v.toggleResaleable = () => this.setState(st => ({ resaleable: !st.resaleable }));
+    v.submitReturn = () => {
+      if (!s.returnRef.trim()) return this.flash('LINK AN ORIGINAL ORDER');
+      this.setState(st => ({ returns: [st.returnRef + ' · ' + st.returnAction.toUpperCase() + ' · ' + (st.resaleable ? 'restocked' : 'written off')].concat(st.returns), returnRef: '', toast: st.returnAction === 'exchange' ? 'LINKED ₹0 REPLACEMENT ORDER CREATED' : 'RETURN RECORDED' }));
+    };
+    v.returnList = s.returns;
+
+    v.moreLinks = [['waste','WASTE','2 taps from Sell'],['returns','RETURNS & EXCHANGES',''],['holds','HOLDS', s.holds.length + ' active'],['stickers','STICKER STOCK',''],['close','CLOSE SHIFT','']].map(([k, label, meta]) => ({ label, meta, onClick: () => this.go(k) }));
+
+    // tab bar
+    v.tabBar = [['sell','SELL',''],['stickers','STOCK',''],['orders','ORDERS', String(s.orders.filter(o => o.fulfil !== 'handed_over').length)],['holds','HOLDS', String(s.holds.length)],['more','MORE','']].map(([k, label, badge]) => ({
+      label, badge, style: 'background:' + (S === k ? '#1B4DF5' : 'transparent') + ';color:#F7F5F1;border:none;border-right:1px solid #000;padding:9px 4px;min-height:56px;cursor:pointer', onClick: () => this.go(k)
+    }));
+
+    // close
+    v.countedCash = s.countedCash;
+    v.onCountedCash = e => this.setState({ countedCash: e.target.value });
+    const cashOrders = s.orders.filter(o => !o.void && (o.pay === 'cash' || o.pay === 'split'));
+    const expected = (s.shift ? s.shift.float : 0) + cashOrders.reduce((a, o) => a + (o.total || 0), 0);
+    v.expectedCash = money(expected);
+    const varv = s.countedCash === '' ? null : (parseFloat(s.countedCash) || 0) - expected;
+    v.variance = varv === null ? '₹—' : (varv > 0 ? '+' : '') + money(varv);
+    v.varianceStyle = 'display:flex;justify-content:space-between;font-family:Eina,sans-serif;font-weight:700;font-size:22px;color:' + (varv !== null && Math.abs(varv) > 200 ? '#C6302B' : '#111');
+    v.closeShift = this.closeShift;
+    v.closeBlocked = s.closeErr;
+    v.unusedBlock = String(s.receiptNext).padStart(6, '0') + '–' + String(s.blockEnd).padStart(6, '0');
+    v.summaryReady = !!s.summary;
+    v.summaryTitle = s.shift ? s.shift.name + ' · ' + s.shift.venue : '';
+    v.summaryStats = s.summary ? [
+      { label: 'GROSS', value: money(s.summary.gross) },
+      { label: 'ORDERS', value: String(s.summary.orders) },
+      { label: 'UNITS', value: String(s.summary.units) },
+      { label: 'CASH VARIANCE', value: v.variance }
+    ] : [];
+    v.summaryRaised = s.summary ? money(s.summary.gross - s.summary.cost) : '₹—';
+    v.shareSummary = () => this.flash('SHARED TO TEAM GROUP');
+
+    // customer sheet
+    v.customerSheet = s.customerSheet;
+    const mustContact = lo && lo.fulfil === 'collect_later';
+    v.contactReqLabel = mustContact ? 'REQUIRED — COLLECT LATER' : 'OPTIONAL';
+    v.contactReqStyle = 'font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em;padding:5px 7px;background:' + (mustContact ? '#C6302B' : '#111') + ';color:' + (mustContact ? '#111' : '#F7F5F1');
+    v.customerFields = [['name','Name'],['phone','Phone'],['email','Email']].map(([k, hint]) => ({ hint, value: s.customer[k], onChange: e => { const val = e.target.value; this.setState(st => ({ customer: Object.assign({}, st.customer, { [k]: val }) })); } }));
+    v.consentLabel = (s.consent ? '☑' : '☐') + '  MARKETING CONSENT';
+    v.consentStyle = 'background:' + (s.consent ? '#1B4DF5' : '#fff') + ';color:' + (s.consent ? '#F7F5F1' : '#111') + ';border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:48px;cursor:pointer;text-align:left;padding:0 12px';
+    v.toggleConsent = () => this.setState(st => ({ consent: !st.consent }));
+    v.skipLabel = mustContact ? 'CANNOT SKIP' : 'SKIP';
+    v.skipStyle = 'background:none;border:2px solid ' + (mustContact ? '#bbb' : '#111') + ';color:' + (mustContact ? '#bbb' : '#111') + ';font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:11px;letter-spacing:0.1em;min-height:52px;cursor:' + (mustContact ? 'not-allowed' : 'pointer');
+    v.skipCustomer = () => mustContact ? this.flash('CONTACT REQUIRED FOR COLLECT-LATER') : this.setState({ customerSheet: false, screen: 'receipt' });
+    v.saveCustomer = () => {
+      if (mustContact && !s.customer.phone.trim()) return this.flash('PHONE REQUIRED');
+      this.setState({ customerSheet: false, screen: 'receipt' });
+    };
+
+    // modals
+    v.pinModal = s.pinModal; v.modalPin = s.modalPin;
+    v.onModalPin = e => this.setState({ modalPin: e.target.value });
+    v.cancelModal = () => this.setState({ pinModal: null, modalPin: '', pinAction: null });
+    v.confirmModal = () => {
+      if (s.modalPin !== '1234') return this.flash('WRONG ADMIN PIN');
+      if (s.pinAction === 'charge') this.commit();
+      else this.setState({ pinModal: null, modalPin: '' });
+    };
+    v.swapOpen = s.swap ? s.swap + ' IS OUT OF STOCK' : null;
+    v.swapOptions = s.swap ? s.designs.filter(d => d.stock > 0 && d.size === (this.designBy(s.swap) || { size: 'M' }).size).slice(0, 3).map(d => ({
+      label: 'Swap for ' + d.code + ' · ' + d.name + ' · ' + d.bin,
+      onClick: () => this.setState(st => ({ cart: st.cart.map(it => Object.assign({}, it, { stickers: it.stickers.map(x => x.code === st.swap ? Object.assign({}, x, { code: d.code, size: d.size }) : x) })), swap: null, toast: 'SWAPPED TO ' + d.code }))
+    })) : [];
+    v.swapRemove = () => this.setState(st => ({ cart: st.cart.map(it => Object.assign({}, it, { stickers: it.stickers.filter(x => x.code !== st.swap) })), swap: null, toast: 'REMOVED FROM ORDER' }));
+
+    // ---------- KIOSK ----------
+    const K = s.kStep;
+    v.k_attract = K === 'attract'; v.k_presets = K === 'presets'; v.k_product = K === 'product'; v.k_canvas = K === 'canvas'; v.k_review = K === 'review'; v.k_ticket = K === 'ticket';
+    v.kInApp = K !== 'attract';
+    v.kStart = () => this.setState({ kStep: 'presets' });
+    v.kExit = () => this.setState({ kStep: 'attract', kPlace: [], kSel: null, kTicket: null });
+    v.kStepLabel = { presets: 'STEP 1 · PICK A LOOK', product: 'STEP 2 · PICK YOUR TEE', canvas: 'STEP 3 · ARRANGE', review: 'STEP 4 · CHECK IT OVER', ticket: 'DONE' }[K] || '';
+    v.kTotal = money(this.kTotalValue());
+    const heroIcons = [['animation','S-031'],['format_size','L-006'],['graphic_eq','M-002'],['deblur','L-014']];
+    v.kHeroTiles = heroIcons.map(([icon, code], i) => {
+      const grounds = ['#F7F5F1', '#0F0F10', '#C6302B', '#F7F5F1'];
+      const bg = grounds[i], fg = bg === '#F7F5F1' ? '#1B4DF5' : '#F7F5F1';
+      return {
+        icon, code,
+        style: 'position:relative;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:' + bg + ';color:' + fg + ';border:2px solid #0F0F10;border-radius:16px;transform:rotate(' + (i % 2 ? '-2deg' : '2deg') + ')',
+        notchStyle: 'position:absolute;top:-6px;right:16px;width:14px;height:14px;border-radius:50%;background:#1B4DF5;border:2px solid #0F0F10',
+        iconStyle: 'font-size:26px',
+        codeStyle: 'font-family:JetBrains Mono,monospace;font-size:9px;letter-spacing:0.06em;opacity:.85'
+      };
+    });
+    v.attractStrip = ['200 DESIGNS','TRUE SCALE','NO SURPRISES','FUNDS AQUATERRA'].map((l, i) => ({
+      label: l, style: 'flex:1 1 0;padding:9px 6px;text-align:center;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.12em;color:' + (i % 2 ? '#C6302B' : '#F7F5F1') + ';border-right:1px solid #333'
+    }));
+    const presetDefs = [
+      { name: 'Deep Field Set', codes: ['M-014','S-011'] },
+      { name: 'Riot Season', codes: ['M-009'] },
+      { name: 'Cassette Sun', codes: ['L-001'] },
+      { name: 'Hand Wash Only', codes: ['M-018','S-023'] }
+    ];
+    v.presetList = presetDefs.map((p, i) => {
+      const val = p.codes.reduce((a, c) => { const d = this.designBy(c); const x = d ? this.stickerPriceOf(d) : null; return (a === null || x === null) ? null : a + x; }, 699);
+      return { name: p.name, codes: p.codes.join(' + '), price: money(this.pricesPending() ? null : val),
+        artLabel: p.codes.join(' + '),
+        artStyle: 'display:flex;align-items:center;justify-content:center;height:150px;border-bottom:3px solid #111;background-image:repeating-linear-gradient(135deg,#dcd6c4 0 7px,#F7F5F1 7px 14px);font-family:JetBrains Mono,monospace;font-size:10px;color:#444;text-align:center;padding:8px',
+        onClick: () => this.setState({ kStep: 'product', kPlace: p.codes.map((c, j) => { const d = this.designBy(c); const cm = this.cmFor(d); return { id: 'pp' + j, code: c, size: d.size, cm, x: 50 - (cm.w / 28 * 100) / 2, y: 18 + j * 34, rot: 0, side: 'front' }; }) }) };
+    });
+    v.kGoCanvas = () => this.setState({ kStep: 'product', kPlace: [] });
+    v.kPickerGroups = [
+      { label: 'COLOUR', options: ['Black','White'].map(c => ({ label: c.toUpperCase(), note: '', style: chip(s.pickColor === c), onClick: () => this.setState({ pickColor: c }) })) },
+      { label: 'FIT', options: ['Oversized','Regular','Crop'].map(f => ({ label: f.toUpperCase(), note: '', style: chip(s.pickFit === f), onClick: () => this.setState({ pickFit: f }) })) },
+      { label: 'SIZE', options: ['XS','S','M','L','XL','XXL'].map(sz => {
+          const k = s.skus.find(x => x.color === s.pickColor && x.fit === s.pickFit && x.size === sz);
+          const avail = k ? this.availableFor(k) : 0;
+          return { label: sz, note: !k ? 'n/a' : avail <= 0 ? 'ask a volunteer' : avail + ' left',
+            style: !k || avail <= 0 ? 'background:#e8e4d8;color:#999;border:2px dashed #bbb;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:13px;padding:0 14px;min-height:56px;cursor:not-allowed' : chip(s.kSku === k.id),
+            onClick: () => { if (!k || avail <= 0) return; this.setState({ kSku: k.id }); } };
+        }) }
+    ];
+    v.kToCanvasLabel = s.kSku ? 'ARRANGE TRANSFERS →' : 'PICK A SIZE TO CONTINUE';
+    v.kToCanvasStyle = 'background:' + (s.kSku ? '#1B4DF5' : '#e8e4d8') + ';color:' + (s.kSku ? '#F7F5F1' : '#999') + ';border:3px solid ' + (s.kSku ? '#111' : '#bbb') + ';font-family:Eina,sans-serif;font-weight:700;font-size:22px;min-height:66px;cursor:' + (s.kSku ? 'pointer' : 'not-allowed');
+    v.kToCanvas = () => s.kSku && this.setState({ kStep: 'canvas' });
+    v.kCanvasCols = 'minmax(0,1.1fr) minmax(0,1fr)';
+    v.kSideChips = [['front','FRONT'],['back','BACK']].map(([k, l]) => ({ label: l,
+      style: 'background:' + (s.kSide === k ? '#F7F5F1' : 'transparent') + ';color:' + (s.kSide === k ? '#111' : '#F7F5F1') + ';border:2px solid #F7F5F1;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em;padding:11px 15px;min-height:44px;cursor:pointer',
+      reviewStyle: 'background:' + (s.kSide === k ? '#111' : 'transparent') + ';color:' + (s.kSide === k ? '#F7F5F1' : '#111') + ';border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:10px;letter-spacing:0.12em;padding:11px 15px;min-height:44px;cursor:pointer',
+      onClick: () => this.setState({ kSide: k, kSel: null }) }));
+    const kSkuObj = s.skus.find(x => x.id === s.kSku);
+    v.kMockStyle = 'position:relative;width:min(88%,340px);aspect-ratio:3/4;background-image:repeating-linear-gradient(135deg,' + (kSkuObj && kSkuObj.color === 'White' ? '#e9e5d8 0 8px,#F7F5F1 8px 16px' : '#232323 0 8px,#1a1a1a 8px 16px') + ');border:2px solid #555';
+    v.kPrintAreaStyle = 'position:absolute;left:19%;top:15%;width:62%;aspect-ratio:28/35;border:1px dashed #777;touch-action:none';
+    v.kMockNote = 'Flat mockup + print rectangle are placeholders — real measurements pending PRD §16.7–8.';
+    v.kPlacements = s.kPlace.filter(p => p.side === s.kSide).map(p => {
+      const geom = 'left:' + p.x + '%;top:' + p.y + '%;width:' + (p.cm.w / 28 * 100) + '%;height:' + (p.cm.h / 35 * 100) + '%';
+      const skin = 'display:flex;align-items:center;justify-content:center;background-image:repeating-linear-gradient(135deg,rgba(244,240,230,.94) 0 5px,rgba(220,214,196,.94) 5px 10px);font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;color:#0F0F10';
+      const on = s.kSel === p.id;
+      return {
+        code: p.code,
+        style: 'position:absolute;' + geom + ';transform:rotate(' + p.rot + 'deg)' + (on ? ' scale(1.02)' : '') + ';' + skin + ';border:2px solid ' + (on ? '#C6302B' : '#111') + ';box-shadow:' + (on ? '0 0 0 3px rgba(232,85,42,.35)' : 'none') + ';cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;animation:stallPop .24s cubic-bezier(.34,1.56,.64,1);transition:box-shadow .14s ease',
+        reviewStyle: 'position:absolute;' + geom + ';transform:rotate(' + p.rot + 'deg);' + skin + ';border:2px solid #0F0F10;animation:stallPop .3s cubic-bezier(.34,1.56,.64,1)',
+        onDown: this.startDrag(p),
+        onSelect: () => this.setState({ kSel: p.id })
+      };
+    });
+    v.kPrintAreaStyleStatic = 'position:absolute;left:19%;top:15%;width:62%;aspect-ratio:28/35;border:1px dashed #777';
+    v.kBackToCanvas = () => this.setState({ kStep: 'canvas' });
+    const kRevSku = s.skus.find(x => x.id === s.kSku);
+    v.kReviewGarment = kRevSku ? kRevSku.color + ' · ' + kRevSku.fit + ' · size ' + kRevSku.size : '—';
+    v.kReviewLines = [].concat(
+      kRevSku ? [{ title: kRevSku.color + ' ' + kRevSku.fit + ' tee', sub: 'Size ' + kRevSku.size + ' · ' + kRevSku.sku, price: money(kRevSku.price) }] : [],
+      s.kPlace.map(p => { const d = this.designBy(p.code); return { title: p.code + ' · ' + (d ? d.name : ''), sub: p.side + ' · ' + p.cm.w + '×' + p.cm.h + 'cm · ' + Math.round(p.rot) + '°', price: money(d ? this.stickerPriceOf(d) : null) }; })
+    );
+    v.kNudge = s.kNudge;
+    v.kQuery = s.kQuery;
+    v.onKQuery = e => this.setState({ kQuery: e.target.value });
+    const tags = ['all'].concat(Array.from(new Set(s.designs.flatMap(d => d.tags))).sort());
+    v.kTagChips = tags.map(t => ({ label: t.toUpperCase(), style: 'flex:0 0 auto;background:' + (s.kTag === t ? '#111' : '#fff') + ';color:' + (s.kTag === t ? '#F7F5F1' : '#111') + ';border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.1em;padding:0 10px;min-height:40px;white-space:nowrap;cursor:pointer', onClick: () => this.setState({ kTag: t }) }));
+    v.kCatalogue = s.designs.filter(d => d.kiosk && d.stock > 0 && (s.kTag === 'all' || d.tags.includes(s.kTag)) && match(d, s.kQuery)).map(d => ({
+      code: d.code, sizeLabel: d.size + ' · ' + this.state.printCm[d.size][0] + 'cm',
+      thumbStyle: 'display:flex;align-items:center;justify-content:center;height:72px;border:1px solid #111;background-image:repeating-linear-gradient(135deg,#dcd6c4 0 5px,#F7F5F1 5px 10px);font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700',
+      onClick: () => this.kAdd(d)
+    }));
+    const selP = s.kPlace.find(p => p.id === s.kSel);
+    v.kSelected = selP ? selP.code + ' · ' + selP.cm.w + '×' + selP.cm.h + 'cm' : null;
+    v.kRotValue = selP ? selP.rot : 0;
+    v.kRotLabel = selP ? Math.round(selP.rot) + '°' : '';
+    v.onKRotate = e => { const r = parseFloat(e.target.value); this.setState(st => ({ kPlace: st.kPlace.map(p => p.id === st.kSel ? Object.assign({}, p, { rot: r }) : p) })); };
+    v.kRemovePlacement = () => this.setState(st => ({ kPlace: st.kPlace.filter(p => p.id !== st.kSel), kSel: null }));
+    v.kTicketBtnLabel = s.kPlace.length ? 'REVIEW · ' + money(this.kTotalValue()) : 'TAP A DESIGN TO START';
+    v.kTicketBtnStyle = 'background:' + (s.kPlace.length ? '#C6302B' : '#e8e4d8') + ';color:' + (s.kPlace.length ? '#111' : '#999') + ';border:none;border-top:3px solid #111;font-family:Eina,sans-serif;font-weight:700;font-size:24px;min-height:72px;cursor:' + (s.kPlace.length ? 'pointer' : 'not-allowed');
+    v.kToReview = () => s.kPlace.length ? this.setState({ kStep: 'review' }) : this.setState({ kNudge: 'TAP A DESIGN ON THE RIGHT' });
+    v.kGetTicket = K === 'canvas' ? v.kToReview : this.kMakeTicket;
+    v.kTicketCode = s.kTicket ? s.kTicket.code : '————';
+    v.kTicketLines = s.kTicket ? s.kTicket.place.map(p => p.code + ' · ' + p.side + ' · x ' + Math.round(p.x) + '% y ' + Math.round(p.y) + '% · ' + Math.round(p.rot) + '° · ' + p.cm.w + '×' + p.cm.h + 'cm') : [];
+    v.kTicketTotal = money(s.kTicket ? s.kTicket.total : null);
+    v.kTicketExpiry = s.kTicket ? Math.max(0, 30 - Math.floor((Date.now() - s.kTicket.at) / 60000)) + ' min' : '30 min';
+    v.kReset = () => this.setState({ kStep: 'attract', kPlace: [], kSel: null, kTicket: null });
+
+    // ---------- ADMIN ----------
+    const A = s.adminTab;
+    v.a_dash = A === 'dash'; v.a_pricing = A === 'pricing'; v.a_b2b = A === 'b2b'; v.a_catalogue = A === 'catalogue';
+    v.adminTitle = { dash: 'DASHBOARD', pricing: 'PRICING', b2b: 'B2B PIPELINE', catalogue: 'CATALOGUE' }[A];
+    v.healthLabel = s.online ? 'KEEP-ALIVE OK · CATALOGUE SYNCED' : 'OFFLINE · ' + s.outbox + ' QUEUED';
+    v.healthStyle = 'font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.14em;padding:7px 9px;background:' + (s.online ? '#F7F5F1' : '#C6302B') + ';color:#0F0F10';
+    const gross = s.orders.filter(o => !o.void).reduce((a, o) => a + (o.total || 0), 0);
+    const cogs = s.orders.filter(o => !o.void).reduce((a, o) => a + (o.cost || 0), 0);
+    v.raisedTotal = money(this.pricesPending() && !gross ? null : gross - cogs);
+    const cardStyle = (warn) => 'border:2px solid ' + (warn ? '#C6302B' : '#111') + ';border-radius:12px;background:#fff;padding:14px;display:flex;flex-direction:column;gap:5px';
+    const bigVal = (warn) => 'font-family:Eina,sans-serif;font-weight:700;font-size:32px;line-height:1;color:' + (warn ? '#C6302B' : '#111');
+    const overdue = s.orders.filter(o => o.fulfil === 'collect_later').length;
+    const lowDesigns = s.designs.filter(d => d.stock <= 5).length;
+    v.dashCards = [
+      { label: 'GROSS TODAY', value: money(gross || (this.pricesPending() ? null : 0)), note: s.orders.length + ' orders', style: cardStyle(false), valueStyle: bigVal(false) },
+      { label: 'PENDING PRESS', value: String(pend.length), note: 'oldest ' + (pend.length ? Math.floor((Date.now() - pend[pend.length - 1].at) / 60000) + 'm' : '—'), style: cardStyle(pend.length > 3), valueStyle: bigVal(pend.length > 3) },
+      { label: 'COLLECT LATER', value: String(overdue), note: 'promised dates set', style: cardStyle(overdue > 0), valueStyle: bigVal(overdue > 0) },
+      { label: 'TICKET → SALE', value: s.tickets.length || s.orders.length ? Math.round(s.orders.filter(o => o.lines.some(l => l.stickers.some(x => x.indexOf('@') > -1))).length / Math.max(1, s.orders.filter(o => o.lines.some(l => l.stickers.some(x => x.indexOf('@') > -1))).length + s.tickets.length) * 100) + '%' : '—', note: s.tickets.length + ' open tickets', style: cardStyle(false), valueStyle: bigVal(false) },
+      { label: 'WASTE LOGGED', value: String(s.waste.length), note: 'cost of waste ₹—', style: cardStyle(s.waste.length > 2), valueStyle: bigVal(s.waste.length > 2) },
+      { label: 'BELOW PAR', value: String(lowDesigns), note: 'designs at or under 5', style: cardStyle(lowDesigns > 0), valueStyle: bigVal(lowDesigns > 0) },
+      { label: 'B2B COMMITTED', value: money(s.b2b.filter(b => ['confirmed','production','ready','dispatched'].includes(b.stage)).reduce((a, b) => a + b.qty * b.price, 0)), note: 'collected shown separately', style: cardStyle(false), valueStyle: bigVal(false) },
+      { label: 'HOLDS ACTIVE', value: String(s.holds.length), note: 'expire on shift close', style: cardStyle(false), valueStyle: bigVal(false) }
+    ];
+
+    v.priceHead = ['COLOUR · FIT','XS','S','M','L','XL','XXL','COST'];
+    v.priceRows = ['Black','White'].flatMap(c => ['Oversized','Regular','Crop'].map(f => ({
+      label: (c + ' · ' + f).toUpperCase(),
+      cells: ['XS','S','M','L','XL','XXL','cost'].map(sz => {
+        if (sz === 'cost') {
+          const k = s.skus.find(x => x.color === c && x.fit === f);
+          return { value: k && k.cost !== null ? String(k.cost) : '', disabled: false, hint: '₹—',
+            style: 'width:100%;border:none;background:#f6f4ec;padding:9px;font-family:Eina,sans-serif;font-weight:700;font-size:15px;text-align:center',
+            onChange: e => { const n = parseFloat(e.target.value); this.setState(st => ({ skus: st.skus.map(x => x.color === c && x.fit === f ? Object.assign({}, x, { cost: isNaN(n) ? null : n }) : x) })); } };
+        }
+        const k = s.skus.find(x => x.color === c && x.fit === f && x.size === sz);
+        if (!k) return { value: '', disabled: true, hint: 'n/a', style: 'width:100%;border:none;background:#eee9dc;padding:9px;text-align:center;color:#aaa;font-size:13px' };
+        return { value: k.price !== null ? String(k.price) : '', disabled: false, hint: '₹—',
+          style: 'width:100%;border:none;background:#fff;padding:9px;font-family:Eina,sans-serif;font-weight:700;font-size:16px;text-align:center',
+          onChange: e => { const n = parseFloat(e.target.value); this.setState(st => ({ skus: st.skus.map(x => x.id === k.id ? Object.assign({}, x, { price: isNaN(n) ? null : n }) : x) })); } };
+      })
+    })));
+    v.stickerPriceHead = ['SIZE','PRINT cm','PRICE','COST','DEFAULT PAR'];
+    v.stickerPriceRows = ['S','M','L'].map(sz => ({
+      label: sz,
+      cells: [
+        { value: String(s.printCm[sz][0]), hint: 'cm', style: 'width:100%;border:none;padding:9px;font-family:Eina,sans-serif;font-weight:700;font-size:16px;text-align:center;background:#fff',
+          onChange: e => { const n = parseFloat(e.target.value) || 0; this.setState(st => ({ printCm: Object.assign({}, st.printCm, { [sz]: [n, n] }) })); } },
+        { value: s.stickerPrice[sz] !== null ? String(s.stickerPrice[sz]) : '', hint: '₹—', style: 'width:100%;border:none;padding:9px;font-family:Eina,sans-serif;font-weight:700;font-size:16px;text-align:center;background:#fff',
+          onChange: e => { const n = parseFloat(e.target.value); this.setState(st => ({ stickerPrice: Object.assign({}, st.stickerPrice, { [sz]: isNaN(n) ? null : n }) })); } },
+        { value: s.stickerCost[sz] !== null ? String(s.stickerCost[sz]) : '', hint: '₹—', style: 'width:100%;border:none;padding:9px;font-family:Eina,sans-serif;font-weight:700;font-size:16px;text-align:center;background:#f6f4ec',
+          onChange: e => { const n = parseFloat(e.target.value); this.setState(st => ({ stickerCost: Object.assign({}, st.stickerCost, { [sz]: isNaN(n) ? null : n }) })); } },
+        { value: '10', hint: '', style: 'width:100%;border:none;padding:9px;font-family:Eina,sans-serif;font-weight:700;font-size:16px;text-align:center;background:#f6f4ec', onChange: () => {} }
+      ]
+    }));
+
+    const stages = [['enquiry','ENQUIRY'],['quoted','QUOTED'],['confirmed','CONFIRMED'],['production','PRODUCTION'],['ready','READY'],['dispatched','DISPATCHED'],['closed','CLOSED'],['lost','LOST']];
+    v.b2bColumns = stages.map(([k, l]) => {
+      const cards = s.b2b.filter(b => b.stage === k);
+      return { label: l, count: String(cards.length), cards: cards.map(b => {
+        const m = (b.price - b.cost) / b.price * 100;
+        return { org: b.org, meta: b.qty + ' × ' + money(b.price) + ' · ' + b.owner,
+          margin: m.toFixed(1) + '% margin',
+          marginStyle: 'display:inline-block;margin-top:6px;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.08em;padding:4px 6px;background:' + (m < 10 ? '#C6302B' : m < 15 ? '#f0c000' : '#1B4DF5') + ';color:' + (m < 15 ? '#111' : '#F7F5F1'),
+          style: 'all:unset;cursor:pointer;display:block;border:2px solid #0F0F10;background:#fff;padding:9px',
+          onClick: () => {
+            const i = stages.findIndex(x => x[0] === b.stage);
+            const next = stages[Math.min(i + 1, 6)][0];
+            this.setState(st => ({ b2b: st.b2b.map(x => x.id === b.id ? Object.assign({}, x, { stage: next }) : x), toast: b.org.toUpperCase() + ' → ' + next.toUpperCase() }));
+          } };
+      }) };
+    });
+    v.b2bHeadline = [
+      { label: 'COMMITTED', value: money(s.b2b.filter(b => ['confirmed','production','ready','dispatched'].includes(b.stage)).reduce((a, b) => a + b.qty * b.price, 0)) },
+      { label: 'COLLECTED', value: money(s.b2b.filter(b => ['dispatched','closed'].includes(b.stage)).reduce((a, b) => a + b.qty * b.price, 0)) }
+    ];
+    v.b2bFields = [['CLIENT ORG','org','Symbiosis Lit Fest'],['CONTACT','contact','Name · phone'],['ACCOUNT OWNER','owner','Required'],['QUANTITY','qty','120'],['UNIT PRICE ₹','price','540'],['UNIT COST ₹','cost','430']].map(([label, k, hint]) => ({
+      label, hint, value: s.b2bDraft[k], onChange: e => { const val = e.target.value; this.setState(st => ({ b2bDraft: Object.assign({}, st.b2bDraft, { [k]: val }), b2bErr: '' })); }
+    }));
+    const m = this.b2bMargin(s.b2bDraft);
+    v.marginLabel = m === null ? '—' : m.toFixed(1) + '%';
+    v.marginNote = m === null ? 'Enter unit price and unit cost. Margin computes live.' : m < 0 ? 'Hard block. Negative margin cannot be saved.' : m < 10 ? 'Below 10% — admin PIN required to save.' : m < 15 ? 'Below your 15% comfort floor. Amber, but saveable.' : 'Above floor. Clear to save.';
+    v.marginBoxStyle = 'display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:14px;border:3px solid ' + (m === null ? '#111' : m < 10 ? '#C6302B' : m < 15 ? '#f0c000' : '#1B4DF5') + ';background:' + (m !== null && m < 10 ? '#fdece7' : '#fff');
+    v.b2bPinNeeded = m !== null && m >= 0 && m < 10;
+    v.b2bPin = s.b2bPin;
+    v.onB2bPin = e => this.setState({ b2bPin: e.target.value });
+    v.saveB2b = this.saveB2b; v.b2bErr = s.b2bErr;
+    v.b2bSaveLabel = m !== null && m < 0 ? 'BLOCKED — NEGATIVE MARGIN' : 'SAVE ENQUIRY';
+    v.b2bSaveStyle = 'background:' + (m !== null && m < 0 ? '#e8e4d8' : '#1B4DF5') + ';color:' + (m !== null && m < 0 ? '#999' : '#F7F5F1') + ';border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-size:20px;min-height:56px;cursor:pointer';
+
+    v.catHead = ['CODE','NAME','TAGS','STOCK','BIN','KIOSK'];
+    v.catRows = s.designs.map(d => ({
+      code: d.code, name: d.name, tags: d.tags.join(', '), stock: String(d.stock), bin: d.bin,
+      stockStyle: 'padding:8px;font-family:Eina,sans-serif;font-weight:700;font-size:18px;color:' + (d.stock <= 5 ? '#C6302B' : '#111'),
+      toggleLabel: d.kiosk ? 'VISIBLE' : 'HIDDEN',
+      toggleStyle: 'background:' + (d.kiosk ? '#1B4DF5' : '#e8e4d8') + ';color:' + (d.kiosk ? '#F7F5F1' : '#666') + ';border:2px solid #0F0F10;font-family:Eina,sans-serif;font-weight:700;font-weight:900;font-size:9px;letter-spacing:0.1em;padding:7px 8px;cursor:pointer',
+      onToggle: () => this.setState(st => ({ designs: st.designs.map(x => x.code === d.code ? Object.assign({}, x, { kiosk: !x.kiosk }) : x) }))
+    }));
+    v.autoTag = () => this.flash('AUTO-TAG QUEUED FOR 18 DESIGNS');
+    v.qrSheet = () => this.flash('A4 LABEL SHEET GENERATED · 18 LABELS');
+
+    v.paRef = this.paRef;
+    return v;
+  }
+}
+</script>
+</body>
+</html>
