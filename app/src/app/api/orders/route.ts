@@ -157,6 +157,31 @@ export async function POST(req: NextRequest) {
 
   if (orderErr) return NextResponse.json({ error: orderErr.message }, { status: 500 });
 
+  if (designTicket) {
+    const { data: ticketRow } = await admin
+      .from("stall_design_tickets")
+      .select("id, payload")
+      .eq("code", designTicket)
+      .eq("status", "open")
+      .maybeSingle();
+    if (ticketRow) {
+      await admin
+        .from("stall_design_tickets")
+        .update({ status: "redeemed", order_id: order.id })
+        .eq("id", ticketRow.id);
+      // Real stock now decrements below, so release the kiosk's soft-hold
+      // session reservations for this ticket's stickers.
+      const payload = ticketRow.payload as { garments?: { stickers?: { hold_id?: string }[] }[] };
+      const holdIds = (payload.garments || []).flatMap((g) => (g.stickers || []).map((s) => s.hold_id)).filter(Boolean);
+      if (holdIds.length) {
+        await admin
+          .from("stall_holds")
+          .update({ released_at: new Date().toISOString() })
+          .in("id", holdIds as string[]);
+      }
+    }
+  }
+
   for (const line of items) {
     const lineTotal = line.unit_price * line.qty;
     const { data: item, error: itemErr } = await admin

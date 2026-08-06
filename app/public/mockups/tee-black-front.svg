@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
+  <rect width="400" height="500" fill="#F7F5F1"/>
+  <path d="M120 40 L160 20 L200 35 L240 20 L280 40 L340 90 L300 150 L270 120 L270 460 L130 460 L130 120 L100 150 L60 90 Z"
+        fill="#0F0F10" stroke="#000" stroke-width="2"/>
+  <rect x="112" y="145" width="176" height="228" fill="none" stroke="#1B4DF5" stroke-width="1.5" stroke-dasharray="6 6" opacity="0.55"/>
+  <text x="200" y="480" text-anchor="middle" font-family="monospace" font-size="12" fill="#777">PLACEHOLDER MOCKUP · BLACK · FRONT</text>
+</svg>

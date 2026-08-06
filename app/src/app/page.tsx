@@ -61,6 +61,7 @@ export default function SellPage() {
 
   const [ticketCode, setTicketCode] = useState("");
   const [ticketErr, setTicketErr] = useState("");
+  const [redeemedTicketCode, setRedeemedTicketCode] = useState<string | null>(null);
 
   const [discountAmt, setDiscountAmt] = useState("");
   const [discountPct, setDiscountPct] = useState("");
@@ -248,19 +249,47 @@ export default function SellPage() {
 
   async function redeemTicket() {
     setTicketErr("");
-    if (!ticketCode.trim()) return;
-    const sb = supabaseBrowser();
-    const { data, error } = await sb
-      .from("stall_design_tickets")
-      .select("*")
-      .eq("code", ticketCode.trim().toUpperCase())
-      .eq("status", "open")
-      .maybeSingle();
-    if (error || !data) {
-      setTicketErr("No open ticket with that code. (Kiosk isn't built yet — this loads DB rows if seeded.)");
+    const code = ticketCode.trim().toUpperCase();
+    if (!code) return;
+    const res = await fetch(`/api/tickets/${code}`);
+    const j = await res.json();
+    if (!res.ok) {
+      setTicketErr(j.error || "No open ticket with that code.");
       return;
     }
-    setTicketErr("Ticket found but Design Studio payload format is a Phase 2 stub — load manually for now.");
+    type TicketSticker = {
+      sticker_design_id: string;
+      code: string;
+      side: string;
+      unit_price: number;
+      unit_cost: number;
+    };
+    type TicketGarment = {
+      product_sku_id: string;
+      sku_code: string;
+      unit_price: number;
+      unit_cost: number;
+      stickers: TicketSticker[];
+    };
+    const payload = j.ticket.payload as { garments: TicketGarment[] };
+    const newGarments: CartGarment[] = payload.garments.map((g) => ({
+      key: uuidv4(),
+      product_sku_id: g.product_sku_id,
+      label: `${g.sku_code} (from ticket ${code})`,
+      stockNote: "from design ticket",
+      unit_price: Number(g.unit_price),
+      unit_cost: Number(g.unit_cost),
+      stickers: g.stickers.map((s) => ({
+        key: uuidv4(),
+        sticker_design_id: s.sticker_design_id,
+        code: s.code,
+        unit_price: Number(s.unit_price),
+        unit_cost: Number(s.unit_cost),
+      })),
+    }));
+    setGarments((prev) => [...prev, ...newGarments]);
+    setRedeemedTicketCode(code);
+    setTicketCode("");
   }
 
   const subtotal = useMemo(() => {
@@ -319,6 +348,7 @@ export default function SellPage() {
     setPayment("cash");
     setCashAmt("");
     setUpiAmt("");
+    setRedeemedTicketCode(null);
   }
 
   async function charge() {
@@ -373,6 +403,7 @@ export default function SellPage() {
       subtotal,
       discountAmount,
       discountReason: discountAmount > 0 ? discountReason : undefined,
+      designTicket: redeemedTicketCode || undefined,
       total,
       costTotal: garments.reduce((s, g) => s + g.unit_cost, 0),
       paymentMethod: payment,
