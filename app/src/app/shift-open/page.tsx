@@ -88,7 +88,7 @@ export default function ShiftOpenPage() {
           </button>
         </div>
         {err && (
-          <div className="bg-signal text-ink p-2.5 font-extrabold text-[11px] tracking-wide uppercase">{err}</div>
+          <div className="bg-signal text-cream p-2.5 font-extrabold text-[11px] tracking-wide uppercase">{err}</div>
         )}
         <BigButton onClick={open} disabled={busy || !name}>
           {busy ? "OPENING…" : "OPEN SHIFT"}

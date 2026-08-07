@@ -13,14 +13,14 @@ const TABS = [
 export function TabBar() {
   const pathname = usePathname();
   return (
-    <div className="sticky bottom-0 bg-ink border-t-2 border-ink flex">
+    <nav aria-label="Primary" className="sticky bottom-0 bg-ink border-t-2 border-ink flex">
       {TABS.map((t) => {
         const active = pathname === t.href || (t.href === "/stock/products" && pathname.startsWith("/stock"));
         return (
           <Link
             key={t.href}
             href={t.href}
-            className={`flex-1 text-center py-2.5 font-extrabold text-[11px] tracking-wide ${
+            className={`flex-1 text-center py-2.5 min-h-[44px] flex items-center justify-center font-extrabold text-[11px] tracking-wide ${
               active ? "text-blue bg-cream" : "text-cream"
             }`}
           >
@@ -28,6 +28,6 @@ export function TabBar() {
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }

@@ -181,7 +181,7 @@ export default function OrdersPage() {
     <div className="min-h-dvh flex flex-col">
       <PosFrame kicker="STALL OS · ORDERS" title="Orders">
         {pending.length > 0 && (
-          <div className="bg-signal text-ink p-2.5 font-extrabold text-[11px] tracking-wide uppercase">
+          <div className="bg-signal text-cream p-2.5 font-extrabold text-[11px] tracking-wide uppercase">
             {pending.length} pending press
           </div>
         )}
@@ -199,7 +199,7 @@ export default function OrdersPage() {
                 ) : (
                   <button
                     onClick={() => voidOrder(o.id)}
-                    className="border border-signal text-signal text-[9px] font-extrabold px-1.5 py-1"
+                    className="tap-target min-w-[44px] inline-flex items-center justify-center border border-signal text-signal text-[9px] font-extrabold px-1.5 py-1"
                   >
                     VOID
                   </button>

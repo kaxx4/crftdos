@@ -533,7 +533,7 @@ export default function SellPage() {
             </BigButton>
           </div>
           {ticketErr && (
-            <div className="bg-signal text-ink p-2 font-extrabold text-[10px] tracking-wide uppercase">
+            <div className="bg-signal text-cream p-2 font-extrabold text-[10px] tracking-wide uppercase">
               {ticketErr}
             </div>
           )}
@@ -552,7 +552,15 @@ export default function SellPage() {
           {garments.map((g) => (
             <div
               key={g.key}
+              role="button"
+              tabIndex={0}
               onClick={() => setTargetGarmentKey(g.key)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setTargetGarmentKey(g.key);
+                }
+              }}
               className={`p-2.5 border-b border-neutral-200 cursor-pointer ${
                 targetGarmentKey === g.key ? "bg-blue/10" : ""
               }`}
@@ -571,7 +579,7 @@ export default function SellPage() {
                       e.stopPropagation();
                       removeGarment(g.key);
                     }}
-                    className="border border-signal text-signal text-[9px] font-extrabold px-1.5 py-1 tracking-wide"
+                    className="tap-target min-w-[44px] inline-flex items-center justify-center border border-signal text-signal text-[9px] font-extrabold px-1.5 py-1 tracking-wide"
                   >
                     REMOVE
                   </button>
@@ -587,7 +595,7 @@ export default function SellPage() {
                         e.stopPropagation();
                         removeStickerFromGarment(g.key, st.key);
                       }}
-                      className="text-signal font-bold"
+                      className="tap-target min-w-[44px] inline-flex items-center justify-center text-signal font-bold"
                     >
                       ×
                     </button>
@@ -786,7 +794,7 @@ export default function SellPage() {
             <option value="other">Other</option>
           </select>
           {needsAdminGate && !discountUnlocked && (
-            <div className="bg-signal text-ink p-2.5 font-extrabold text-[10px] tracking-wide uppercase">
+            <div className="bg-signal text-cream p-2.5 font-extrabold text-[10px] tracking-wide uppercase">
               Above 10% — admin PIN required at Charge
             </div>
           )}

@@ -23,13 +23,13 @@ export function PosFrame({
           <div className="flex justify-between items-start gap-2">
             <div>
               <div className="font-extrabold text-[9px] tracking-[0.2em] opacity-75">{kicker}</div>
-              <div className="font-extrabold text-2xl leading-tight tracking-wide">{title}</div>
+              <h1 className="font-extrabold text-2xl leading-tight tracking-wide">{title}</h1>
             </div>
             {meta && <div className="text-right font-mono text-[10px] leading-relaxed opacity-85">{meta}</div>}
           </div>
         </div>
         {banner}
-        <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-3.5">{children}</div>
+        <main className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-3.5">{children}</main>
       </div>
     </div>
   );

@@ -57,16 +57,26 @@ export default function ProductStockPage() {
                   <Mono>{color} · {fit} · {s.size}</Mono>
                 </div>
                 {editing === s.id ? (
-                  <div className="flex gap-1.5">
-                    <input
-                      autoFocus
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      className="border-2 border-ink w-16 p-1.5 text-center"
-                    />
-                    <button onClick={() => saveStock(s.id)} className="bg-blue text-cream px-2 font-bold text-xs">
-                      OK
-                    </button>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="flex gap-1.5">
+                      <input
+                        autoFocus
+                        disabled
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        className="border-2 border-ink w-16 p-1.5 text-center bg-neutral-200 text-neutral-400 cursor-not-allowed"
+                      />
+                      <button
+                        disabled
+                        onClick={() => saveStock(s.id)}
+                        className="bg-neutral-300 text-neutral-500 px-2 font-bold text-xs cursor-not-allowed"
+                      >
+                        OK
+                      </button>
+                    </div>
+                    <div className="font-mono text-[9px] text-neutral-500 text-right max-w-[140px]">
+                      Stock edits need admin access — not available yet
+                    </div>
                   </div>
                 ) : (
                   <button

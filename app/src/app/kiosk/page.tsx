@@ -11,7 +11,7 @@ const fraunces = Fraunces({ subsets: ["latin"], weight: ["900"], style: ["italic
 
 /** Halftone dot-grid texture, CSS-only (no image assets) — used behind hero
  * blocks on the attract/ticket screens per the collision-layout brief. */
-function Halftone({ className = "", color = "#1B4DF5" }: { className?: string; color?: string }) {
+function Halftone({ className = "", color = "var(--color-blue)" }: { className?: string; color?: string }) {
   return (
     <div
       className={`absolute inset-0 pointer-events-none opacity-25 ${className}`}
@@ -43,7 +43,7 @@ function KioskCropMarks({ dark = false }: { dark?: boolean }) {
 function BoxLabel({ children, rotate = -3 }: { children: React.ReactNode; rotate?: number }) {
   return (
     <span
-      className="inline-block bg-signal text-ink font-extrabold text-[10px] tracking-[0.14em] px-2.5 py-1 border-2 border-ink"
+      className="inline-block bg-signal text-cream font-extrabold text-[10px] tracking-[0.14em] px-2.5 py-1 border-2 border-ink"
       style={{ transform: `rotate(${rotate}deg)` }}
     >
       {children}
@@ -53,7 +53,7 @@ function BoxLabel({ children, rotate = -3 }: { children: React.ReactNode; rotate
 
 /** Star-burst glyph — cheap collision-layout ornament, positioned absolutely
  * by the caller. */
-function StarBurst({ size = 28, color = "#F7F5F1" }: { size?: number; color?: string }) {
+function StarBurst({ size = 28, color = "var(--color-cream)" }: { size?: number; color?: string }) {
   return (
     <span style={{ fontSize: size, color, lineHeight: 1 }} className="select-none">
       ✦
@@ -456,10 +456,10 @@ export default function KioskPage() {
           <Halftone />
           <KioskCropMarks />
           <div className="absolute top-8 left-8">
-            <StarBurst size={40} color="#C6302B" />
+            <StarBurst size={40} color="var(--color-signal)" />
           </div>
           <div className="absolute bottom-10 right-10">
-            <StarBurst size={28} color="#1B4DF5" />
+            <StarBurst size={28} color="var(--color-blue)" />
           </div>
           <div className="absolute top-10 right-10 rotate-3">
             <BoxLabel>STALL OS · KIOSK</BoxLabel>
@@ -491,7 +491,7 @@ export default function KioskPage() {
             >
               TAP TO START
               <span className="absolute -top-3 -right-3">
-                <StarBurst size={22} color="#F7F5F1" />
+                <StarBurst size={22} color="var(--color-cream)" />
               </span>
             </button>
           </div>
@@ -634,6 +634,9 @@ export default function KioskPage() {
             <img
               src={side === "front" ? sku.mockup_front : sku.mockup_back}
               alt="mockup"
+              loading="lazy"
+              width={IMG_W}
+              height={IMG_H}
               className="absolute inset-0 w-full h-full pointer-events-none"
               draggable={false}
             />
@@ -655,6 +658,7 @@ export default function KioskPage() {
                     key={p.key}
                     src={designs.find((d) => d.id === p.sticker_design_id)?.cutout_path || "/mockups/stickers/star.svg"}
                     alt={p.code}
+                    loading="lazy"
                     onPointerDown={(e) => onPointerDownSticker(e, p)}
                     className={`absolute cursor-move touch-none ${selectedKey === p.key ? "ring-2 ring-signal" : ""}`}
                     style={{
@@ -669,7 +673,7 @@ export default function KioskPage() {
               })}
           </div>
 
-          {overlapMsg && <div className="bg-signal text-ink p-2 font-extrabold text-[11px]">{overlapMsg}</div>}
+          {overlapMsg && <div className="bg-signal text-cream p-2 font-extrabold text-[11px]">{overlapMsg}</div>}
 
           {selectedKey && (
             <div className="border-2 border-ink p-2 flex flex-col gap-1.5">
@@ -700,7 +704,7 @@ export default function KioskPage() {
           <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
             {filteredDesigns.map((d) => (
               <button key={d.id} onClick={() => placeDesign(d)} className="border-2 border-ink p-1 flex flex-col items-center">
-                <img src={d.cutout_path} alt={d.code} className="w-10 h-10" />
+                <img src={d.cutout_path} alt={d.code} loading="lazy" width={40} height={40} className="w-10 h-10" />
                 <span className="text-[9px] font-mono">{d.code}</span>
               </button>
             ))}
@@ -713,7 +717,7 @@ export default function KioskPage() {
             <span>Total</span>
             <span>₹{total}</span>
           </div>
-          {ticketError && <div className="bg-signal text-ink p-2 font-extrabold text-[11px]">{ticketError}</div>}
+          {ticketError && <div className="bg-signal text-cream p-2 font-extrabold text-[11px]">{ticketError}</div>}
           <button onClick={getTicket} className="bg-blue text-cream py-3 font-extrabold min-h-[44px]">
             GET TICKET
           </button>
@@ -724,7 +728,7 @@ export default function KioskPage() {
         <div className="relative flex flex-col items-center gap-5 bg-cream text-ink p-8 border-2 border-ink max-w-sm">
           <KioskCropMarks dark />
           <div className="absolute -top-4 -right-4 rotate-6">
-            <StarBurst size={32} color="#C6302B" />
+            <StarBurst size={32} color="var(--color-signal)" />
           </div>
           <div className="w-full bg-blue text-cream -mt-8 -mx-8 px-8 py-3 mb-2">
             <div

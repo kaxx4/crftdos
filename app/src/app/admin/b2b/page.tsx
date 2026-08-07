@@ -116,7 +116,7 @@ export default function B2BPage() {
           <input placeholder="Unit cost" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} className="border-2 border-ink p-2 w-28" />
           <div
             className={`px-3 py-2 font-extrabold text-sm ${
-              margin < 0 ? "bg-signal text-ink" : margin < 10 ? "bg-signal/70 text-ink" : margin < 15 ? "bg-amber-200 text-ink" : "bg-green-200 text-ink"
+              margin < 0 ? "bg-signal text-cream" : margin < 10 ? "bg-signal/70 text-cream" : margin < 15 ? "bg-amber-200 text-ink" : "bg-green-200 text-ink"
             }`}
           >
             {margin.toFixed(1)}% margin
@@ -131,8 +131,8 @@ export default function B2BPage() {
             className="border-2 border-ink p-2"
           />
         )}
-        {margin < 0 && <div className="bg-signal text-ink p-2 font-extrabold text-xs">HARD BLOCKED — cannot save below 0% margin.</div>}
-        {err && <div className="bg-signal text-ink p-2 font-extrabold text-xs">{err}</div>}
+        {margin < 0 && <div className="bg-signal text-cream p-2 font-extrabold text-xs">HARD BLOCKED — cannot save below 0% margin.</div>}
+        {err && <div className="bg-signal text-cream p-2 font-extrabold text-xs">{err}</div>}
         <button onClick={create} disabled={margin < 0} className="bg-blue text-cream py-2 font-extrabold disabled:opacity-40">
           SAVE ENQUIRY
         </button>

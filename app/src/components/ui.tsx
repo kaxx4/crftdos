@@ -61,6 +61,7 @@ export function Chip({
   return (
     <button
       {...props}
+      aria-pressed={active}
       className={`border-2 px-3 py-2 min-h-[44px] font-bold text-xs tracking-wide cursor-pointer transition-colors ${
         danger
           ? "border-signal text-signal bg-white"
@@ -89,7 +90,7 @@ export function Banner({ children, tone = "signal" }: { children: ReactNode; ton
   return (
     <div
       className={`px-3.5 py-2 font-extrabold text-[11px] tracking-[0.1em] uppercase flex justify-between gap-2 ${
-        tone === "signal" ? "bg-signal text-ink" : "bg-blue text-cream"
+        tone === "signal" ? "bg-signal text-cream" : "bg-blue text-cream"
       }`}
     >
       {children}

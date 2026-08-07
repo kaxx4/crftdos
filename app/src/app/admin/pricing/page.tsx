@@ -48,7 +48,7 @@ export default function AdminPricingPage() {
 
   return (
     <div className="min-h-dvh bg-cream text-ink p-6 flex flex-col gap-6 max-w-3xl mx-auto">
-      <div className="bg-signal text-ink p-3 font-extrabold text-xs tracking-wide">
+      <div className="bg-signal text-cream p-3 font-extrabold text-xs tracking-wide">
         PLACEHOLDER PRICING — seeded per PRD §5 defaults, not yet signed off by AQUATERRA. Replace before treating
         any of this as real invoicing data. Prices snapshot onto order lines at sale time — editing here never
         rewrites past orders.

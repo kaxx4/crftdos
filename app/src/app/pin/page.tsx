@@ -65,7 +65,7 @@ function PinInner() {
               onClick={() => press(k)}
               disabled={busy}
               className={`min-h-[56px] border-2 border-ink font-extrabold text-xl ${
-                k === "OK" ? "bg-blue text-cream" : k === "CLR" ? "bg-signal text-ink" : "bg-white text-ink"
+                k === "OK" ? "bg-blue text-cream" : k === "CLR" ? "bg-signal text-cream" : "bg-white text-ink"
               }`}
             >
               {k}
@@ -73,13 +73,15 @@ function PinInner() {
           ))}
         </div>
         {err && (
-          <div className="bg-signal text-ink p-2.5 font-extrabold text-[11px] tracking-[0.1em] uppercase">
+          <div className="bg-signal text-cream p-2.5 font-extrabold text-[11px] tracking-[0.1em] uppercase">
             {err}
           </div>
         )}
-        <div className="font-mono text-[11px] text-neutral-600 border border-dashed border-neutral-400 p-2.5">
-          Demo PINs — stall 1111 · admin 1234 · kiosk 2222
-        </div>
+        {process.env.NODE_ENV !== "production" && (
+          <div className="font-mono text-[11px] text-neutral-600 border border-dashed border-neutral-400 p-2.5">
+            Demo PINs — stall 1111 · admin 1234 · kiosk 2222
+          </div>
+        )}
       </div>
     </PosFrame>
   );

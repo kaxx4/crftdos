@@ -73,7 +73,7 @@ export default function ReceiptPage() {
           </div>
           <div className="font-mono text-[11px] text-neutral-600">{data.shiftName}</div>
           {!data.synced && (
-            <div className="bg-signal text-ink p-2 font-extrabold text-[10px] tracking-wide uppercase">
+            <div className="bg-signal text-cream p-2 font-extrabold text-[10px] tracking-wide uppercase">
               Offline sale — number confirms once this device syncs
             </div>
           )}

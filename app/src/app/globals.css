@@ -82,3 +82,9 @@ input[type="number"]::-webkit-inner-spin-button {
   border: 3px solid var(--color-cream);
   cursor: pointer;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin {
+    animation-duration: 3s;
+  }
+}
