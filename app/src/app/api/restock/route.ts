@@ -47,15 +47,12 @@ export async function POST(req: NextRequest) {
   const { type, id, qty } = await req.json().catch(() => ({}));
   if (!type || !id || !qty) return NextResponse.json({ error: "type, id, qty required" }, { status: 400 });
   const admin = supabaseAdmin();
-  const table = type === "product" ? "stall_product_skus" : "stall_sticker_designs";
-  const { data: row } = await admin.from(table).select("stock_qty").eq("id", id).single();
-  const { data: updated, error } = await admin
-    .from(table)
-    .update({ stock_qty: (row?.stock_qty ?? 0) + Number(qty) })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const rpcName = type === "product" ? "stall_adjust_product_stock" : "stall_adjust_sticker_stock";
+  const { data: updatedRows, error } = await admin.rpc(rpcName, { p_id: id, p_delta: Number(qty) });
+  const updated = Array.isArray(updatedRows) ? updatedRows[0] : updatedRows;
+  if (error || !updated) {
+    return NextResponse.json({ error: error?.message || "Restock update failed" }, { status: 500 });
+  }
   await admin.from("stall_inventory_movements").insert({
     sku_type: type,
     sku_id: id,

@@ -22,7 +22,16 @@ export default function StickerStockPage() {
     setDesigns(data || []);
   }
   useEffect(() => {
-    load();
+    let cancelled = false;
+    (async () => {
+      const sb = supabaseBrowser();
+      const { data } = await sb.from("stall_sticker_designs").select("*").order("code");
+      if (cancelled) return;
+      setDesigns(data || []);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function save(id: string) {

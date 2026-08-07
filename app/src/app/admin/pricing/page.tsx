@@ -16,7 +16,16 @@ export default function AdminPricingPage() {
     setDesigns(j.designs || []);
   }
   useEffect(() => {
-    load();
+    let cancelled = false;
+    (async () => {
+      const j = await fetch("/api/admin/pricing").then((r) => r.json());
+      if (cancelled) return;
+      setSkus(j.skus || []);
+      setDesigns(j.designs || []);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function saveCell(type: "product" | "sticker", id: string, field: "unit_price" | "unit_cost", value: string) {

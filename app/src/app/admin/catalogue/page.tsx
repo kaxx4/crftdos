@@ -33,10 +33,10 @@ export default function CataloguePage() {
         Encodes crftd:s:&lt;code&gt; per PRD §9. Camera scanning stays off by default until labels are printed and a
         settings flag is flipped — not built this pass.
       </div>
-      <div className="grid grid-cols-4 gap-3 print:grid-cols-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 print:grid-cols-3">
         {designs.map((d) => (
           <div key={d.id} className="border-2 border-ink p-2 flex flex-col items-center gap-1 bg-white">
-            {qrs[d.id] && <img src={qrs[d.id]} alt="" className="w-20 h-20" />}
+            {qrs[d.id] && <img src={qrs[d.id]} alt="" className="w-20 h-20 max-w-full" />}
             <div className="font-extrabold text-sm font-mono">{d.code}</div>
             <div className="text-[10px] text-neutral-600 text-center">{d.bin_location || "no bin set"}</div>
           </div>

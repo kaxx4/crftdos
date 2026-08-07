@@ -31,11 +31,17 @@ export async function GET(req: NextRequest) {
       }
     }
   }
-  const { data: designs } = await admin.from("stall_sticker_designs").select("id, code");
-  const topDesigns = [...designCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([id, count]) => ({ code: designs?.find((d) => d.id === id)?.code || id, count }));
+  const topDesignIds = [...designCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const { data: designs } = topDesignIds.length
+    ? await admin
+        .from("stall_sticker_designs")
+        .select("id, code")
+        .in("id", topDesignIds.map(([id]) => id))
+    : { data: [] as { id: string; code: string }[] };
+  const topDesigns = topDesignIds.map(([id, count]) => ({
+    code: designs?.find((d) => d.id === id)?.code || id,
+    count,
+  }));
 
   return NextResponse.json({
     shift,

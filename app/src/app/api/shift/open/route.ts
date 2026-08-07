@@ -41,8 +41,29 @@ export async function POST(req: NextRequest) {
       })
       .select()
       .single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    shift = created;
+    if (error) {
+      // A concurrent device may have won the race and already opened a
+      // shift, tripping the stall_one_open_shift unique index (23505).
+      // Re-select and join it instead of surfacing a hard failure.
+      if (error.code === "23505") {
+        const { data: winner } = await admin
+          .from("stall_shifts")
+          .select("*")
+          .is("closed_at", null)
+          .order("opened_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (winner) {
+          shift = winner;
+        } else {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+      } else {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    } else {
+      shift = created;
+    }
   }
 
   // Allocate a block of 100 receipt numbers to this device for this shift,

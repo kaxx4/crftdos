@@ -18,13 +18,16 @@ export async function GET(req: NextRequest) {
   const raisedForAquaterra = gross - cogs;
 
   const { data: waste } = await admin.from("stall_waste_log").select("sticker_qty, product_qty, sticker_id, product_sku_id");
-  const { data: designs } = await admin.from("stall_sticker_designs").select("id, code, unit_cost");
-  const { data: skus } = await admin.from("stall_product_skus").select("id, sku_code, unit_cost");
+  const { data: designs } = await admin.from("stall_sticker_designs").select("id, unit_cost");
+  const { data: skus } = await admin.from("stall_product_skus").select("id, unit_cost");
+
+  const designCostById = new Map((designs || []).map((d) => [d.id, Number(d.unit_cost)]));
+  const skuCostById = new Map((skus || []).map((s) => [s.id, Number(s.unit_cost)]));
 
   const wasteCost = (waste || []).reduce((s, w) => {
-    const d = designs?.find((x) => x.id === w.sticker_id);
-    const p = skus?.find((x) => x.id === w.product_sku_id);
-    return s + (d ? Number(d.unit_cost) * w.sticker_qty : 0) + (p ? Number(p.unit_cost) * w.product_qty : 0);
+    const dCost = w.sticker_id ? designCostById.get(w.sticker_id) : undefined;
+    const pCost = w.product_sku_id ? skuCostById.get(w.product_sku_id) : undefined;
+    return s + (dCost !== undefined ? dCost * w.sticker_qty : 0) + (pCost !== undefined ? pCost * w.product_qty : 0);
   }, 0);
 
   const { data: returns } = await admin.from("stall_returns").select("id, action, reason");

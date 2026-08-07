@@ -53,8 +53,21 @@ export async function outboxCount(): Promise<number> {
 }
 
 /** Attempts to flush every queued order to the server, in order. Idempotent
- * on the server via the client-generated order id, so retries are safe. */
+ * on the server via the client-generated order id, so retries are safe.
+ * Reentrancy-guarded: if 'online' and 'visibilitychange' both fire a flush
+ * near-simultaneously, the second call awaits the first run instead of
+ * starting a concurrent pass that could double-POST the same item. */
+let inFlightFlush: Promise<void> | null = null;
+
 export async function flushOutbox(onProgress?: (remaining: number) => void) {
+  if (inFlightFlush) return inFlightFlush;
+  inFlightFlush = flushOutboxInner(onProgress).finally(() => {
+    inFlightFlush = null;
+  });
+  return inFlightFlush;
+}
+
+async function flushOutboxInner(onProgress?: (remaining: number) => void) {
   if (!navigator.onLine) return;
   const items = await listOutbox();
   for (const item of items) {

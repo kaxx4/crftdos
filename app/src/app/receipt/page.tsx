@@ -34,7 +34,14 @@ export default function ReceiptPage() {
       router.replace("/");
       return;
     }
-    setData(JSON.parse(raw));
+    try {
+      const parsed = JSON.parse(raw);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reading a one-shot sessionStorage handoff, not a value derivable from render
+      setData(parsed);
+    } catch {
+      sessionStorage.removeItem("last_receipt");
+      router.replace("/");
+    }
   }, [router]);
 
   if (!data) return null;

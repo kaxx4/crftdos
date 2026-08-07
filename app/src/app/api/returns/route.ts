@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { verifySession, SESSION_COOKIE } from "@/lib/session";
+import { checkRateLimit, recordFailure, clearRateLimit } from "@/lib/rateLimit";
 
 async function requireStall(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE.stall)?.value;
   return verifySession("stall", token);
+}
+
+function clientIp(req: NextRequest) {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown"
+  );
 }
 
 export async function GET(req: NextRequest) {
@@ -40,11 +49,22 @@ export async function POST(req: NextRequest) {
   const admin = supabaseAdmin();
 
   // Approval gate — any return needs an admin PIN per PRD's "approved_by" field intent.
+  // Rate-limited the same way as /api/auth/pin: a stall session is lower
+  // privilege than admin, so this check must not be brute-forceable.
+  const rlKey = `${clientIp(req)}:admin-pin`;
+  const rl = checkRateLimit(rlKey);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many failed attempts. Try again in 15 minutes." }, { status: 429 });
+  }
   if (approverPin) {
     const { verify } = await import("@node-rs/argon2");
     const { data: pinRow } = await admin.from("stall_settings").select("value").eq("key", "pin_admin").single();
     const ok = pinRow ? await verify(pinRow.value as string, approverPin).catch(() => false) : false;
-    if (!ok) return NextResponse.json({ error: "Incorrect admin PIN" }, { status: 401 });
+    if (!ok) {
+      recordFailure(rlKey);
+      return NextResponse.json({ error: "Incorrect admin PIN" }, { status: 401 });
+    }
+    clearRateLimit(rlKey);
   } else {
     return NextResponse.json({ error: "Approver PIN required" }, { status: 401 });
   }
@@ -81,15 +101,14 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
     if (item && exchangeItem.product_sku_id) {
-      const { data: sku } = await admin
-        .from("stall_product_skus")
-        .select("stock_qty")
-        .eq("id", exchangeItem.product_sku_id)
-        .single();
-      await admin
-        .from("stall_product_skus")
-        .update({ stock_qty: (sku?.stock_qty ?? 0) - (exchangeItem.qty || 1) })
-        .eq("id", exchangeItem.product_sku_id);
+      const { data: adjusted, error: adjErr } = await admin.rpc("stall_adjust_product_stock", {
+        p_id: exchangeItem.product_sku_id,
+        p_delta: -(exchangeItem.qty || 1),
+      });
+      const adjustedRow = Array.isArray(adjusted) ? adjusted[0] : adjusted;
+      if (adjErr || !adjustedRow) {
+        return NextResponse.json({ error: "Exchange item is out of stock" }, { status: 409 });
+      }
       await admin.from("stall_inventory_movements").insert({
         sku_type: "product",
         sku_id: exchangeItem.product_sku_id,
@@ -105,9 +124,8 @@ export async function POST(req: NextRequest) {
   // Restock what's coming back, if marked resaleable.
   if (resaleable && restockItems?.length) {
     for (const r of restockItems as { sku_type: "product" | "sticker"; sku_id: string; qty: number }[]) {
-      const table = r.sku_type === "product" ? "stall_product_skus" : "stall_sticker_designs";
-      const { data: row } = await admin.from(table).select("stock_qty").eq("id", r.sku_id).single();
-      await admin.from(table).update({ stock_qty: (row?.stock_qty ?? 0) + r.qty }).eq("id", r.sku_id);
+      const rpcName = r.sku_type === "product" ? "stall_adjust_product_stock" : "stall_adjust_sticker_stock";
+      await admin.rpc(rpcName, { p_id: r.sku_id, p_delta: r.qty });
       await admin.from("stall_inventory_movements").insert({
         sku_type: r.sku_type,
         sku_id: r.sku_id,

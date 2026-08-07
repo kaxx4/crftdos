@@ -89,7 +89,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required order fields" }, { status: 400 });
   }
 
-  // Consume a receipt number from this device's open block.
+  // Consume a receipt number from this device's open block atomically —
+  // next_no = next_no + 1 in one guarded UPDATE, so two concurrent orders on
+  // the same device can never be handed the same receipt number.
   const { data: block } = await admin
     .from("stall_receipt_blocks")
     .select("*")
@@ -105,11 +107,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const receiptNo = formatReceiptNo(block.fy, block.next_no);
-  await admin
-    .from("stall_receipt_blocks")
-    .update({ next_no: block.next_no + 1 })
-    .eq("id", block.id);
+  const { data: consumedRows, error: consumeErr } = await admin.rpc("stall_consume_receipt_no", {
+    p_block_id: block.id,
+  });
+  const consumed = Array.isArray(consumedRows) ? consumedRows[0] : consumedRows;
+  if (consumeErr || !consumed) {
+    return NextResponse.json(
+      { error: "No receipt numbers left on this device's block. Reopen shift on this device." },
+      { status: 409 }
+    );
+  }
+  const receiptNo = formatReceiptNo(consumed.fy, consumed.consumed_no);
 
   let customerId: string | null = null;
   if (customer?.phone || customer?.name || customer?.email) {
@@ -157,6 +165,16 @@ export async function POST(req: NextRequest) {
 
   if (orderErr) return NextResponse.json({ error: orderErr.message }, { status: 500 });
 
+  // Best-effort cleanup helper: if anything below fails irrecoverably, void
+  // the order we just created instead of leaving a paid-looking order with
+  // missing items/stock changes.
+  async function abortOrder(reason: string) {
+    await admin
+      .from("stall_orders")
+      .update({ voided_at: new Date().toISOString(), voided_by: "system", void_reason: reason })
+      .eq("id", order.id);
+  }
+
   if (designTicket) {
     const { data: ticketRow } = await admin
       .from("stall_design_tickets")
@@ -165,19 +183,32 @@ export async function POST(req: NextRequest) {
       .eq("status", "open")
       .maybeSingle();
     if (ticketRow) {
-      await admin
+      const { error: ticketUpdErr } = await admin
         .from("stall_design_tickets")
         .update({ status: "redeemed", order_id: order.id })
         .eq("id", ticketRow.id);
+      if (ticketUpdErr) {
+        await abortOrder(`Failed to redeem design ticket: ${ticketUpdErr.message}`);
+        return NextResponse.json({ error: "Failed to finalize order (ticket redemption)" }, { status: 500 });
+      }
       // Real stock now decrements below, so release the kiosk's soft-hold
       // session reservations for this ticket's stickers.
       const payload = ticketRow.payload as { garments?: { stickers?: { hold_id?: string }[] }[] };
       const holdIds = (payload.garments || []).flatMap((g) => (g.stickers || []).map((s) => s.hold_id)).filter(Boolean);
       if (holdIds.length) {
-        await admin
+        const { error: holdRelErr } = await admin
           .from("stall_holds")
           .update({ released_at: new Date().toISOString() })
           .in("id", holdIds as string[]);
+        if (holdRelErr) {
+          // Non-fatal: a stale hold just expires on its own TTL, but log via
+          // an inventory-movement-free audit note so it's not silent.
+          await admin.from("stall_admin_audit").insert({
+            actor: deviceId,
+            action: "hold_release_failed",
+            detail: { orderId: order.id, holdIds, error: holdRelErr.message },
+          });
+        }
       }
     }
   }
@@ -196,18 +227,21 @@ export async function POST(req: NextRequest) {
       })
       .select()
       .single();
-    if (itemErr) continue;
+    if (itemErr) {
+      await abortOrder(`Failed to insert order item: ${itemErr.message}`);
+      return NextResponse.json({ error: "Failed to finalize order (item insert)" }, { status: 500 });
+    }
 
     if (line.product_sku_id) {
-      const { data: sku } = await admin
-        .from("stall_product_skus")
-        .select("stock_qty")
-        .eq("id", line.product_sku_id)
-        .single();
-      await admin
-        .from("stall_product_skus")
-        .update({ stock_qty: (sku?.stock_qty ?? 0) - line.qty })
-        .eq("id", line.product_sku_id);
+      const { data: adjusted, error: adjErr } = await admin.rpc("stall_adjust_product_stock", {
+        p_id: line.product_sku_id,
+        p_delta: -line.qty,
+      });
+      const adjustedRow = Array.isArray(adjusted) ? adjusted[0] : adjusted;
+      if (adjErr || !adjustedRow) {
+        await abortOrder(`Out of stock or stock update failed for SKU ${line.product_sku_id}`);
+        return NextResponse.json({ error: "Item went out of stock during checkout" }, { status: 409 });
+      }
       await admin.from("stall_inventory_movements").insert({
         sku_type: "product",
         sku_id: line.product_sku_id,
@@ -246,15 +280,15 @@ export async function POST(req: NextRequest) {
       });
 
       if (st.sticker_design_id) {
-        const { data: design } = await admin
-          .from("stall_sticker_designs")
-          .select("stock_qty")
-          .eq("id", st.sticker_design_id)
-          .single();
-        await admin
-          .from("stall_sticker_designs")
-          .update({ stock_qty: (design?.stock_qty ?? 0) - 1 })
-          .eq("id", st.sticker_design_id);
+        const { data: adjusted, error: adjErr } = await admin.rpc("stall_adjust_sticker_stock", {
+          p_id: st.sticker_design_id,
+          p_delta: -1,
+        });
+        const adjustedRow = Array.isArray(adjusted) ? adjusted[0] : adjusted;
+        if (adjErr || !adjustedRow) {
+          await abortOrder(`Out of stock or stock update failed for sticker ${st.sticker_design_id}`);
+          return NextResponse.json({ error: "Sticker went out of stock during checkout" }, { status: 409 });
+        }
         await admin.from("stall_inventory_movements").insert({
           sku_type: "sticker",
           sku_id: st.sticker_design_id,
@@ -276,9 +310,19 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const shiftId = req.nextUrl.searchParams.get("shiftId");
+  const pageParam = req.nextUrl.searchParams.get("limit");
+  const limit = Math.min(Math.max(parseInt(pageParam || "100", 10) || 100, 1), 200);
+
   const admin = supabaseAdmin();
-  let q = admin.from("stall_orders").select("*, stall_order_items(*, stall_order_item_stickers(*))").order("created_at", { ascending: false });
-  if (shiftId) q = q.eq("shift_id", shiftId);
+  let q = admin
+    .from("stall_orders")
+    .select("*, stall_order_items(*, stall_order_item_stickers(*))")
+    .order("created_at", { ascending: false });
+  if (shiftId) {
+    q = q.eq("shift_id", shiftId);
+  } else {
+    q = q.limit(limit);
+  }
   const { data, error } = await q;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ orders: data });

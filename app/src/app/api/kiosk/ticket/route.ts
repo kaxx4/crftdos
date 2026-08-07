@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { verifySession, SESSION_COOKIE } from "@/lib/session";
 
 // Unambiguous alphabet per PRD §4.4 — no O/0, I/1.
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -11,6 +12,10 @@ function genCode() {
 }
 
 export async function POST(req: NextRequest) {
+  const token = req.cookies.get(SESSION_COOKIE.kiosk)?.value;
+  const session = await verifySession("kiosk", token);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await req.json().catch(() => ({}));
   const { garments, quotedTotal, deviceId } = body as {
     garments: unknown[];

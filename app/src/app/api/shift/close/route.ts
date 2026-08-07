@@ -41,18 +41,21 @@ export async function POST(req: NextRequest) {
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Void every unused number in every open block for this shift.
+  // Void every unused number in every open block for this shift in one
+  // bulk update — a loop of per-row updates left a window where a crash
+  // mid-loop could leave the shift closed but a block still open.
   const { data: blocks } = await admin
     .from("stall_receipt_blocks")
     .select("*")
     .eq("shift_id", shiftId)
     .is("closed_at", null);
 
-  for (const b of blocks || []) {
+  if (blocks?.length) {
     await admin
       .from("stall_receipt_blocks")
       .update({ closed_at: new Date().toISOString() })
-      .eq("id", b.id);
+      .eq("shift_id", shiftId)
+      .is("closed_at", null);
   }
 
   const unusedCount = (blocks || []).reduce((s, b) => s + (b.end_no - b.next_no + 1), 0);

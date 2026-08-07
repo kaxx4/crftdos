@@ -146,6 +146,9 @@ export default function KioskPage() {
   const [query, setQuery] = useState("");
   const [overlapMsg, setOverlapMsg] = useState("");
   const [ticket, setTicket] = useState<{ code: string; expires_at: string } | null>(null);
+  const [catalogueLoading, setCatalogueLoading] = useState(true);
+  const [catalogueError, setCatalogueError] = useState("");
+  const [ticketError, setTicketError] = useState("");
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ key: string; startX: number; startY: number; origX: number; origY: number } | null>(
@@ -163,7 +166,9 @@ export default function KioskPage() {
         setPresets(j.presets || []);
         if (j.colors?.[0]) setColorId(j.colors[0].id);
         if (j.fits?.[0]) setFitId(j.fits[0].id);
-      });
+      })
+      .catch(() => setCatalogueError("Could not load the catalogue. Ask a volunteer for help."))
+      .finally(() => setCatalogueLoading(false));
   }, []);
 
   const sku = useMemo(
@@ -267,23 +272,25 @@ export default function KioskPage() {
       }
     }
     setOverlapMsg("No free space on this side without overlapping — remove one first.");
+    releaseHold(holdId);
+  }
+
+  function releaseHold(holdId: string) {
     fetch("/api/kiosk/reserve", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ holdId }),
+    }).catch(() => {
+      // Non-fatal: the hold's TTL will expire it server-side even if this
+      // release fails, but surface it so it's not a silent stock-lock.
+      setOverlapMsg("Couldn't release that reservation — it'll free up on its own shortly.");
     });
   }
 
   function removePlacement(key: string) {
     const p = placements.find((pp) => pp.key === key);
     setPlacements((prev) => prev.filter((pp) => pp.key !== key));
-    if (p?.holdId) {
-      fetch("/api/kiosk/reserve", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ holdId: p.holdId }),
-      });
-    }
+    if (p?.holdId) releaseHold(p.holdId);
     if (selectedKey === key) setSelectedKey(null);
   }
 
@@ -343,37 +350,46 @@ export default function KioskPage() {
 
   async function getTicket() {
     if (!sku) return;
-    const res = await fetch("/api/kiosk/ticket", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        deviceId: "kiosk-" + getSessionId().slice(0, 6),
-        quotedTotal: total,
-        garments: [
-          {
-            product_sku_id: sku.id,
-            sku_code: sku.sku_code,
-            unit_price: sku.unit_price,
-            unit_cost: sku.unit_cost,
-            stickers: placements.map((p) => ({
-              sticker_design_id: p.sticker_design_id,
-              code: p.code,
-              side: p.side,
-              pos_x: p.xPct,
-              pos_y: p.yPct,
-              rotation: p.rotation,
-              unit_price: p.unit_price,
-              unit_cost: p.unit_cost,
-              hold_id: p.holdId,
-            })),
-          },
-        ],
-      }),
-    });
-    const j = await res.json();
-    if (res.ok) {
+    setTicketError("");
+    let res: Response;
+    try {
+      res = await fetch("/api/kiosk/ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deviceId: "kiosk-" + getSessionId().slice(0, 6),
+          quotedTotal: total,
+          garments: [
+            {
+              product_sku_id: sku.id,
+              sku_code: sku.sku_code,
+              unit_price: sku.unit_price,
+              unit_cost: sku.unit_cost,
+              stickers: placements.map((p) => ({
+                sticker_design_id: p.sticker_design_id,
+                code: p.code,
+                side: p.side,
+                pos_x: p.xPct,
+                pos_y: p.yPct,
+                rotation: p.rotation,
+                unit_price: p.unit_price,
+                unit_cost: p.unit_cost,
+                hold_id: p.holdId,
+              })),
+            },
+          ],
+        }),
+      });
+    } catch {
+      setTicketError("Network error — check the connection and try again.");
+      return;
+    }
+    const j = await res.json().catch(() => ({}));
+    if (res.ok && j.ticket) {
       setTicket({ code: j.ticket.code, expires_at: j.ticket.expires_at });
       setStage("ticket");
+    } else {
+      setTicketError(j.error || "Could not get a ticket — a reservation may have expired. Try again.");
     }
   }
 
@@ -385,33 +401,46 @@ export default function KioskPage() {
     setSide("front");
     setPlacements([]);
     setTicket(null);
+    setOverlapMsg("");
+    setTicketError("");
+    setSelectedKey(null);
+    setQuery("");
     sessionStorage.removeItem("kiosk_session_id");
   }
 
-  function applyPreset(p: Preset) {
+  async function applyPreset(p: Preset) {
     const matchedSku = skus.find((s) => s.id === p.payload.product_sku_id);
     if (matchedSku) {
       setColorId(matchedSku.color_id);
       setFitId(matchedSku.fit_id);
       setSize(matchedSku.size);
     }
-    setPlacements(
-      (p.payload.placements || []).map((pl) => ({
+    setStage("canvas");
+
+    // Each preset placement must actually reserve stock the same way a
+    // manually-placed sticker does — otherwise two kiosks applying the same
+    // limited-stock preset can both check out the same last unit.
+    const built: Placement[] = [];
+    for (const pl of p.payload.placements || []) {
+      const design = designs.find((d) => d.id === pl.sticker_design_id);
+      const holdId = design ? await reserveSticker(design) : null;
+      if (!holdId) continue; // sold out / reservation failed — skip this sticker, don't silently fake it
+      built.push({
         key: uuidv4(),
         sticker_design_id: pl.sticker_design_id,
         code: pl.code,
-        print_w_cm: 14,
-        print_h_cm: 14,
+        print_w_cm: design?.print_w_cm ?? 14,
+        print_h_cm: design?.print_h_cm ?? 14,
         unit_price: pl.unit_price,
         unit_cost: pl.unit_cost,
         side: "front" as const,
         xPct: pl.pos_x,
         yPct: pl.pos_y,
         rotation: pl.rotation || 0,
-        holdId: "",
-      }))
-    );
-    setStage("canvas");
+        holdId,
+      });
+    }
+    setPlacements(built);
   }
 
   const filteredDesigns = designs.filter((d) => {
@@ -469,8 +498,21 @@ export default function KioskPage() {
         </div>
       )}
 
-      {stage === "path" && (
-        <div className="relative flex flex-col gap-4 w-full max-w-md">
+      {stage === "path" && catalogueLoading && (
+        <div className="flex flex-col items-center gap-3 text-cream">
+          <div className="w-10 h-10 border-4 border-cream/30 border-t-cream rounded-full animate-spin" />
+          <div className="text-sm text-neutral-400">Loading catalogue…</div>
+        </div>
+      )}
+
+      {stage === "path" && !catalogueLoading && catalogueError && (
+        <div className="flex flex-col items-center gap-3 text-cream text-center max-w-xs">
+          <div className="text-signal font-extrabold">{catalogueError}</div>
+        </div>
+      )}
+
+      {stage === "path" && !catalogueLoading && !catalogueError && (
+        <div className="relative flex flex-col gap-4 w-full max-w-md lg:max-w-lg">
           <div className="absolute -top-6 -left-4 rotate-[-6deg]">
             <BoxLabel rotate={-6}>PICK A PATH</BoxLabel>
           </div>
@@ -507,7 +549,7 @@ export default function KioskPage() {
       )}
 
       {stage === "product" && (
-        <div className="flex flex-col gap-4 w-full max-w-md bg-cream text-ink p-4">
+        <div className="flex flex-col gap-4 w-full max-w-md lg:max-w-lg bg-cream text-ink p-4">
           <div className="font-extrabold text-lg">Choose your tee</div>
           <div className="flex gap-2 flex-wrap">
             {colors.map((c) => (
@@ -531,7 +573,7 @@ export default function KioskPage() {
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {["XS", "S", "M", "L", "XL", "XXL"].map((sz) => {
               const s = skus.find((x) => x.color_id === colorId && x.fit_id === fitId && x.size === sz);
               const disabled = !s || s.stock_qty <= 0;
@@ -561,7 +603,7 @@ export default function KioskPage() {
       )}
 
       {stage === "canvas" && sku && printArea && (
-        <div className="relative flex flex-col gap-3 w-full max-w-md bg-cream text-ink p-3">
+        <div className="relative flex flex-col gap-3 w-full max-w-md lg:max-w-xl bg-cream text-ink p-3">
           <div className="absolute -top-5 -left-3 -rotate-3">
             <BoxLabel rotate={-3}>DESIGN STUDIO</BoxLabel>
           </div>
@@ -612,6 +654,7 @@ export default function KioskPage() {
                   <img
                     key={p.key}
                     src={designs.find((d) => d.id === p.sticker_design_id)?.cutout_path || "/mockups/stickers/star.svg"}
+                    alt={p.code}
                     onPointerDown={(e) => onPointerDownSticker(e, p)}
                     className={`absolute cursor-move touch-none ${selectedKey === p.key ? "ring-2 ring-signal" : ""}`}
                     style={{
@@ -637,9 +680,12 @@ export default function KioskPage() {
                 max={359}
                 value={placements.find((p) => p.key === selectedKey)?.rotation || 0}
                 onChange={(e) => setRotation(selectedKey, Number(e.target.value))}
-                className="w-full"
+                className="w-full h-11 kiosk-slider"
               />
-              <button onClick={() => removePlacement(selectedKey)} className="border border-signal text-signal text-[10px] font-extrabold py-1">
+              <button
+                onClick={() => removePlacement(selectedKey)}
+                className="border border-signal text-signal text-xs font-extrabold py-2 min-h-[44px]"
+              >
                 REMOVE
               </button>
             </div>
@@ -667,7 +713,8 @@ export default function KioskPage() {
             <span>Total</span>
             <span>₹{total}</span>
           </div>
-          <button onClick={getTicket} className="bg-blue text-cream py-3 font-extrabold">
+          {ticketError && <div className="bg-signal text-ink p-2 font-extrabold text-[11px]">{ticketError}</div>}
+          <button onClick={getTicket} className="bg-blue text-cream py-3 font-extrabold min-h-[44px]">
             GET TICKET
           </button>
         </div>
@@ -688,7 +735,12 @@ export default function KioskPage() {
             </div>
           </div>
           <div className="font-extrabold text-sm tracking-wide">SHOW THIS TO A VOLUNTEER</div>
-          <div className="font-extrabold text-6xl tracking-[0.3em]">{ticket.code}</div>
+          <div
+            className="font-extrabold tracking-[0.2em] sm:tracking-[0.3em] text-center"
+            style={{ fontSize: "clamp(32px,12vw,60px)" }}
+          >
+            {ticket.code}
+          </div>
           <div className="text-xs font-mono text-neutral-600">
             Expires {new Date(ticket.expires_at).toLocaleTimeString("en-IN")} · Total ₹{total}
           </div>

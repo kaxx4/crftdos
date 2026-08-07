@@ -2,7 +2,6 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PosFrame } from "@/components/PosFrame";
-import { BigButton } from "@/components/ui";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "CLR", "0", "OK"];
 

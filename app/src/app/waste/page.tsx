@@ -35,7 +35,24 @@ export default function WastePage() {
     setShift(shiftRes.shift);
   }
   useEffect(() => {
-    load();
+    let cancelled = false;
+    (async () => {
+      const sb = supabaseBrowser();
+      const [s, d, w, shiftRes] = await Promise.all([
+        sb.from("stall_product_skus").select("*"),
+        sb.from("stall_sticker_designs").select("*"),
+        fetch("/api/waste").then((r) => r.json()),
+        fetch(`/api/shift/current?deviceId=${getDeviceId()}`).then((r) => r.json()),
+      ]);
+      if (cancelled) return;
+      setSkus(s.data || []);
+      setDesigns(d.data || []);
+      setLog(w.waste || []);
+      setShift(shiftRes.shift);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function submit() {

@@ -315,6 +315,10 @@ export default function SellPage() {
   const cartEmpty = garments.length === 0 && standalone.length === 0;
 
   useEffect(() => {
+    // Intentional state sync: discountUnlocked is set true by a user action
+    // (admin PIN entry) and must be reset once the gate that required it no
+    // longer applies — it can't be derived purely from needsAdminGate.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!needsAdminGate) setDiscountUnlocked(false);
   }, [needsAdminGate]);
 

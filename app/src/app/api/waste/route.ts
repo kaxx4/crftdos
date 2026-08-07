@@ -37,8 +37,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   if (stickerId && stickerQty > 0) {
-    const { data: d } = await admin.from("stall_sticker_designs").select("stock_qty").eq("id", stickerId).single();
-    await admin.from("stall_sticker_designs").update({ stock_qty: (d?.stock_qty ?? 0) - stickerQty }).eq("id", stickerId);
+    await admin.rpc("stall_adjust_sticker_stock", { p_id: stickerId, p_delta: -stickerQty });
     await admin.from("stall_inventory_movements").insert({
       sku_type: "sticker",
       sku_id: stickerId,
@@ -49,8 +48,7 @@ export async function POST(req: NextRequest) {
     });
   }
   if (productSkuId && productQty > 0) {
-    const { data: p } = await admin.from("stall_product_skus").select("stock_qty").eq("id", productSkuId).single();
-    await admin.from("stall_product_skus").update({ stock_qty: (p?.stock_qty ?? 0) - productQty }).eq("id", productSkuId);
+    await admin.rpc("stall_adjust_product_stock", { p_id: productSkuId, p_delta: -productQty });
     await admin.from("stall_inventory_movements").insert({
       sku_type: "product",
       sku_id: productSkuId,

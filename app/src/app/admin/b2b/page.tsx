@@ -45,7 +45,18 @@ export default function B2BPage() {
     setCollected(j.collected || 0);
   }
   useEffect(() => {
-    load();
+    let cancelled = false;
+    (async () => {
+      const j = await fetch("/api/admin/b2b").then((r) => r.json());
+      if (cancelled) return;
+      setOrders(j.orders || []);
+      setVolunteers(j.volunteers || []);
+      setCommitted(j.committed || 0);
+      setCollected(j.collected || 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function create() {

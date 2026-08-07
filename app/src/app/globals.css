@@ -59,3 +59,26 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Kiosk touchscreen rotate slider — default range thumbs (~16px) are too
+   small to grab reliably on a touchscreen; enlarge to the ~44px target. */
+.kiosk-slider {
+  touch-action: none;
+}
+.kiosk-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: var(--color-blue);
+  border: 3px solid var(--color-cream);
+  cursor: pointer;
+}
+.kiosk-slider::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: var(--color-blue);
+  border: 3px solid var(--color-cream);
+  cursor: pointer;
+}

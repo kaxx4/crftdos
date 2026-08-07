@@ -26,6 +26,16 @@ export default function HoldsPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [skuCode, setSkuCode] = useState("");
+  const [nowMs, setNowMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Ticking clock for the "N min left" countdown — legitimately syncs
+    // React state with the passage of time, not derivable from props/state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNowMs(Date.now());
+    const id = setInterval(() => setNowMs(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   async function load() {
     const [h, sb, shiftRes] = await Promise.all([
@@ -40,7 +50,23 @@ export default function HoldsPage() {
     setDesigns(d.data || []);
   }
   useEffect(() => {
-    load();
+    let cancelled = false;
+    (async () => {
+      const [h, sb, shiftRes] = await Promise.all([
+        fetch("/api/holds").then((r) => r.json()),
+        supabaseBrowser(),
+        fetch(`/api/shift/current?deviceId=${getDeviceId()}`).then((r) => r.json()),
+      ]);
+      const [s, d] = await Promise.all([sb.from("stall_product_skus").select("*"), sb.from("stall_sticker_designs").select("*")]);
+      if (cancelled) return;
+      setHolds(h.holds || []);
+      setShift(shiftRes.shift);
+      setSkus(s.data || []);
+      setDesigns(d.data || []);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function label(h: Hold) {
@@ -49,7 +75,8 @@ export default function HoldsPage() {
   }
 
   function minutesLeft(h: Hold) {
-    return Math.max(0, Math.round((new Date(h.expires_at).getTime() - Date.now()) / 60000));
+    if (nowMs == null) return 0;
+    return Math.max(0, Math.round((new Date(h.expires_at).getTime() - nowMs) / 60000));
   }
 
   async function addHold() {

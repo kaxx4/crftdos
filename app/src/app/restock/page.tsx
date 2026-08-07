@@ -17,7 +17,16 @@ export default function RestockPage() {
     setDeadStock(j.deadStock || []);
   }
   useEffect(() => {
-    load();
+    let cancelled = false;
+    (async () => {
+      const j = await fetch("/api/restock").then((r) => r.json());
+      if (cancelled) return;
+      setBelowPar(j.belowPar || []);
+      setDeadStock(j.deadStock || []);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function restock(item: Item) {
