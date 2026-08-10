@@ -56,7 +56,7 @@ export default function AdminPricingPage() {
 
       <div>
         <div className="font-extrabold text-lg mb-2">Bulk set (products by fit)</div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <select value={bulkFit} onChange={(e) => setBulkFit(e.target.value)} className="border-2 border-ink p-2">
             <option value="oversized">Oversized</option>
             <option value="regular">Regular</option>

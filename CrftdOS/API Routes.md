@@ -5,7 +5,7 @@ updated: 2026-08-10
 
 # API Routes
 
-Part of [[Architecture Overview]]. 30 route handlers under `app/src/app/api/`. Every one uses `supabaseAdmin()` (service role, RLS bypassed) and does its own cookie check — see [[Row Level Security]].
+Part of [[Architecture Overview]]. 33 route handlers under `app/src/app/api/`. Every one uses `supabaseAdmin()` (service role, RLS bypassed). Every one does its own cookie check *except* the three `/api/kiosk/*` routes, which are deliberately public — see [[Row Level Security]].
 
 `middleware.ts` explicitly lets `/api/*` through untouched: *"API routes do their own auth checks per-handler."* There is no second gate.
 
@@ -76,8 +76,10 @@ Collections tab's exit action for `collect_later` orders. Sets `fulfillment_stat
 
 ## Kiosk
 
+All three kiosk routes are intentionally unauthenticated as of [[Changelog 2026-08-10]] — the kiosk is now the public site root (`/`), not a PIN-gated staff surface, so there is no session to check. Abuse surface is bounded by hold TTLs and ticket expiry rather than a login.
+
 ### `GET /api/kiosk/catalogue`
-Six parallel queries (colors, fits, skus, designs, presets, active holds), then computes `available_qty` per design in JS and drops anything at zero, so a sold-out design never appears in the kiosk. Uses service role because anon cannot see holds. **No auth check** — but the `/kiosk` *page* is PIN-gated by middleware.
+Six parallel queries (colors, fits, skus, designs, presets, active holds), then computes `available_qty` per design in JS and drops anything at zero, so a sold-out design never appears in the kiosk. Uses service role because anon cannot see holds.
 
 ### `POST /api/kiosk/reserve` · `DELETE`
 Wraps `stall_reserve_sticker_hold` — the `for update` lock that stops two kiosks reserving the last transfer. `DELETE` releases. See [[Holds]].

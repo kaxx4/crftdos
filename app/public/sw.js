@@ -28,7 +28,7 @@ const ASSET_CACHE = `crftd-assets-${VERSION}`;
 
 // Routes worth having available offline. Precached on install so a device
 // that has been opened once on wifi can cold-start without signal.
-const SHELL_ROUTES = ["/", "/orders", "/stock/products", "/stock/stickers", "/restock", "/more"];
+const SHELL_ROUTES = ["/", "/sell", "/orders", "/stock/products", "/stock/stickers", "/restock", "/more"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

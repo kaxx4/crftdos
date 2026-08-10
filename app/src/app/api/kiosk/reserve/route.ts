@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { verifySession, SESSION_COOKIE } from "@/lib/session";
 
 const RESERVE_MINUTES = 15;
 
-async function requireKiosk(req: NextRequest) {
-  const token = req.cookies.get(SESSION_COOKIE.kiosk)?.value;
-  return verifySession("kiosk", token);
-}
-
+// The kiosk is a public, unauthenticated customer surface — no session to
+// check here. Abuse surface is bounded by the hold itself (15 min TTL, one
+// sticker per call) rather than a login.
+//
 // Kiosk session reservations reuse `stall_holds` (sticker_id + a
 // kiosk:<sessionId> marker in created_by-less form via `customer_name`) so a
 // second kiosk composing against the same last unit is blocked, per §4.3.
@@ -19,8 +17,6 @@ async function requireKiosk(req: NextRequest) {
 // duration of the check — this closes the check-then-insert race where two
 // concurrent kiosk sessions could both reserve the last unit.
 export async function POST(req: NextRequest) {
-  if (!(await requireKiosk(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const { sessionId, stickerDesignId } = await req.json().catch(() => ({}));
   if (!sessionId || !stickerDesignId) {
     return NextResponse.json({ error: "sessionId and stickerDesignId required" }, { status: 400 });
@@ -45,8 +41,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!(await requireKiosk(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const { holdId } = await req.json().catch(() => ({}));
   if (!holdId) return NextResponse.json({ error: "holdId required" }, { status: 400 });
   const admin = supabaseAdmin();

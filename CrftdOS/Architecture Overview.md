@@ -28,7 +28,8 @@ Browser (all pages are "use client")
    │
    └── fetch /api/*  ──► Next route handler ──► service-role client ──► Postgres [everything else]
                             ▲
-                            └── middleware.ts gates every non-API page on a PIN cookie
+                            └── middleware.ts gates every non-API page on a PIN cookie,
+                                except "/" (the public kiosk) and "/pin" itself
 ```
 
 Two distinct database access paths, and the split is deliberate:
@@ -62,8 +63,8 @@ They share a connection pool, a CPU budget, and a blast radius. Worth knowing be
 ```
 app/src/
   app/
-    page.tsx              Sell — the main POS screen (880 lines)
-    kiosk/                Customer Design Studio (758 lines)
+    page.tsx              Kiosk — public customer Design Studio, site root (758 lines)
+    sell/                 Sell — the main POS screen (880 lines), PIN-gated
     orders/ holds/ waste/ returns/ restock/ stock/ more/
     shift-open/ receipt/ pin/
     admin/                dashboard, analytics, pricing, b2b, bulk, catalogue

@@ -100,11 +100,39 @@ Three new routes, each a plain guarded `update` rather than an RPC — single ro
 
 Also closed the PWA-icon watch-list item: `sharp` was already a dependency, so the SVG icon is now rasterised to `public/icon-192.png` and `public/icon-512.png`, both registered in `manifest.webmanifest` and the 192 wired as `apple-touch-icon` in `layout.tsx` (iOS ignores SVG apple icons on many versions; the manifest's SVG entry stays as the `any`-size source of truth). No manual asset was needed — "no image converter was available" was wrong; one was already in `node_modules`.
 
+## Fifth pass — kiosk becomes the site root
+
+Product decision: the home page should be the kiosk showcase, not a PIN wall. Previously `/` *was* Sell — a volunteer-only screen nobody could reach without a PIN, and the kiosk lived at `/kiosk` behind its own PIN.
+
+- `app/page.tsx` (Sell, 880 lines) moved to `app/sell/page.tsx`.
+- `app/kiosk/page.tsx` (758 lines) moved to `app/page.tsx` — the kiosk is now the site root.
+- `next.config.ts` 308-redirects `/kiosk` → `/` for anything printed or bookmarked before the move.
+- `middleware.ts`: `/` is now in an exact-match public-paths list (not prefix-match — `pathname.startsWith("/")` would have publicised every route). Everything else keeps the PIN gate it had; `/sell` inherits the same stall-session gate `/` used to carry.
+- **The kiosk PIN is gone.** `/api/kiosk/reserve` and `/api/kiosk/ticket` no longer check a kiosk session — the kiosk is a public, unauthenticated customer surface by design now, not a staff-unlocked device. Abuse surface is bounded by hold TTL (15 min) and ticket expiry (30 min), not a login. `/api/kiosk/catalogue` was already unauthenticated.
+- Attract screen gained a small "Staff passcode" link to `/pin` — unobtrusive, bottom-left, `opacity-40` at rest, since this is a customer-facing showcase and the passcode entry is a staff affordance, not the headline.
+- `/pin`'s post-login default destination for `kind=stall` changed from `/` to `/sell`.
+- Every internal redirect that assumed root-equals-Sell now points at `/sell`: `shift-open`'s already-open-shift check, `receipt`'s missing-data guard and "Next customer" button, `TabBar`'s Sell tab.
+- `more/page.tsx`'s kiosk link now points at `/` with a "public" note instead of "Kiosk (PIN)".
+- `sw.js`'s hand-maintained offline precache list gained `/sell` (was only precaching `/`, which is now the kiosk).
+- Verified live in dev: `/` → 200, `/kiosk` → 308 → `/`, `/sell` and `/admin` → 307 → `/pin` when unauthenticated, and both kiosk POST routes return 400 on a bad body with no cookie at all (previously 401).
+
+**Demo PINs, dev-only** (`pin/page.tsx`, hidden outside `NODE_ENV=production`): stall `1111` · admin `1234` · kiosk `2222` (the kiosk PIN kind still exists in the auth system, just unused now). Production PINs are argon2 hashes in `stall_settings` — one-way, not recoverable from code or here.
+
+## Sixth pass — Admin responsive pass
+
+Closed the last "Responsive is still barely engaged" item. POS pages needed no change — `PosFrame` already centers every volunteer screen at `max-w-[480px]`, so they were never actually stretching edge-to-edge on a wider device. Kiosk already had the most breakpoint engagement of any surface. Admin was the real gap: five pages, each with at least one fixed-column grid or flex row that didn't step down.
+
+- `admin/page.tsx` — dashboard stat grid `grid-cols-2` → `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`; top nav row gained `flex-wrap`.
+- `admin/b2b/page.tsx` — summary grid `grid-cols-2` → `grid-cols-1 sm:grid-cols-2`; the new-enquiry input row and each order row gained `flex-wrap`.
+- `admin/pricing/page.tsx` — bulk-set row gained `flex-wrap` (tables already scrolled independently from the earlier pass).
+- `admin/catalogue/page.tsx` — already `grid-cols-2 sm:grid-cols-3 md:grid-cols-4`; no change needed, an earlier audit had this wrong.
+- `admin/bulk/page.tsx` — already a narrow single-column form; no change needed.
+
 ## Verification
 
-`tsc --noEmit` clean · `next build` clean · all 17 pages still prerender as static · impeccable detector reports zero findings · `stall_create_order` rollback, rate-limit sequence and analytics output all asserted against the live database.
+`tsc --noEmit` clean · `next build` clean · all pages still prerender as static (`/` and `/sell` replacing the old single `/`) · impeccable detector reports zero findings · `stall_create_order` rollback, rate-limit sequence and analytics output all asserted against the live database · fifth-pass routing changes smoke-tested against a live `next dev` server (see above).
 
-**Not verified in a browser — no dev server was run.** Specifically unviewed: the colour sweep, admin widening, the new QR on the kiosk ticket screen, the stale-catalogue banner, service-worker behaviour (which is disabled in dev by design and so only exercises in a production deploy), and the fourth-pass Pressed/Handed Over/Collected controls. Worth a pass before a real stall.
+**Not verified in a browser beyond curl-level routing checks.** Specifically unviewed: the colour sweep, admin widening, the new QR on the kiosk ticket screen, the stale-catalogue banner, service-worker behaviour (which is disabled in dev by design and so only exercises in a production deploy), the fourth-pass Pressed/Handed Over/Collected controls, and the visual result of the fifth/sixth-pass changes (kiosk-as-root, staff passcode link, Admin breakpoints). Worth a pass before a real stall.
 
 ## Related
 [[Known Issues]] · [[Performance Backlog]] · [[Database Map]] · [[Frontend Audit 2026-08]]

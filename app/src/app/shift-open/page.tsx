@@ -19,7 +19,7 @@ export default function ShiftOpenPage() {
     fetch(`/api/shift/current?deviceId=${getDeviceId()}`)
       .then((r) => r.json())
       .then((j) => {
-        if (j.shift) router.replace("/");
+        if (j.shift) router.replace("/sell");
       });
   }, [router]);
 
@@ -44,7 +44,7 @@ export default function ShiftOpenPage() {
         setErr(j.error || "Could not open shift");
         return;
       }
-      router.push("/");
+      router.push("/sell");
     } finally {
       setBusy(false);
     }

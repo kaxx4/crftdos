@@ -9,8 +9,7 @@ Part of [[crftd Stall OS]]. **Open items only.** Everything cleared on 10 Aug, i
 
 ## Open — code
 
-### Responsive is still barely engaged
-7 breakpoint utilities across 17 pages. Admin was widened and the pricing tables wrapped, but no page has been designed at more than one width. Not a defect anywhere specific — a gap that will keep producing them.
+None. The responsive pass and the home-page/routing restructure that were the last open code items are both in [[Changelog 2026-08-10]].
 
 ## Open — product inputs (PRD §16)
 

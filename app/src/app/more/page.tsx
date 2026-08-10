@@ -7,7 +7,7 @@ const LINKS = [
   { href: "/waste", label: "Waste log", note: "Phase 3" },
   { href: "/returns", label: "Returns & exchanges", note: "Phase 3" },
   { href: "/admin", label: "Admin (PIN)", note: "partial" },
-  { href: "/kiosk", label: "Kiosk (PIN)", note: "Phase 2" },
+  { href: "/", label: "Kiosk", note: "public" },
 ];
 
 export default function MorePage() {

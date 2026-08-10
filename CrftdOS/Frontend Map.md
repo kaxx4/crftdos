@@ -12,7 +12,7 @@ Part of [[Architecture Overview]]. 17 pages, 3 shared components, all client-ren
 ### Volunteer — [[Surface - Volunteer POS]]
 | Route | File | Lines | What |
 |---|---|---|---|
-| `/` | `app/page.tsx` | 880 | **Sell.** The main POS screen. See [[Flow - Sell]] |
+| `/sell` | `app/sell/page.tsx` | 880 | **Sell.** The main POS screen, moved off the root so `/` could become the public kiosk. See [[Flow - Sell]] |
 | `/orders` | `app/orders/page.tsx` | 264 | Shift log, pending press queue, voids, summary card export |
 | `/holds` | `app/holds/page.tsx` | | Active reservations with countdown |
 | `/stock/products` `/stock/stickers` | | | Inventory matrices |
@@ -25,7 +25,7 @@ Part of [[Architecture Overview]]. 17 pages, 3 shared components, all client-ren
 | `/pin` | | | PIN entry for all three kinds |
 
 ### Kiosk — [[Surface - Kiosk]]
-| `/kiosk` | `app/kiosk/page.tsx` | 758 | Attract → presets or canvas → ticket |
+| `/` | `app/page.tsx` | 758 | Attract → presets or canvas → ticket. **Public — no PIN.** `/kiosk` 308-redirects here for old links/QR codes. A "Staff passcode" link on the attract screen goes to `/pin`. |
 
 ### Admin — [[Surface - Admin]]
 | `/admin` | 86 | Dashboard |
@@ -44,7 +44,7 @@ There is **no state library**. No Redux, Zustand, TanStack Query, SWR, or React 
 Consequences worth naming:
 - Navigating Sell → Orders → Sell **refetches the entire catalogue**. There is no cache to hit.
 - The Sell page alone holds ~25 `useState` calls. It is the natural first candidate for a reducer.
-- Cross-page invalidation does not exist — a stock change on `/stock/stickers` is invisible on `/` until remount or a Realtime event.
+- Cross-page invalidation does not exist — a stock change on `/stock/stickers` is invisible on `/sell` until remount or a Realtime event.
 
 That is a defensible choice for an app this size, but it is the reason [[Performance Backlog]] item 5 (the boot waterfall) hits on *every* navigation rather than once.
 
@@ -82,7 +82,7 @@ The cost lands elsewhere: a blank shell, then hydration, then a fetch waterfall 
 
 The design reference specifies **Eina**, a paid Fontspring-licensed face. `layout.tsx` carries an explicit note that the `.ttf` files are *not* shipped because there is no proof of a licence covering this deployment, and Plus Jakarta Sans is the OFL substitute. Good call, and the reasoning is recorded where the next person will find it.
 
-**Fraunces 900 italic** is loaded separately and *only inside* `kiosk/page.tsx`, scoped via `fraunces.variable` on the kiosk root so the restrained volunteer skin cannot pick it up. It renders the "yours" in *Build yours*, per PRD §11.
+**Fraunces 900 italic** is loaded separately and *only inside* `app/page.tsx` (the kiosk, now the site root), scoped via `fraunces.variable` so the restrained volunteer skin cannot pick it up. It renders the "yours" in *Build yours*, per PRD §11.
 
 Anton, Archivo Expanded Black and Chivo from the PRD §11 stack are not loaded at all. See [[Design System]].
 

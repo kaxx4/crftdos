@@ -31,7 +31,7 @@ export default function ReceiptPage() {
   useEffect(() => {
     const raw = sessionStorage.getItem("last_receipt");
     if (!raw) {
-      router.replace("/");
+      router.replace("/sell");
       return;
     }
     try {
@@ -40,7 +40,7 @@ export default function ReceiptPage() {
       setData(parsed);
     } catch {
       sessionStorage.removeItem("last_receipt");
-      router.replace("/");
+      router.replace("/sell");
     }
   }, [router]);
 
@@ -137,7 +137,7 @@ export default function ReceiptPage() {
           EMAIL (PHASE 4)
         </button>
       </div>
-      <BigButton variant="ghost" onClick={() => router.push("/")}>
+      <BigButton variant="ghost" onClick={() => router.push("/sell")}>
         NEXT CUSTOMER
       </BigButton>
     </PosFrame>

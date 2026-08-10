@@ -9,7 +9,7 @@ function PinInner() {
   const params = useSearchParams();
   const router = useRouter();
   const kind = (params.get("kind") as "stall" | "admin" | "kiosk") || "stall";
-  const next = params.get("next") || (kind === "admin" ? "/admin" : kind === "kiosk" ? "/kiosk" : "/");
+  const next = params.get("next") || (kind === "admin" ? "/admin" : kind === "kiosk" ? "/" : "/sell");
   const [pin, setPin] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);

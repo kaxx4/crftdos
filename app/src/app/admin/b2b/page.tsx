@@ -88,7 +88,7 @@ export default function B2BPage() {
 
   return (
     <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 w-full max-w-[1400px] mx-auto flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="border-2 border-ink bg-white p-3">
           <div className="font-mono text-xs text-muted">Committed value (confirmed+)</div>
           <div className="font-extrabold text-2xl">₹{committed}</div>
@@ -110,7 +110,7 @@ export default function B2BPage() {
             </option>
           ))}
         </select>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input placeholder="Qty" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="border-2 border-ink p-2 w-24" />
           <input placeholder="Unit price" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="border-2 border-ink p-2 w-28" />
           <input placeholder="Unit cost" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} className="border-2 border-ink p-2 w-28" />
@@ -140,7 +140,7 @@ export default function B2BPage() {
 
       <div className="flex flex-col gap-2">
         {orders.map((o) => (
-          <div key={o.id} className="border-2 border-ink bg-white p-3 flex justify-between items-center gap-2">
+          <div key={o.id} className="border-2 border-ink bg-white p-3 flex flex-wrap justify-between items-center gap-2">
             <div>
               <div className="font-extrabold">{o.client_org}</div>
               <div className="font-mono text-xs text-muted">
