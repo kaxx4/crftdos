@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verify } from "@node-rs/argon2";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { verifySession, SESSION_COOKIE } from "@/lib/session";
 
@@ -48,6 +49,31 @@ export async function POST(req: NextRequest) {
 
   if (!shiftId || !items?.length || !paymentMethod) {
     return NextResponse.json({ error: "Missing required order fields" }, { status: 400 });
+  }
+
+  // PRD §3.1: "Above 10% requires admin PIN." The Sell screen enforces this
+  // client-side, but nothing previously re-checked it here — the RPC
+  // inserted whatever discountAmount the payload carried, PIN or not. A
+  // hand-crafted POST to this route (or a client that skipped the prompt)
+  // could apply any discount at all. Re-verify the same hash /api/auth/verify
+  // checks before the discount reaches the database.
+  const subtotal = Number(body.subtotal) || 0;
+  const discountAmount = Number(body.discountAmount) || 0;
+  const discountPct = subtotal > 0 ? (discountAmount / subtotal) * 100 : 0;
+  if (discountPct > 10 && discountAmount > 0) {
+    const admin0 = supabaseAdmin();
+    const { data: pinRow } = await admin0.from("stall_settings").select("value").eq("key", "pin_admin").single();
+    const pinOk = pinRow && (await verify(pinRow.value as string, body.adminPin || "").catch(() => false));
+    if (!pinOk) {
+      return NextResponse.json({ error: "Admin PIN required for discounts above 10%" }, { status: 403 });
+    }
+    // PRD §12: "discount overrides" are one of the four action types that
+    // must write to admin_audit. Previously none of them did.
+    await admin0.from("stall_admin_audit").insert({
+      actor: "volunteer",
+      action: "discount_override",
+      detail: { orderId: body.id, subtotal, discountAmount, discountPct: Math.round(discountPct * 10) / 10 },
+    });
   }
 
   // The whole charge — idempotency check, receipt-number consumption, customer

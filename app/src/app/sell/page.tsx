@@ -73,7 +73,10 @@ export default function SellPage() {
 
   const [stickerQuery, setStickerQuery] = useState("");
   const [sizeFilter, setSizeFilter] = useState<"S" | "M" | "L" | null>(null);
-  const [recent, setRecent] = useState<string[]>([]);
+  // PRD §3.1: "8 most-used this shift" — a frequency count, not a recency
+  // stack, and scoped to the shift rather than to this component instance
+  // (which remounts every time a volunteer navigates away and back).
+  const [recentCounts, setRecentCounts] = useState<Record<string, number>>({});
   const [customOpen, setCustomOpen] = useState(false);
   const [customDesc, setCustomDesc] = useState("");
   const [customSize, setCustomSize] = useState<"S" | "M" | "L">("M");
@@ -99,6 +102,21 @@ export default function SellPage() {
   const [undo, setUndo] = useState<{ orderId: string; snapshot: unknown; timer: ReturnType<typeof setTimeout> } | null>(
     null
   );
+
+  // PRD §3.1 "Customer sheet" / §3.2 press mode. A custom sticker or a
+  // canvas (kiosk) placement on a collect-later shift means someone has to
+  // be reachable when the garment is ready, so contact capture stops being
+  // skippable in that one case. Shown as a gate before Charge rather than
+  // after (the PRD says "after"), since the order is written atomically —
+  // customer_id is set at insert time, so there is no later moment to
+  // attach a name/phone to an order that already exists.
+  const [customerSheetOpen, setCustomerSheetOpen] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerConsent, setCustomerConsent] = useState(false);
+  const [promisedDate, setPromisedDate] = useState("");
+  const [customerErr, setCustomerErr] = useState("");
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -186,6 +204,12 @@ export default function SellPage() {
       if (shiftRes?.shift) {
         setShift(shiftRes.shift);
         setBlock(shiftRes.block);
+        try {
+          const raw = sessionStorage.getItem(`recent_stickers_${shiftRes.shift.id}`);
+          if (raw) setRecentCounts(JSON.parse(raw));
+        } catch {
+          // Corrupt/unavailable sessionStorage — start empty, not fatal.
+        }
       }
       setLoading(false);
     }
@@ -223,6 +247,15 @@ export default function SellPage() {
     if (targetGarmentKey === key) setTargetGarmentKey(null);
   }
 
+  const recentTop8 = useMemo(
+    () =>
+      Object.entries(recentCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([code]) => code),
+    [recentCounts]
+  );
+
   const stickerResults = useMemo(() => {
     let list = designs;
     if (sizeFilter) list = list.filter((d) => d.size_class === sizeFilter);
@@ -259,7 +292,17 @@ export default function SellPage() {
       unit_price: Number(design.unit_price),
       unit_cost: Number(design.unit_cost),
     };
-    setRecent((r) => [design.code, ...r.filter((c) => c !== design.code)].slice(0, 8));
+    setRecentCounts((prev) => {
+      const next = { ...prev, [design.code]: (prev[design.code] || 0) + 1 };
+      if (shift) {
+        try {
+          sessionStorage.setItem(`recent_stickers_${shift.id}`, JSON.stringify(next));
+        } catch {
+          // Non-fatal — this is a convenience list, not the sale record.
+        }
+      }
+      return next;
+    });
     if (targetGarmentKey) {
       setGarments((prev) =>
         prev.map((g) => (g.key === targetGarmentKey ? { ...g, stickers: [...g.stickers, entry] } : g))
@@ -411,9 +454,13 @@ export default function SellPage() {
     });
     const j = await res.json().catch(() => ({}));
     if (j.ok) {
+      // Kept (not cleared) so the order payload can carry it — /api/orders
+      // re-verifies server-side. A client that skipped this prompt entirely
+      // (or hit the API directly) must not be able to write a >10% discount
+      // with no PIN at all, which was previously true: the RPC accepted
+      // whatever discountAmount the client sent, no re-check.
       setDiscountUnlocked(true);
       setAdminPinPrompt(false);
-      setAdminPinValue("");
     } else {
       // A lockout must not read as a wrong PIN, or the volunteer keeps
       // retyping a PIN that was correct and the queue keeps growing.
@@ -424,6 +471,16 @@ export default function SellPage() {
   const splitTotal = (Number(cashAmt) || 0) + (Number(upiAmt) || 0);
   const splitOk = payment !== "split" || Math.abs(splitTotal - total) < 1;
 
+  // PRD §3.1/§3.2: a custom sticker or a canvas (kiosk) placement means the
+  // garment isn't handed over on the spot. On a collect-later shift that
+  // makes contact information non-negotiable — there is no other way to
+  // reach the customer when it's ready.
+  const cartHasFulfillmentTrigger = useMemo(() => {
+    const allStickers = [...garments.flatMap((g) => g.stickers), ...standalone];
+    return allStickers.some((s) => s.custom || s.pos_x != null);
+  }, [garments, standalone]);
+  const collectLater = cartHasFulfillmentTrigger && shift?.press_on_site === false;
+
   function resetCart() {
     setGarments([]);
     setStandalone([]);
@@ -431,13 +488,20 @@ export default function SellPage() {
     setDiscountAmt("");
     setDiscountPct("");
     setDiscountUnlocked(false);
+    setAdminPinValue("");
     setPayment("cash");
     setCashAmt("");
     setUpiAmt("");
     setRedeemedTicketCode(null);
+    setCustomerName("");
+    setCustomerPhone("");
+    setCustomerEmail("");
+    setCustomerConsent(false);
+    setPromisedDate("");
+    setCustomerErr("");
   }
 
-  async function charge() {
+  function openCharge() {
     if (cartEmpty) return;
     if (needsAdminGate && !discountUnlocked) {
       setAdminPinPrompt(true);
@@ -445,7 +509,18 @@ export default function SellPage() {
     }
     if (!splitOk) return;
     if (!shift || !block) return;
+    setCustomerErr("");
+    setCustomerSheetOpen(true);
+  }
 
+  async function charge() {
+    if (collectLater && (!promisedDate || !customerPhone.trim())) {
+      setCustomerErr("Promised date and a phone number are required — this garment isn't handed over today.");
+      return;
+    }
+    if (!shift || !block) return;
+
+    setCustomerSheetOpen(false);
     setCharging(true);
     const orderId = uuidv4();
     const deviceId = getDeviceId();
@@ -485,6 +560,12 @@ export default function SellPage() {
       })),
     ];
 
+    const fulfillmentStatus = cartHasFulfillmentTrigger
+      ? shift.press_on_site
+        ? "pending_press"
+        : "collect_later"
+      : undefined;
+
     const payload = {
       id: orderId,
       shiftId: shift.id,
@@ -500,6 +581,20 @@ export default function SellPage() {
       paidCash: payment === "cash" ? total : payment === "split" ? Number(cashAmt) || 0 : 0,
       paidUpi: payment === "upi" ? total : payment === "split" ? Number(upiAmt) || 0 : 0,
       clientCreatedAt: new Date().toISOString(),
+      fulfillmentStatus,
+      promisedDate: collectLater ? promisedDate : undefined,
+      customer:
+        customerName || customerPhone || customerEmail
+          ? {
+              name: customerName || undefined,
+              phone: customerPhone || undefined,
+              email: customerEmail || undefined,
+              consent_marketing: customerConsent,
+            }
+          : undefined,
+      // Re-verified server-side against the same hash /api/auth/verify uses —
+      // the client-side unlock alone was never enforced past this point.
+      adminPin: needsAdminGate && discountUnlocked ? adminPinValue : undefined,
     };
 
     const snapshot = { garments, standalone, discountAmt, discountPct, payment, cashAmt, upiAmt };
@@ -776,11 +871,11 @@ export default function SellPage() {
               </Chip>
             ))}
           </div>
-          {recent.length > 0 && (
+          {recentTop8.length > 0 && (
             <div className="flex flex-col gap-1">
               <PanelLabel>Recent</PanelLabel>
               <div className="flex gap-1.5 overflow-x-auto">
-                {recent.map((code) => {
+                {recentTop8.map((code) => {
                   const d = designs.find((x) => x.code === code);
                   return (
                     d && (
@@ -940,7 +1035,7 @@ export default function SellPage() {
           variant="blue"
           className="w-full"
           disabled={cartEmpty || charging || !splitOk}
-          onClick={charge}
+          onClick={openCharge}
         >
           {charging ? "CHARGING…" : `CHARGE ₹${total}`}
         </BigButton>
@@ -966,6 +1061,50 @@ export default function SellPage() {
               <BigButton variant="ghost" className="flex-1" onClick={() => setAdminPinPrompt(false)}>
                 CANCEL
               </BigButton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {customerSheetOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-cream border-2 border-ink p-4 w-full max-w-xs flex flex-col gap-3">
+            <PanelLabel>{collectLater ? "Collection details (required)" : "Customer details"}</PanelLabel>
+            {collectLater && (
+              <div className="bg-signal text-cream p-2 font-extrabold text-[10px] tracking-wide uppercase">
+                Custom or canvas item on a collect-later shift — a promised date and phone number are required.
+              </div>
+            )}
+            <Field label="Customer name" placeholder="Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+            <Field
+              label="Customer phone"
+              placeholder={collectLater ? "Phone (required)" : "Phone"}
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+            />
+            <Field label="Customer email" placeholder="Email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+            {collectLater && (
+              <Field
+                label="Promised collection date"
+                type="date"
+                value={promisedDate}
+                onChange={(e) => setPromisedDate(e.target.value)}
+              />
+            )}
+            <label className="flex items-center gap-2 text-xs font-bold">
+              <input type="checkbox" checked={customerConsent} onChange={(e) => setCustomerConsent(e.target.checked)} className="w-5 h-5" />
+              OK to contact for marketing
+            </label>
+            {customerErr && <div className="text-signal text-xs font-bold">{customerErr}</div>}
+            <div className="flex gap-2">
+              <BigButton variant="blue" className="flex-1" onClick={charge}>
+                {charging ? "CHARGING…" : `CHARGE ₹${total}`}
+              </BigButton>
+              {!collectLater && (
+                <BigButton variant="ghost" className="flex-1" onClick={() => { setCustomerName(""); setCustomerPhone(""); setCustomerEmail(""); setCustomerConsent(false); charge(); }}>
+                  SKIP
+                </BigButton>
+              )}
             </div>
           </div>
         </div>

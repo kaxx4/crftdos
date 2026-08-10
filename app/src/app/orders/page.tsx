@@ -9,6 +9,7 @@ import { TOKENS } from "@/lib/tokens";
 import { PressQueue, type PressOrder } from "@/components/PressQueue";
 import { Collections } from "@/components/Collections";
 import { Chip } from "@/components/ui";
+import { flushOutbox, outboxCount } from "@/lib/outbox";
 
 type Summary = {
   shift: { name: string; venue: string };
@@ -39,6 +40,8 @@ export default function OrdersPage() {
   const [closeResult, setCloseResult] = useState<{ expectedCash: number; variance: number | null } | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [tab, setTab] = useState<"press" | "collections">("press");
+  const [outboxPending, setOutboxPending] = useState(0);
+  const [closeBlockedErr, setCloseBlockedErr] = useState("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -104,6 +107,23 @@ export default function OrdersPage() {
 
   async function closeShift() {
     if (!shift) return;
+    setCloseBlockedErr("");
+
+    // PRD §10: shift close "must block on a non-empty outbox with a clear
+    // '3 sales not yet synced, connect to wifi' message." Previously this
+    // called /api/shift/close unconditionally — a volunteer could close on
+    // iOS (no Background Sync) with queued sales still sitting in IndexedDB,
+    // and the till would reconcile against server data missing those orders.
+    if (navigator.onLine) await flushOutbox(setOutboxPending);
+    const remaining = await outboxCount();
+    setOutboxPending(remaining);
+    if (remaining > 0) {
+      setCloseBlockedErr(
+        `${remaining} sale${remaining === 1 ? "" : "s"} not yet synced — connect to wifi and try again.`
+      );
+      return;
+    }
+
     const res = await fetch("/api/shift/close", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -278,6 +298,11 @@ export default function OrdersPage() {
           <BigButton variant="blue" onClick={() => setClosing(true)}>
             CLOSE SHIFT
           </BigButton>
+          {closeBlockedErr && (
+            <div role="alert" className="bg-signal text-cream p-2.5 font-extrabold text-[11px] tracking-wide uppercase">
+              {closeBlockedErr}
+            </div>
+          )}
           {closing && !closeResult && (
             <div className="flex flex-col gap-2">
               <p className="text-sm">Confirm close? Unused receipt numbers on this device will be voided.</p>

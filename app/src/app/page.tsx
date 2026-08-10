@@ -395,6 +395,23 @@ export default function KioskPage() {
     return Math.max(halfPct, Math.min(100 - halfPct, pct));
   }
 
+  /** clampCenterPct clamps against the unrotated half-extent, which is
+   *  correct while dragging (placements start unrotated) but not once a
+   *  placement has been rotated — a rotated sticker's true corners (from
+   *  pxCorners, the same oriented-rectangle math the overlap check uses)
+   *  can extend past the printable rectangle even though its center is
+   *  still inside it. This is the drag-end backstop for that case. */
+  function withinPrintArea(p: Placement | PlacementTrial): boolean {
+    if (!printArea) return true;
+    const areaX = printArea.x * IMG_W;
+    const areaY = printArea.y * IMG_H;
+    const areaW = printArea.w * IMG_W;
+    const areaH = printArea.h * IMG_H;
+    return pxCorners(p).every(
+      (pt) => pt.x >= areaX - 0.5 && pt.x <= areaX + areaW + 0.5 && pt.y >= areaY - 0.5 && pt.y <= areaY + areaH + 0.5
+    );
+  }
+
   function onPointerDownSticker(e: React.PointerEvent, p: Placement) {
     e.stopPropagation();
     setSelectedKey(p.key);
@@ -431,8 +448,13 @@ export default function KioskPage() {
       const moved = prev.find((p) => p.key === ds.key);
       if (!moved) return prev;
       const collides = prev.some((p) => p.key !== ds.key && p.side === moved.side && overlaps(moved, p));
-      if (collides) {
-        setOverlapMsg("That overlaps another sticker — placement reverted.");
+      const outOfBounds = !withinPrintArea(moved);
+      if (collides || outOfBounds) {
+        setOverlapMsg(
+          outOfBounds
+            ? "That's off the printable area — placement reverted."
+            : "That overlaps another sticker — placement reverted."
+        );
         return prev.map((p) => (p.key === ds.key ? { ...p, xPct: ds.origX, yPct: ds.origY } : p));
       }
       return prev;
@@ -531,6 +553,12 @@ export default function KioskPage() {
   }
 
   function resetAll() {
+    // Every placement still holding a reservation gets released rather than
+    // left to expire on the 15-minute TTL — matters most when a customer
+    // never reaches "Get Ticket" and a volunteer resets the kiosk for the
+    // next person, which previously leaked holds against real availability
+    // for up to 15 minutes with nothing that customer actually bought.
+    for (const p of placements) releaseHold(p.holdId);
     setTicketQr(null);
     setStage("attract");
     setColorId(colors[0]?.id || null);

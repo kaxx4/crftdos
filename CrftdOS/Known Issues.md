@@ -9,7 +9,12 @@ Part of [[crftd Stall OS]]. **Open items only.** Everything cleared on 10 Aug, i
 
 ## Open — code
 
-None. The responsive pass and the home-page/routing restructure that were the last open code items are both in [[Changelog 2026-08-10]].
+A PRD audit on 10 Aug (see [[Changelog 2026-08-10]] "Seventh pass") fixed the load-bearing gaps it found — fulfillment status was never sent from Sell, so the press queue and Collections tab built earlier that day were unreachable from a real sale. What's left, in order of how much it matters:
+
+1. **Stock adjustments and PIN changes don't write `stall_admin_audit`.** Discount overrides now do (this pass). Stock edits write `stall_inventory_movements` instead, which has `actor`/`reason`/`note` and is arguably the more correct ledger for a stock delta — but it means "stock adjustments above a threshold" per PRD §12 isn't in the same audit trail as price/discount actions, and there's no "above a threshold" distinction, everything logs. There's also no PIN-change *feature* built yet (PINs are only set at seed time), so that category has nothing to audit.
+2. **Kiosk rotation slider doesn't re-check overlap or print-area bounds.** Dragging is checked against both (this pass added bounds-checking to drag-end); rotating a placed sticker via the slider checks neither, live, as the user drags it. A rotation could end a sticker overlapping its neighbour or off the printable area with no revert.
+3. **Customer retention purge (PRD §12: "purge customers with no order in 24 months") is unbuilt.** No cron/scheduled-job infrastructure exists in this repo to hang it off yet.
+4. **`middleware.ts`'s only gate on every `/api/*` route is that handler's own `verifySession` call** — a handler that forgot it would be a fully open door via the service-role client, which bypasses RLS entirely. Not a bug found, an architectural note: worth a pass that greps every `api/**/route.ts` for a missing session check, not done as part of this audit.
 
 ## Open — product inputs (PRD §16)
 
