@@ -6,6 +6,7 @@ import { TabBar } from "@/components/TabBar";
 import { BigButton, Mono } from "@/components/ui";
 import { getDeviceId } from "@/lib/deviceId";
 import { TOKENS } from "@/lib/tokens";
+import { PressQueue, type PressOrder } from "@/components/PressQueue";
 
 type Summary = {
   shift: { name: string; venue: string };
@@ -18,14 +19,11 @@ type Summary = {
   cashVariance: number | null;
 };
 
-type Order = {
-  id: string;
-  receipt_no: string;
+type Order = PressOrder & {
   total: number;
   payment_method: string;
   fulfillment_status: string;
   voided_at: string | null;
-  created_at: string;
 };
 
 export default function OrdersPage() {
@@ -181,11 +179,9 @@ export default function OrdersPage() {
   return (
     <div className="min-h-dvh flex flex-col">
       <PosFrame kicker="STALL OS · ORDERS" title="Orders">
-        {pending.length > 0 && (
-          <div className="bg-signal text-cream p-2.5 font-extrabold text-[11px] tracking-wide uppercase">
-            {pending.length} pending press
-          </div>
-        )}
+        {/* PRD §3.2: pending items pin to the top with a live timer and the
+            press sheet the heat-press operator actually works from. */}
+        <PressQueue orders={pending} />
         <div className="flex flex-col gap-2">
           {orders.map((o) => (
             <div key={o.id} className="border-2 border-ink bg-white p-2.5 flex justify-between gap-2">

@@ -13,3 +13,7 @@ Thumbs.db
 
 # Obsidian per-machine UI state (open panes, window geometry) — churns constantly.
 CrftdOS/.obsidian/workspace.json
+
+# Handoff archive: every one of its 95 entries is already extracted and
+# tracked under _import/interactive-flow-build-for-web-mobile-desktop/.
+*-handoff.zip

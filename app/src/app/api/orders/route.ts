@@ -83,10 +83,23 @@ export async function GET(req: NextRequest) {
   const pageParam = req.nextUrl.searchParams.get("limit");
   const limit = Math.min(Math.max(parseInt(pageParam || "100", 10) || 100, 1), 200);
 
+  // Joins the mockup, print area and cutout paths the press sheet needs
+  // (PRD §4.4) so the queue can composite on-device without a second fetch —
+  // the press table has the same signal as the rest of the stall.
   const admin = supabaseAdmin();
   let q = admin
     .from("stall_orders")
-    .select("*, stall_order_items(*, stall_order_item_stickers(*))")
+    .select(
+      `*, stall_order_items(
+         *,
+         stall_product_skus(sku_code, mockup_front, mockup_back, print_area),
+         stall_order_item_stickers(
+           *,
+           stall_sticker_designs(code, cutout_path, print_w_cm, print_h_cm),
+           stall_custom_stickers(code, description)
+         )
+       )`
+    )
     .order("created_at", { ascending: false });
   if (shiftId) {
     // A shift is one day, so this is bounded — but bound it anyway rather

@@ -9,12 +9,8 @@ Part of [[crftd Stall OS]]. **Open items only.** Everything cleared on 10 Aug is
 
 ## Open — code
 
-### Press sheet is not generated
-**The last remaining spec gap in the build.** PRD §4.4 requires a composite PNG of the tee with stickers in position, for the person at the heat press to work from. Nothing renders one.
-
-Everything it needs now exists: placements persist through [[Order Creation RPC]], the kiosk QR carries them, and the canvas already knows how to position a cutout inside a print area. What is missing is the compositing step — load the mockup, draw each cutout at its `pos_x`/`pos_y`/`rotation`, export a PNG, attach it to the ticket and the order detail.
-
-Left open deliberately rather than half-built: it is new visual output, and its whole value is being *correct to look at*. It needs a browser and a real mockup image to verify, and neither was available in this session.
+### Press queue has no state transitions
+PRD §3.2 requires one-tap **Pressed** and **Handed Over** on the pending queue. `PressQueue` now shows the composite sheet, the placement list and a live wait timer, but there are no controls and no route behind them — `stall_orders.pressed_at` and `collected_at` exist and are never written after creation. The collect-later **Collections tab grouped by date** from the same section is also missing.
 
 ### Responsive is still barely engaged
 7 breakpoint utilities across 17 pages. Admin was widened and the pricing tables wrapped, but no page has been designed at more than one width. Not a defect anywhere specific — a gap that will keep producing them.

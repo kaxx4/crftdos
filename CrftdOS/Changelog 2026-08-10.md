@@ -78,6 +78,14 @@ Added `src/lib/catalogueCache.ts` so the Sell screen boots from an IndexedDB sna
 
 **Polish.** Touch-target floor unified at 48px (four different values existed). The selected-garment marker — which decides *which shirt gets pressed* — went from a 10% tint to a solid blue rail.
 
+## Third pass — the press sheet
+
+PRD §4.4's press sheet now exists: `src/lib/pressSheet.ts` composites the mockup, draws each cutout at its `pos_x`/`pos_y`/`rotation`, and marks the print-area boundary and a centre crosshair on each placement — the operator aligns to the crosshair, not to the eyeballed middle of the artwork. A missing cutout draws its footprint and code in signal red rather than vanishing.
+
+Rendered on-device on demand rather than uploaded, so it works offline: the press table is the same stall with the same signal. The machine-readable placement list beside it is not a fallback for the image but the other half of the spec — the image says where, the table gives exact numbers when "about a third across" will not do.
+
+This also turned the pending queue from a red count banner into a real queue: oldest first, live wait timer, sheet per garment per side. It surfaced a gap rather than closing one — there are still no **Pressed** / **Handed Over** controls, logged in [[Known Issues]].
+
 ## Verification
 
 `tsc --noEmit` clean · `next build` clean · all 17 pages still prerender as static · impeccable detector reports zero findings · `stall_create_order` rollback, rate-limit sequence and analytics output all asserted against the live database.
