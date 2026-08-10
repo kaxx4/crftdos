@@ -465,6 +465,38 @@ export default function KioskPage() {
     setPlacements((prev) => prev.map((p) => (p.key === key ? { ...p, rotation } : p)));
   }
 
+  /** Dragging updates live (setRotation) for smooth visual feedback — no
+   *  overlap/bounds check mid-drag, matching how position-dragging behaves.
+   *  Release is where both get enforced, same as onPointerUp does for
+   *  position: revert to the rotation the drag started at if the end state
+   *  overlaps a neighbour or leaves the printable area. Previously rotation
+   *  checked neither, live or on release — a rotated sticker could end up
+   *  overlapping or off-area with nothing to catch it. */
+  const rotationDragStart = useRef<number | null>(null);
+  function onRotationPointerDown(key: string) {
+    rotationDragStart.current = placements.find((p) => p.key === key)?.rotation ?? 0;
+  }
+  function onRotationCommit(key: string) {
+    const start = rotationDragStart.current;
+    rotationDragStart.current = null;
+    if (start === null) return;
+    setPlacements((prev) => {
+      const moved = prev.find((p) => p.key === key);
+      if (!moved) return prev;
+      const collides = prev.some((p) => p.key !== key && p.side === moved.side && overlaps(moved, p));
+      const outOfBounds = !withinPrintArea(moved);
+      if (collides || outOfBounds) {
+        setOverlapMsg(
+          outOfBounds
+            ? "That rotation puts it off the printable area — reverted."
+            : "That rotation overlaps another sticker — reverted."
+        );
+        return prev.map((p) => (p.key === key ? { ...p, rotation: start } : p));
+      }
+      return prev;
+    });
+  }
+
   async function getTicket() {
     if (!sku) return;
     setTicketError("");
@@ -859,6 +891,17 @@ export default function KioskPage() {
                 max={359}
                 value={placements.find((p) => p.key === selectedKey)?.rotation || 0}
                 onChange={(e) => setRotation(selectedKey, Number(e.target.value))}
+                onPointerDown={() => onRotationPointerDown(selectedKey)}
+                onPointerUp={() => onRotationCommit(selectedKey)}
+                onBlur={() => onRotationCommit(selectedKey)}
+                onKeyDown={() => {
+                  if (rotationDragStart.current === null) onRotationPointerDown(selectedKey);
+                }}
+                onKeyUp={(e) => {
+                  if (["ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown"].includes(e.key)) {
+                    onRotationCommit(selectedKey);
+                  }
+                }}
                 className="w-full h-11 kiosk-slider"
               />
               <button

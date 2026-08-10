@@ -163,6 +163,17 @@ With both fixed, the full loop was re-verified live: charge → order lands in t
 
 `tsc --noEmit` clean · `next build` clean · all pages still prerender as static (`/` and `/sell` replacing the old single `/`) · impeccable detector reports zero findings. Live-database verification, this session: `stall_create_order` rollback, rate-limit sequence and analytics output (earlier passes); migration 005 applied directly to `drvucogrjphctwfealxd`; the full Sell → press queue → Pressed → Handed Over loop driven end-to-end in a real headless browser against production data, order created and cleaned up afterward; every page's horizontal-overflow check across three width bands.
 
+## Ninth pass — the last two code-only Known Issues
+
+Closed both remaining items that were pure code (not blocked on external assets):
+
+- **Stock-adjustment audit logging.** `/api/stock/product/[id]` and `/api/stock/sticker/[id]` already wrote a `stall_inventory_movements` row per edit; PRD §12 also asks for "stock adjustments above a threshold" in `stall_admin_audit` alongside price changes and discount overrides, which neither route did. Both now write a `stock_adjustment` audit row when `|delta| >= 10`, same threshold philosophy as the 10% discount gate.
+- **Kiosk rotation slider bounds/overlap.** Dragging a placement was already checked against both on release; rotating one via its slider checked neither, live. Rotation now commits the same check dragging uses — on pointer-up, blur, and arrow-key release, not mid-drag (which would fight the user's gesture) — and reverts to the rotation the interaction started at if the end state overlaps a neighbour or leaves the printable area.
+
+## Verification, ninth pass
+
+`tsc --noEmit` clean · `next build` clean.
+
 **Still not verified in a browser:** the colour sweep, the new QR on the kiosk ticket screen, the stale-catalogue banner, service-worker behaviour (disabled in dev by design, only exercises in a production deploy), void, returns, holds, waste, restock, B2B, bulk entry, and the admin pricing/catalogue screens' inline-edit interactions. The core sell → press → collect loop and routing are now real-browser-verified; the rest of the surface area is not.
 
 ## Related
