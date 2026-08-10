@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Mono } from "./ui";
+import { BigButton, Mono } from "./ui";
 import { renderPressSheet, placementList, type PressPlacement, type PrintArea } from "@/lib/pressSheet";
 
 /** Shape of a pending order as /api/orders returns it, with the press-sheet
@@ -10,6 +10,7 @@ export type PressOrder = {
   receipt_no: string;
   created_at: string;
   promised_date: string | null;
+  pressed_at: string | null;
   stall_order_items: {
     stall_product_skus: {
       sku_code: string;
@@ -161,9 +162,17 @@ function GarmentSheet({
   );
 }
 
-/** The pending-press queue (PRD §3.2): oldest first, with a live wait timer
- *  and the press sheet for each garment. */
-export function PressQueue({ orders }: { orders: PressOrder[] }) {
+/** The pending-press queue (PRD §3.2): oldest first, with a live wait timer,
+ *  the press sheet for each garment, and one-tap Pressed / Handed Over. */
+export function PressQueue({
+  orders,
+  onPress,
+  onHandOver,
+}: {
+  orders: PressOrder[];
+  onPress: (id: string) => void;
+  onHandOver: (id: string) => void;
+}) {
   // Re-render once a minute so the wait timers stay honest without a timer
   // per order.
   const [, setTick] = useState(0);
@@ -193,12 +202,25 @@ export function PressQueue({ orders }: { orders: PressOrder[] }) {
               <Mono>
                 waiting {waitedFor(o.created_at)}
                 {o.promised_date ? ` · promised ${o.promised_date}` : ""}
+                {o.pressed_at ? " · pressed" : ""}
               </Mono>
             </div>
           </div>
           {o.stall_order_items.map((item, i) => (
             <GarmentSheet key={i} item={item} receiptNo={o.receipt_no} />
           ))}
+          <div className="grid grid-cols-2 gap-2">
+            <BigButton
+              variant={o.pressed_at ? "ghost" : "blue"}
+              disabled={!!o.pressed_at}
+              onClick={() => onPress(o.id)}
+            >
+              {o.pressed_at ? "PRESSED" : "MARK PRESSED"}
+            </BigButton>
+            <BigButton variant="ink" onClick={() => onHandOver(o.id)}>
+              HANDED OVER
+            </BigButton>
+          </div>
         </div>
       ))}
     </section>

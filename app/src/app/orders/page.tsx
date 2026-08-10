@@ -7,6 +7,8 @@ import { BigButton, Mono } from "@/components/ui";
 import { getDeviceId } from "@/lib/deviceId";
 import { TOKENS } from "@/lib/tokens";
 import { PressQueue, type PressOrder } from "@/components/PressQueue";
+import { Collections } from "@/components/Collections";
+import { Chip } from "@/components/ui";
 
 type Summary = {
   shift: { name: string; venue: string };
@@ -24,6 +26,8 @@ type Order = PressOrder & {
   payment_method: string;
   fulfillment_status: string;
   voided_at: string | null;
+  collected_at: string | null;
+  customer_id: string | null;
 };
 
 export default function OrdersPage() {
@@ -34,6 +38,7 @@ export default function OrdersPage() {
   const [countedCash, setCountedCash] = useState("");
   const [closeResult, setCloseResult] = useState<{ expectedCash: number; variance: number | null } | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [tab, setTab] = useState<"press" | "collections">("press");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -61,6 +66,39 @@ export default function OrdersPage() {
     });
     if (res.ok) {
       setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, voided_at: new Date().toISOString() } : o)));
+    }
+  }
+
+  async function pressOrder(id: string) {
+    const res = await fetch(`/api/orders/${id}/press`, { method: "POST" });
+    if (res.ok) {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, pressed_at: new Date().toISOString() } : o))
+      );
+    }
+  }
+
+  async function handOverOrder(id: string) {
+    const res = await fetch(`/api/orders/${id}/handover`, { method: "POST" });
+    if (res.ok) {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === id
+            ? { ...o, fulfillment_status: "handed_over", pressed_at: o.pressed_at ?? new Date().toISOString() }
+            : o
+        )
+      );
+    }
+  }
+
+  async function collectOrder(id: string) {
+    const res = await fetch(`/api/orders/${id}/collect`, { method: "POST" });
+    if (res.ok) {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === id ? { ...o, fulfillment_status: "collected", collected_at: new Date().toISOString() } : o
+        )
+      );
     }
   }
 
@@ -175,13 +213,33 @@ export default function OrdersPage() {
   }
 
   const pending = orders.filter((o) => o.fulfillment_status === "pending_press" && !o.voided_at);
+  const collecting = orders.filter((o) => o.fulfillment_status === "collect_later" && !o.voided_at);
 
   return (
     <div className="min-h-dvh flex flex-col">
       <PosFrame kicker="STALL OS · ORDERS" title="Orders">
+        {(pending.length > 0 || collecting.length > 0) && (
+          <div className="flex gap-2" role="tablist" aria-label="Press and collection queues">
+            <Chip role="tab" aria-selected={tab === "press"} active={tab === "press"} onClick={() => setTab("press")}>
+              PRESS QUEUE{pending.length ? ` · ${pending.length}` : ""}
+            </Chip>
+            <Chip
+              role="tab"
+              aria-selected={tab === "collections"}
+              active={tab === "collections"}
+              onClick={() => setTab("collections")}
+            >
+              COLLECTIONS{collecting.length ? ` · ${collecting.length}` : ""}
+            </Chip>
+          </div>
+        )}
         {/* PRD §3.2: pending items pin to the top with a live timer and the
             press sheet the heat-press operator actually works from. */}
-        <PressQueue orders={pending} />
+        {tab === "press" ? (
+          <PressQueue orders={pending} onPress={pressOrder} onHandOver={handOverOrder} />
+        ) : (
+          <Collections orders={collecting} onCollect={collectOrder} />
+        )}
         <div className="flex flex-col gap-2">
           {orders.map((o) => (
             <div key={o.id} className="border-2 border-ink bg-white p-2.5 flex justify-between gap-2">

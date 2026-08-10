@@ -61,8 +61,16 @@ Orders with nested items and stickers. `limit` is clamped 1–200 — but **only
 Exact `receipt_no` lookup. Returns four columns. Clean.
 
 ### `POST /api/orders/[id]/void`
-Restocks everything the order consumed, writes `void` movements, soft-voids the order (number preserved).
-> ⚠️ Restocks via `SELECT stock_qty` → `UPDATE` with a JS-computed value — the exact lost-update race migration 001 added the atomic RPCs to fix. This route was never converted. Task #12.
+Restocks everything the order consumed, writes `void` movements, soft-voids the order (number preserved). Runs through `stall_void_order` — one atomic RPC as of [[Changelog 2026-08-10]].
+
+### `POST /api/orders/[id]/press`
+PRD §3.2 one-tap **Pressed**. Plain `update` guarded by `eq("fulfillment_status", "pending_press")` — stamps `pressed_at`, order stays in the press queue. No RPC: single row, single column, no stock or ledger side effect.
+
+### `POST /api/orders/[id]/handover`
+PRD §3.2 one-tap **Handed Over**, the on-site flow's exit. Sets `fulfillment_status = 'handed_over'`; backfills `pressed_at` if the garment was handed over without an explicit Pressed tap first.
+
+### `POST /api/orders/[id]/collect`
+Collections tab's exit action for `collect_later` orders. Sets `fulfillment_status = 'collected'` and `collected_at`.
 
 ---
 

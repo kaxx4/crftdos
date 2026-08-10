@@ -5,12 +5,9 @@ updated: 2026-08-10
 
 # Known Issues
 
-Part of [[crftd Stall OS]]. **Open items only.** Everything cleared on 10 Aug is in [[Changelog 2026-08-10]].
+Part of [[crftd Stall OS]]. **Open items only.** Everything cleared on 10 Aug, including the press-queue and collections work, is in [[Changelog 2026-08-10]].
 
 ## Open — code
-
-### Press queue has no state transitions
-PRD §3.2 requires one-tap **Pressed** and **Handed Over** on the pending queue. `PressQueue` now shows the composite sheet, the placement list and a live wait timer, but there are no controls and no route behind them — `stall_orders.pressed_at` and `collected_at` exist and are never written after creation. The collect-later **Collections tab grouped by date** from the same section is also missing.
 
 ### Responsive is still barely engaged
 7 breakpoint utilities across 17 pages. Admin was widened and the pricing tables wrapped, but no page has been designed at more than one width. Not a defect anywhere specific — a gap that will keep producing them.

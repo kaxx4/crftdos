@@ -86,11 +86,23 @@ Rendered on-device on demand rather than uploaded, so it works offline: the pres
 
 This also turned the pending queue from a red count banner into a real queue: oldest first, live wait timer, sheet per garment per side. It surfaced a gap rather than closing one — there are still no **Pressed** / **Handed Over** controls, logged in [[Known Issues]].
 
+## Fourth pass — press queue state transitions
+
+Closed the last open code item in [[Known Issues]]. `PressQueue` was pure display — no controls, no route, `stall_orders.pressed_at`/`collected_at` never written after order creation.
+
+Three new routes, each a plain guarded `update` rather than an RPC — single row, single column, no stock or ledger side effect to protect:
+
+- `POST /api/orders/[id]/press` — stamps `pressed_at`, order stays in the queue.
+- `POST /api/orders/[id]/handover` — sets `fulfillment_status = 'handed_over'`, backfilling `pressed_at` if it was skipped.
+- `POST /api/orders/[id]/collect` — the collect-later exit: `fulfillment_status = 'collected'` + `collected_at`.
+
+`PressQueue` gained a **MARK PRESSED** / **HANDED OVER** button row per order, disabling the first once pressed. A new `Collections` component groups `collect_later` orders by `promised_date`, oldest first, with a one-tap **COLLECTED**. `/orders` now has a two-way tab (`PressQueue` / `Collections`) above the order list, counts in each chip, only shown once either queue is non-empty.
+
 ## Verification
 
 `tsc --noEmit` clean · `next build` clean · all 17 pages still prerender as static · impeccable detector reports zero findings · `stall_create_order` rollback, rate-limit sequence and analytics output all asserted against the live database.
 
-**Not verified in a browser — no dev server was run.** Specifically unviewed: the colour sweep, admin widening, the new QR on the kiosk ticket screen, the stale-catalogue banner, and service-worker behaviour (which is disabled in dev by design and so only exercises in a production deploy). Worth a pass before a real stall.
+**Not verified in a browser — no dev server was run.** Specifically unviewed: the colour sweep, admin widening, the new QR on the kiosk ticket screen, the stale-catalogue banner, service-worker behaviour (which is disabled in dev by design and so only exercises in a production deploy), and the fourth-pass Pressed/Handed Over/Collected controls. Worth a pass before a real stall.
 
 ## Related
 [[Known Issues]] · [[Performance Backlog]] · [[Database Map]] · [[Frontend Audit 2026-08]]
