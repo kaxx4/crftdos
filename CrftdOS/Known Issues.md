@@ -29,7 +29,6 @@ Things that are correct now but will bite at volume or need a decision.
 - **App-shell precache lists routes by hand** in `public/sw.js`. A new volunteer route must be added there or it will not work offline.
 - **`Field` labels are `aria-label`, not visible `<label>`s.** Programmatically correct; whether each screen *should* show a visible label is a per-screen design decision nobody has made yet.
 - **The kiosk QR grows with cart size.** Compressed and short-keyed, comfortable for a realistic order, but a very large cart on a scratched screen in daylight is the failure mode to watch. The 4-character code remains the fallback.
-- **PWA icon is a single SVG.** Installable, but PNG icons at 192/512 would give a better install prompt on Android. No image converter was available.
 
 ## Related
 [[Changelog 2026-08-10]] · [[Frontend Audit 2026-08]] · [[Database Map]] · [[Offline and Sync]]

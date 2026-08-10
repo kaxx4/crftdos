@@ -98,6 +98,8 @@ Three new routes, each a plain guarded `update` rather than an RPC — single ro
 
 `PressQueue` gained a **MARK PRESSED** / **HANDED OVER** button row per order, disabling the first once pressed. A new `Collections` component groups `collect_later` orders by `promised_date`, oldest first, with a one-tap **COLLECTED**. `/orders` now has a two-way tab (`PressQueue` / `Collections`) above the order list, counts in each chip, only shown once either queue is non-empty.
 
+Also closed the PWA-icon watch-list item: `sharp` was already a dependency, so the SVG icon is now rasterised to `public/icon-192.png` and `public/icon-512.png`, both registered in `manifest.webmanifest` and the 192 wired as `apple-touch-icon` in `layout.tsx` (iOS ignores SVG apple icons on many versions; the manifest's SVG entry stays as the `any`-size source of truth). No manual asset was needed — "no image converter was available" was wrong; one was already in `node_modules`.
+
 ## Verification
 
 `tsc --noEmit` clean · `next build` clean · all 17 pages still prerender as static · impeccable detector reports zero findings · `stall_create_order` rollback, rate-limit sequence and analytics output all asserted against the live database.

@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   description: "AQUATERRA / crftd point-of-sale, kiosk and operations app",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "crftd" },
-  icons: { icon: "/icon.svg", apple: "/icon.svg" },
+  icons: { icon: "/icon.svg", apple: "/icon-192.png" },
 };
 
 // Blue matches the POS header band so the browser chrome continues it rather
