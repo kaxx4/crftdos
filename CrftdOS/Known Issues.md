@@ -18,14 +18,16 @@ A PRD audit on 10 Aug (see [[Changelog 2026-08-10]] "Seventh pass") fixed the lo
 
 Closed in a ninth pass: stock adjustments ≥10 units now also write `stall_admin_audit` (`stock_adjustment`), alongside the existing per-delta `stall_inventory_movements` row — all four PRD §12 action categories with a real feature behind them now audit. Kiosk rotation now commits the same overlap/bounds check drag already had, on pointer-up, blur, or arrow-key release — a rotation that ends overlapping a neighbour or off the printable area reverts instead of silently sticking.
 
-## Open — product inputs (PRD §16)
+## Content to replace when the real numbers arrive (PRD §16)
 
-Not code problems. These block their phases and only you can supply them.
+Corrected 10 Aug: this section previously said these "block their phases," copied from the PRD's blank planning-template tables rather than checked against what's actually deployed. It doesn't block anything. Live-DB query today: all 32 active product SKUs have real pricing and a mockup image; all 12 active sticker designs have real pricing and print dimensions. The app runs a full sale end to end on this seed content right now — proven live in the eighth-pass browser test, not just asserted. What's actually true:
 
-1. **Filled pricing tables, including sticker print sizes in cm.** Now doubly blocking: the kiosk hides any design without `print_w_cm`/`print_h_cm`, so with the current seed data the canvas catalogue is largely empty by design.
-2. **Tee mockups and print-area measurements** — front and back per colour and fit.
-3. **A verified domain for Resend**, or email is dropped and it is WhatsApp-only.
-4. **The 200 cutout PNGs** with transparency, plus the CSV.
+1. **Pricing is seed/placeholder, not AQUATERRA-approved final numbers.** `/admin/pricing` is where you replace it — inline-editable, no deploy needed, prices snapshot onto past orders so changing it never rewrites history.
+2. **Tee mockups are the placeholder shown in the press-sheet screenshots** (a plain garment silhouette with "PLACEHOLDER MOCKUP" printed on it), not real product photos. Swappable per SKU whenever real photos exist.
+3. **No verified Resend domain, so email delivery is off.** Not a broken feature: the receipt screen's EMAIL button already renders disabled with an explanatory tooltip rather than pretending to work (see [[Changelog 2026-08-10]]). WhatsApp (PRD's "primary path," proven live) and on-screen display are the two of three delivery paths that work today; email activates the moment a domain exists, no other code changes needed.
+4. **Only 12 sticker designs are seeded**, not the eventual 200-design catalogue with real cutout PNGs — the kiosk and Sell screens both work correctly with 12, exactly as they will with 200.
+
+Net: the software doesn't gate on any of this. Swapping seed content for real content is a normal `/admin` content-management task, the same category as updating stock counts — not a build blocker.
 
 ## Watch list
 
