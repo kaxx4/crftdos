@@ -176,5 +176,20 @@ Closed both remaining items that were pure code (not blocked on external assets)
 
 **Still not verified in a browser:** the colour sweep, the new QR on the kiosk ticket screen, the stale-catalogue banner, service-worker behaviour (disabled in dev by design, only exercises in a production deploy), void, returns, holds, waste, restock, B2B, bulk entry, and the admin pricing/catalogue screens' inline-edit interactions. The core sell → press → collect loop and routing are now real-browser-verified; the rest of the surface area is not.
 
+## Tenth pass — tools to populate PRD §16's content
+
+Not the content itself — the on-ramp for supplying it, requested after [[Known Issues]] was corrected to stop calling seed content a shipping blocker. Three new admin surfaces, all against a new `stall-public` Supabase Storage bucket (public read, service-role write, no RLS policies needed since nothing writes to it except server routes already gated on the admin session):
+
+- **`/admin/catalogue` gained CSV bulk-import.** A hand-rolled parser (quoted-field aware, no dependency) upserts `stall_sticker_designs` by `code` — matches PRD §16.10's "code, name, size class, stock, cost, price, bin location" CSV exactly. Re-importing after fixing a typo updates rather than duplicates. A "LOAD TEMPLATE" button fills in the expected header row so the format doesn't have to be reverse-engineered from the route.
+- **`/admin/catalogue` gained bulk cutout upload.** Select every PNG at once; each is matched to a design by filename (`M-014.png` → code `M-014`), uploaded to `cutouts/<code>.png`, and `cutout_path` updated. A file that doesn't match an existing code reports why rather than silently vanishing.
+- **New `/admin/mockups` page.** PRD §16.7-8's most manual input: per colour/fit/side, upload a tee photo and drag a rectangle over the printable area on it, plus the rectangle's real width/height in cm. Saves to every SKU sharing that colour+fit (a garment's silhouette doesn't change by size) — one measurement covers XS through XXL rather than six.
+- **Admin dashboard gained a live Resend status card.** Reads `RESEND_API_KEY`; if set, calls Resend's `/domains` endpoint and reports verified/unverified/none rather than requiring a trip to Resend's own dashboard to check. Domain verification itself (DNS records at your registrar) is still yours to do — this only answers "is it done yet."
+
+All three data-writing tools were exercised live against the production database, not just built: a test design created via CSV import, a cutout PNG uploaded and matched by filename, and a mockup photo + hand-drawn print rectangle saved across 4 SKUs (one colour/fit × 4 sizes) — all succeeded with zero errors, verified via direct query, then fully reverted (test design deleted, real SKUs' `mockup_front`/`print_area.front` restored to their pre-test seed values, both test files removed from Storage via its API — `DELETE FROM storage.objects` is blocked directly, by design).
+
+## Verification, tenth pass
+
+`tsc --noEmit` clean · `next build` clean · all three new endpoints driven live in a real browser against the production database (CSV import → cutout upload → mockup upload+draw+save, each confirmed via direct SQL query afterward) · test data fully reverted, storage bucket confirmed empty.
+
 ## Related
 [[Known Issues]] · [[Performance Backlog]] · [[Database Map]] · [[Frontend Audit 2026-08]]

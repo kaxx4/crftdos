@@ -113,6 +113,10 @@ Till-side redemption lookup.
 | `GET/PATCH /api/admin/pricing` | Inline cell edits + `bulk` set by fit. Writes `stall_admin_audit`. See [[Pricing]] |
 | `GET/POST /api/admin/b2b`, `/api/admin/b2b/[id]` | Pipeline CRUD + activity log. See [[B2B Pipeline]] |
 | `POST /api/admin/bulk` | ⚠️ N+1 loop **and** read-modify-write stock (does not use the atomic RPC). Task #3 |
+| `POST /api/admin/catalogue/import` | CSV bulk upsert for `stall_sticker_designs`, by code. Hand-rolled parser (quoted-field aware), no dependency. See [[Known Issues]] |
+| `POST /api/admin/catalogue/cutouts` | Multipart bulk upload of cutout PNGs to the `stall-public` storage bucket; matched to designs by filename (`M-014.png` → code `M-014`) |
+| `GET/POST /api/admin/mockups` | Tee mockup photo + print-area rectangle, per colour/fit/side, applied to every SKU sharing that combo |
+| `GET /api/admin/email-status` | Resend domain verification status — reads `RESEND_API_KEY`, calls Resend's `/domains` if set |
 
 ---
 

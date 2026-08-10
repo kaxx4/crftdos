@@ -13,14 +13,19 @@ type Analytics = {
   returnCount: number;
   returnRate: number;
 };
+type EmailStatus = { configured: boolean; reachable?: boolean; verifiedCount?: number; message: string };
 
 export default function AdminHome() {
   const [a, setA] = useState<Analytics | null>(null);
+  const [email, setEmail] = useState<EmailStatus | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/analytics")
       .then((r) => r.json())
       .then(setA);
+    fetch("/api/admin/email-status")
+      .then((r) => r.json())
+      .then(setEmail);
   }, []);
 
   return (
@@ -37,6 +42,9 @@ export default function AdminHome() {
         </Link>
         <Link href="/admin/catalogue" className="border-2 border-ink px-3 py-2 font-extrabold text-sm bg-white">
           QR labels
+        </Link>
+        <Link href="/admin/mockups" className="border-2 border-ink px-3 py-2 font-extrabold text-sm bg-white">
+          Mockups
         </Link>
       </div>
 
@@ -81,6 +89,17 @@ export default function AdminHome() {
         This is headline + waste + returns only, per the current build pass. Full §13 analytics (kiosk conversion,
         fulfilment timing, holds conversion, B2B pipeline value) is a later pass.
       </div>
+
+      {email && (
+        <div
+          className={`border-2 p-3 flex flex-col gap-1 ${
+            email.verifiedCount && email.verifiedCount > 0 ? "border-ok" : "border-signal"
+          } bg-white`}
+        >
+          <div className="font-extrabold text-xs tracking-[0.1em]">EMAIL DELIVERY (RESEND)</div>
+          <div className="font-mono text-xs text-muted">{email.message}</div>
+        </div>
+      )}
     </div>
   );
 }

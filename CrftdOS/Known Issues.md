@@ -29,6 +29,8 @@ Corrected 10 Aug: this section previously said these "block their phases," copie
 
 Net: the software doesn't gate on any of this. Swapping seed content for real content is a normal `/admin` content-management task, the same category as updating stock counts — not a build blocker.
 
+**Tooling to do that swap now exists** (10 Aug, tenth pass — see [[Changelog 2026-08-10]]): `/admin/catalogue` gained CSV bulk-import (upsert by code) and bulk cutout-PNG upload (matched to designs by filename) for the 200-design catalogue; `/admin/mockups` is a new page for uploading tee mockup photos and drawing the print-area rectangle per colour/fit/side; the admin dashboard shows live Resend domain-verification status instead of requiring a trip to Resend's own dashboard to check. None of this populates real business data on its own — the pricing, photos, and domain are still yours to supply — it's the on-ramp for supplying it without hand-editing the database.
+
 ## Watch list
 
 Things that are correct now but will bite at volume or need a decision.
