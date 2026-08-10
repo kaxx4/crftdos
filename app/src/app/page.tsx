@@ -648,7 +648,21 @@ export default function KioskPage() {
   });
 
   return (
-    <div className={`min-h-dvh bg-ink text-cream flex flex-col items-center justify-center p-4 ${fraunces.variable}`}>
+    <div className={`relative min-h-dvh bg-ink text-cream flex flex-col items-center justify-center p-4 overflow-hidden ${fraunces.variable}`}>
+      {stage !== "attract" && (
+        // Same fill-the-tall-tablet-canvas treatment as the attract screen,
+        // just quieter — these are working stages, not the hero, so texture
+        // stays low-opacity and out of the way of the card's own shadow/edge.
+        <>
+          <Halftone className="opacity-[0.06]" />
+          <div className="absolute left-[6%] top-[10%] hidden md:block">
+            <StarBurst size={16} color="var(--color-blue)" />
+          </div>
+          <div className="absolute right-[7%] bottom-[12%] hidden md:block">
+            <StarBurst size={20} color="var(--color-signal)" />
+          </div>
+        </>
+      )}
       {stage === "attract" && (
         <div className="relative w-full h-dvh flex flex-col items-center justify-center overflow-hidden">
           <Halftone />
@@ -661,6 +675,23 @@ export default function KioskPage() {
           </div>
           <div className="absolute top-10 right-10 rotate-3">
             <BoxLabel>STALL OS · KIOSK</BoxLabel>
+          </div>
+          {/* Percentage-positioned so they scale with viewport height rather
+              than clustering at fixed pixel corners — on a tall tablet
+              portrait (the kiosk's actual target, PRD §11: 768-1024) the
+              hero content only occupies the vertical middle, and four
+              corner marks alone left most of the canvas empty. */}
+          <div className="absolute left-[8%] hidden sm:block" style={{ top: "22%" }}>
+            <StarBurst size={18} color="var(--color-signal)" />
+          </div>
+          <div className="absolute right-[10%] hidden sm:block" style={{ top: "32%" }}>
+            <StarBurst size={14} color="var(--color-cream)" />
+          </div>
+          <div className="absolute left-[12%] hidden sm:block" style={{ bottom: "22%" }}>
+            <StarBurst size={20} color="var(--color-blue)" />
+          </div>
+          <div className="absolute right-[14%] hidden sm:block rotate-[8deg]" style={{ bottom: "14%" }}>
+            <BoxLabel rotate={8}>SELF SERVE</BoxLabel>
           </div>
 
           {/* Unobtrusive on purpose — this is a customer-facing showcase, and
@@ -688,7 +719,7 @@ export default function KioskPage() {
                 yours
               </span>
             </div>
-            <div className="text-sm text-muted max-w-xs">
+            <div className="text-sm text-cream/70 max-w-xs">
               Compose a tee, get a ticket, hand it to a volunteer at the till. Nothing is charged until they scan it.
             </div>
             <button
@@ -708,7 +739,7 @@ export default function KioskPage() {
       {stage === "path" && catalogueLoading && (
         <div className="flex flex-col items-center gap-3 text-cream">
           <div className="w-10 h-10 border-4 border-cream/30 border-t-cream rounded-full animate-spin" />
-          <div className="text-sm text-muted">Loading catalogue…</div>
+          <div className="text-sm text-cream/70">Loading catalogue…</div>
         </div>
       )}
 
