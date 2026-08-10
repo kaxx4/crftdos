@@ -687,7 +687,7 @@ export default function KioskPage() {
       )}
 
       {stage === "path" && !catalogueLoading && !catalogueError && (
-        <div className="relative flex flex-col gap-4 w-full max-w-md lg:max-w-lg">
+        <div className="relative flex flex-col gap-4 w-full max-w-md md:max-w-xl">
           <div className="absolute -top-6 -left-4 rotate-[-6deg]">
             <BoxLabel rotate={-6}>PICK A PATH</BoxLabel>
           </div>
@@ -724,7 +724,7 @@ export default function KioskPage() {
       )}
 
       {stage === "product" && (
-        <div className="flex flex-col gap-4 w-full max-w-md lg:max-w-lg bg-cream text-ink p-4">
+        <div className="flex flex-col gap-4 w-full max-w-md md:max-w-xl bg-cream text-ink p-4">
           <div className="font-extrabold text-lg">Choose your tee</div>
           <div className="flex gap-2 flex-wrap">
             {colors.map((c) => (
@@ -778,7 +778,7 @@ export default function KioskPage() {
       )}
 
       {stage === "canvas" && sku && printArea && (
-        <div className="relative flex flex-col gap-3 w-full max-w-md lg:max-w-xl bg-cream text-ink p-3">
+        <div className="relative flex flex-col gap-3 w-full max-w-md md:max-w-xl lg:max-w-2xl bg-cream text-ink p-3">
           <div className="absolute -top-5 -left-3 -rotate-3">
             <BoxLabel rotate={-3}>DESIGN STUDIO</BoxLabel>
           </div>
@@ -876,7 +876,7 @@ export default function KioskPage() {
             placeholder="Search stickers…"
             className="border-2 border-ink p-2"
           />
-          <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+          <div className="grid grid-cols-4 md:grid-cols-6 gap-2 max-h-40 overflow-y-auto">
             {filteredDesigns.map((d) => (
               <button key={d.id} onClick={() => placeDesign(d)} className="border-2 border-ink p-1 flex flex-col items-center">
                 <img src={d.cutout_path} alt={d.code} loading="lazy" width={40} height={40} className="w-10 h-10" />

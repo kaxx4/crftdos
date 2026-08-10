@@ -102,8 +102,29 @@ export async function POST(req: NextRequest) {
       })
       .select()
       .single();
-    if (blockErr) return NextResponse.json({ error: blockErr.message }, { status: 500 });
-    block = newBlock;
+    if (blockErr) {
+      // Two near-simultaneous opens for the SAME device (e.g. two tabs, or
+      // React StrictMode's dev-only double effect) can each see no open
+      // block and both reach this insert. migration 005's unique index on
+      // (shift_id, device_id) where closed_at is null turns the loser into a
+      // 23505 instead of a second silently-created block — re-select and use
+      // the winner's row rather than surfacing a hard failure.
+      if (blockErr.code === "23505") {
+        const { data: winner } = await admin
+          .from("stall_receipt_blocks")
+          .select("*")
+          .eq("shift_id", shift.id)
+          .eq("device_id", deviceId)
+          .is("closed_at", null)
+          .maybeSingle();
+        if (!winner) return NextResponse.json({ error: blockErr.message }, { status: 500 });
+        block = winner;
+      } else {
+        return NextResponse.json({ error: blockErr.message }, { status: 500 });
+      }
+    } else {
+      block = newBlock;
+    }
   }
 
   return NextResponse.json({ shift, block });

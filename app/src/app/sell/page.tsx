@@ -58,6 +58,7 @@ export default function SellPage() {
   const [online, setOnline] = useState(true);
   const [pendingOutbox, setPendingOutbox] = useState(0);
   const [catalogueAge, setCatalogueAge] = useState<string | null>(null);
+  const [blockJoinFailed, setBlockJoinFailed] = useState(false);
 
   const [colors, setColors] = useState<Color[]>([]);
   const [fits, setFits] = useState<Fit[]>([]);
@@ -202,8 +203,37 @@ export default function SellPage() {
         return;
       }
       if (shiftRes?.shift) {
+        let block = shiftRes.block;
+        if (!block) {
+          // A device that logs in while a shift is already open (started by
+          // a different device) previously landed here with block === null
+          // forever — nothing ever called /api/shift/open for THIS device,
+          // and /shift-open only runs when no shift exists at all. Charge
+          // silently no-op'd on `if (!shift || !block) return`, with no
+          // error shown, so a second/third/... device could never sell.
+          // /api/shift/open is idempotent (it joins an already-open shift
+          // rather than erroring), so auto-join here with the shift's own
+          // settings — the volunteer never sees a form for a shift someone
+          // else already configured.
+          const joinRes = await fetch("/api/shift/open", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: shiftRes.shift.name,
+              venue: shiftRes.shift.venue,
+              event_name: shiftRes.shift.event_name,
+              press_on_site: shiftRes.shift.press_on_site,
+              opening_float: 0,
+              deviceId,
+            }),
+          })
+            .then((r) => r.json())
+            .catch(() => null);
+          if (joinRes?.block) block = joinRes.block;
+          else setBlockJoinFailed(true);
+        }
         setShift(shiftRes.shift);
-        setBlock(shiftRes.block);
+        setBlock(block);
         try {
           const raw = sessionStorage.getItem(`recent_stickers_${shiftRes.shift.id}`);
           if (raw) setRecentCounts(JSON.parse(raw));
@@ -704,6 +734,15 @@ export default function SellPage() {
               <Banner tone="signal">
                 <span>CACHED CATALOGUE — STOCK MAY BE STALE</span>
                 <span>{catalogueAge}</span>
+              </Banner>
+            )}
+            {blockJoinFailed && (
+              // Previously this failed silently: Charge just did nothing,
+              // forever, with no indication why — this device joined an
+              // already-open shift but never got a receipt-number block.
+              <Banner tone="signal">
+                <span>NO RECEIPT BLOCK — CAN'T CHARGE ON THIS DEVICE</span>
+                <span>reload or ask a volunteer</span>
               </Banner>
             )}
           </>
