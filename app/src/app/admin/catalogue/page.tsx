@@ -29,7 +29,7 @@ export default function CataloguePage() {
           PRINT A4 SHEET
         </button>
       </div>
-      <div className="font-mono text-xs text-neutral-500 mb-4 print:hidden">
+      <div className="font-mono text-xs text-muted mb-4 print:hidden">
         Encodes crftd:s:&lt;code&gt; per PRD §9. Camera scanning stays off by default until labels are printed and a
         settings flag is flipped — not built this pass.
       </div>
@@ -38,7 +38,7 @@ export default function CataloguePage() {
           <div key={d.id} className="border-2 border-ink p-2 flex flex-col items-center gap-1 bg-white">
             {qrs[d.id] && <img src={qrs[d.id]} alt="" className="w-20 h-20 max-w-full" />}
             <div className="font-extrabold text-sm font-mono">{d.code}</div>
-            <div className="text-[10px] text-neutral-600 text-center">{d.bin_location || "no bin set"}</div>
+            <div className="text-[10px] text-muted text-center">{d.bin_location || "no bin set"}</div>
           </div>
         ))}
       </div>

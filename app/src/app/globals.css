@@ -9,6 +9,17 @@
   --color-blue: #1b4df5; /* crftd blue */
   --color-signal: #c6302b; /* signal red/orange */
   --color-line: #333333;
+
+  /* Supporting ramp. The brand colours above were tokenised from day one but
+     every structural colour — secondary text, hairlines, status tints — fell
+     back to Tailwind's default neutral/green/amber ramps in ~55 places. These
+     close that gap so a palette change is one file, not fifty-five.
+     --color-muted is 7.4:1 on white and 7.0:1 on cream: the PRD §11 sunlight
+     target, not merely WCAG AA. */
+  --color-muted: #52504c;
+  --color-hairline: #d9d5cd;
+  --color-ok: #1c6b3f;
+  --color-warn: #8a5a00;
 }
 
 @theme inline {
@@ -16,6 +27,11 @@
   --color-cream: var(--color-cream);
   --color-blue: var(--color-blue);
   --color-signal: var(--color-signal);
+  --color-line: var(--color-line);
+  --color-muted: var(--color-muted);
+  --color-hairline: var(--color-hairline);
+  --color-ok: var(--color-ok);
+  --color-warn: var(--color-warn);
   --font-body: var(--font-body), system-ui, sans-serif;
   --font-mono: var(--font-mono), monospace;
 }

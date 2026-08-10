@@ -10,7 +10,7 @@ const PUBLIC_PATHS = ["/pin", "/api/auth/pin", "/_next", "/favicon.ico", "/fonts
 // manifest, etc.) must never be caught by the PIN gate — that was a real bug:
 // unauthenticated <img> requests were getting redirected to the PIN HTML
 // page, which the browser then tried (and failed) to render as an image.
-const STATIC_FILE = /\.(svg|png|jpe?g|webp|gif|ico|css|js|json|txt|woff2?|ttf)$/i;
+const STATIC_FILE = /\.(svg|png|jpe?g|webp|gif|ico|css|js|json|txt|woff2?|ttf|webmanifest)$/i;
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

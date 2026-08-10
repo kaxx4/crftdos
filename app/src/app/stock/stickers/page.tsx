@@ -108,7 +108,7 @@ export default function StickerStockPage() {
             </div>
           ))}
           {designs.length === 0 && (
-            <div className="text-center text-sm text-neutral-600 py-6">
+            <div className="text-center text-sm text-muted py-6">
               No sticker designs yet. The 200-design catalogue import (PRD §16.10) is still pending — add a few
               manually below to test Sell.
             </div>
@@ -121,7 +121,7 @@ export default function StickerStockPage() {
           </BigButton>
         ) : (
           <div className="border-2 border-ink bg-white p-2.5 flex flex-col gap-2">
-            <Field placeholder="Code e.g. M-014" value={newCode} onChange={(e) => setNewCode(e.target.value)} />
+            <Field label="Sticker code" placeholder="Code e.g. M-014" value={newCode} onChange={(e) => setNewCode(e.target.value)} />
             <div className="flex gap-1.5">
               {(["S", "M", "L"] as const).map((sz) => (
                 <button
@@ -132,7 +132,7 @@ export default function StickerStockPage() {
                   {sz}
                 </button>
               ))}
-              <Field type="number" placeholder="₹ price" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} className="flex-1" />
+              <Field label="Unit price in rupees" type="number" placeholder="₹ price" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} className="flex-1" />
             </div>
             <div className="flex gap-1.5">
               <BigButton variant="blue" className="flex-1" onClick={addDesign}>
@@ -144,7 +144,7 @@ export default function StickerStockPage() {
             </div>
           </div>
         )}
-        <div className="font-mono text-[11px] text-neutral-600 border border-dashed p-2.5">
+        <div className="font-mono text-[11px] text-muted border border-dashed p-2.5">
           CSV/image bulk import and QR label sheets (PRD §9) are stubbed — this page covers count + bin location
           CRUD only, which is what Sell needs.
         </div>

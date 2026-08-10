@@ -2,21 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { verify } from "@node-rs/argon2";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { signSession, SESSION_COOKIE, cookieMaxAge, SessionKind } from "@/lib/session";
-import { checkRateLimit, recordFailure, clearRateLimit } from "@/lib/rateLimit";
+import { checkRateLimit, recordFailure, clearRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
 const SETTINGS_KEY: Record<SessionKind, string> = {
   stall: "pin_stall",
   admin: "pin_admin",
   kiosk: "pin_kiosk",
 };
-
-function clientIp(req: NextRequest) {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -28,13 +20,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const ip = clientIp(req);
-  const rlKey = `${ip}:${kind}`;
-  const rl = checkRateLimit(rlKey);
+  const rlKey = rateLimitKey(req, kind);
+  const rl = await checkRateLimit(rlKey);
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: "Too many failed attempts. Try again in 15 minutes." },
-      { status: 429 }
+      { error: `Too many failed attempts. Try again in ${Math.ceil(rl.retryAfterSeconds / 60)} minutes.` },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
     );
   }
 
@@ -54,11 +45,11 @@ export async function POST(req: NextRequest) {
     const ok = await verify(hash, pin).catch(() => false);
 
     if (!ok) {
-      recordFailure(rlKey);
+      await recordFailure(rlKey);
       return NextResponse.json({ error: "Incorrect PIN" }, { status: 401 });
     }
 
-    clearRateLimit(rlKey);
+    await clearRateLimit(rlKey);
     const token = await signSession(kind, deviceId);
     const res = NextResponse.json({ ok: true });
     res.cookies.set(SESSION_COOKIE[kind], token, {

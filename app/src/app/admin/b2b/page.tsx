@@ -87,14 +87,14 @@ export default function B2BPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-cream text-ink p-6 max-w-4xl mx-auto flex flex-col gap-6">
+    <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 w-full max-w-[1400px] mx-auto flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-3">
         <div className="border-2 border-ink bg-white p-3">
-          <div className="font-mono text-xs text-neutral-500">Committed value (confirmed+)</div>
+          <div className="font-mono text-xs text-muted">Committed value (confirmed+)</div>
           <div className="font-extrabold text-2xl">₹{committed}</div>
         </div>
         <div className="border-2 border-ink bg-white p-3">
-          <div className="font-mono text-xs text-neutral-500">Collected (deposits + balances)</div>
+          <div className="font-mono text-xs text-muted">Collected (deposits + balances)</div>
           <div className="font-extrabold text-2xl">₹{collected}</div>
         </div>
       </div>
@@ -116,7 +116,7 @@ export default function B2BPage() {
           <input placeholder="Unit cost" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} className="border-2 border-ink p-2 w-28" />
           <div
             className={`px-3 py-2 font-extrabold text-sm ${
-              margin < 0 ? "bg-signal text-cream" : margin < 10 ? "bg-signal/70 text-cream" : margin < 15 ? "bg-amber-200 text-ink" : "bg-green-200 text-ink"
+              margin < 0 ? "bg-signal text-cream" : margin < 10 ? "bg-signal/70 text-cream" : margin < 15 ? "bg-warn text-cream" : "bg-ok text-cream"
             }`}
           >
             {margin.toFixed(1)}% margin
@@ -143,7 +143,7 @@ export default function B2BPage() {
           <div key={o.id} className="border-2 border-ink bg-white p-3 flex justify-between items-center gap-2">
             <div>
               <div className="font-extrabold">{o.client_org}</div>
-              <div className="font-mono text-xs text-neutral-500">
+              <div className="font-mono text-xs text-muted">
                 {o.quantity} × ₹{o.unit_price} = ₹{o.gross_value}
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function B2BPage() {
             </select>
           </div>
         ))}
-        {orders.length === 0 && <div className="text-center text-sm text-neutral-500 py-6">No B2B enquiries yet.</div>}
+        {orders.length === 0 && <div className="text-center text-sm text-muted py-6">No B2B enquiries yet.</div>}
       </div>
     </div>
   );

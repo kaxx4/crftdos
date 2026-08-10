@@ -71,7 +71,7 @@ export default function ReceiptPage() {
             <span>{data.receipt_no}</span>
             <span>{new Date(data.clientCreatedAt).toLocaleString("en-IN")}</span>
           </div>
-          <div className="font-mono text-[11px] text-neutral-600">{data.shiftName}</div>
+          <div className="font-mono text-[11px] text-muted">{data.shiftName}</div>
           {!data.synced && (
             <div className="bg-signal text-cream p-2 font-extrabold text-[10px] tracking-wide uppercase">
               Offline sale — number confirms once this device syncs
@@ -87,7 +87,7 @@ export default function ReceiptPage() {
                   </span>
                 </div>
                 {it.stickers.length > 0 && (
-                  <div className="font-mono text-[10px] text-neutral-600">
+                  <div className="font-mono text-[10px] text-muted">
                     {it.stickers.map((s) => s.code || s.description).join(", ")}
                   </div>
                 )}
@@ -114,7 +114,7 @@ export default function ReceiptPage() {
             <span className="font-extrabold text-[9px] tracking-[0.14em] max-w-[14ch]">RAISED FOR AQUATERRA</span>
             <span className="font-extrabold text-2xl">₹{raised}</span>
           </div>
-          <div className="text-[11px] text-neutral-700 leading-relaxed">
+          <div className="text-[11px] text-muted leading-relaxed">
             Proceeds support AquaTerra welfare work. Hand wash recommended. DTF transfers rated 10–15 washes
             minimum. No change-of-mind returns.
           </div>
@@ -132,7 +132,7 @@ export default function ReceiptPage() {
         <button
           disabled
           title="Email delivery is Phase 4 (needs a verified sending domain — PRD §16.9)"
-          className="bg-cream text-neutral-400 border-2 border-ink font-extrabold text-[11px] tracking-wide min-h-[52px]"
+          className="bg-cream text-muted border-2 border-ink font-extrabold text-[11px] tracking-wide min-h-[52px]"
         >
           EMAIL (PHASE 4)
         </button>

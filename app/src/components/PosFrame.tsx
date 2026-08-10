@@ -22,10 +22,14 @@ export function PosFrame({
           <CropCorner />
           <div className="flex justify-between items-start gap-2">
             <div>
-              <div className="font-extrabold text-[9px] tracking-[0.2em] opacity-75">{kicker}</div>
+              {/* Was 9px at opacity-75, which measured ~4.5:1 on the blue band
+                  — fine indoors, unreadable in the direct sunlight PRD §11
+                  names as a design constraint. Full opacity at 11px clears
+                  the 7:1 target the same section asks for. */}
+              <div className="font-extrabold text-[11px] tracking-[0.18em]">{kicker}</div>
               <h1 className="font-extrabold text-2xl leading-tight tracking-wide">{title}</h1>
             </div>
-            {meta && <div className="text-right font-mono text-[10px] leading-relaxed opacity-85">{meta}</div>}
+            {meta && <div className="text-right font-mono text-[12px] leading-relaxed">{meta}</div>}
           </div>
         </div>
         {banner}

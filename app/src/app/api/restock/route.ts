@@ -11,35 +11,19 @@ export async function GET(req: NextRequest) {
   if (!(await requireStall(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const admin = supabaseAdmin();
 
-  const [{ data: products }, { data: designs }, { data: soldSkus }, { data: soldStickers }] = await Promise.all([
-    admin.from("stall_product_skus").select("*").eq("is_active", true),
-    admin.from("stall_sticker_designs").select("*").eq("is_active", true),
-    admin.from("stall_order_items").select("product_sku_id"),
-    admin.from("stall_order_item_stickers").select("sticker_design_id"),
-  ]);
+  // Below-par and dead-stock are computed in Postgres and only the answer
+  // crosses the wire. This route used to SELECT every row of
+  // stall_order_items and stall_order_item_stickers purely to build two id
+  // sets in JavaScript, so its payload grew with lifetime sales forever —
+  // fine at one test order, ruinous after a season of stalls.
+  const { data, error } = await admin.rpc("stall_restock_signals");
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const soldSkuIds = new Set((soldSkus || []).map((r) => r.product_sku_id).filter(Boolean));
-  const soldStickerIds = new Set((soldStickers || []).map((r) => r.sticker_design_id).filter(Boolean));
-
-  const belowPar = [
-    ...(products || [])
-      .filter((p) => p.stock_qty < p.par_level)
-      .map((p) => ({ type: "product" as const, id: p.id, code: p.sku_code, stock: p.stock_qty, par: p.par_level })),
-    ...(designs || [])
-      .filter((d) => d.stock_qty < d.par_level)
-      .map((d) => ({ type: "sticker" as const, id: d.id, code: d.code, stock: d.stock_qty, par: d.par_level })),
-  ];
-
-  const deadStock = [
-    ...(products || [])
-      .filter((p) => !soldSkuIds.has(p.id) && p.stock_qty > 0)
-      .map((p) => ({ type: "product" as const, id: p.id, code: p.sku_code, stock: p.stock_qty })),
-    ...(designs || [])
-      .filter((d) => !soldStickerIds.has(d.id) && d.stock_qty > 0)
-      .map((d) => ({ type: "sticker" as const, id: d.id, code: d.code, stock: d.stock_qty })),
-  ];
-
-  return NextResponse.json({ belowPar, deadStock });
+  const signals = data as {
+    belowPar: { type: string; id: string; code: string; stock: number; par: number }[];
+    deadStock: { type: string; id: string; code: string; stock: number }[];
+  };
+  return NextResponse.json({ belowPar: signals.belowPar, deadStock: signals.deadStock });
 }
 
 export async function POST(req: NextRequest) {

@@ -8,6 +8,8 @@ import { BigButton, Chip, Field, Panel, PanelLabel, Banner, Mono } from "@/compo
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { getDeviceId } from "@/lib/deviceId";
 import { enqueueOrder, flushOutbox, outboxCount } from "@/lib/outbox";
+import { loadWithCache, describeAge } from "@/lib/catalogueCache";
+import { decodeTicket, expandTicket } from "@/lib/ticketPayload";
 import type { Color, Fit, ProductSku, StickerDesign, Shift, ReceiptBlock } from "@/lib/types";
 
 type CartSticker = {
@@ -17,6 +19,14 @@ type CartSticker = {
   code: string;
   unit_price: number;
   unit_cost: number;
+  // Set only for stickers arriving from a kiosk design ticket. These are the
+  // coordinates the customer chose on the canvas, and they are what the
+  // person at the heat press actually works from — the whole justification
+  // for the Design Studio. Till-entered stickers have no placement.
+  side?: "front" | "back";
+  pos_x?: number;
+  pos_y?: number;
+  rotation?: number;
 };
 type CartGarment = {
   key: string;
@@ -29,6 +39,15 @@ type CartGarment = {
 };
 type CartStandaloneSticker = CartSticker & { kind: "standalone" };
 
+// Explicit column lists. select("*") shipped image paths, timestamps, par
+// levels and bin metadata the Sell screen never reads — dead weight on mobile
+// data and in the IndexedDB snapshot. Compression helps; not sending helps more.
+const SELECT_COLORS = "id,name,hex,sort";
+const SELECT_FITS = "id,name,applies_to,sort";
+const SELECT_SKUS = "id,product_type,color_id,fit_id,size,sku_code,stock_qty,unit_cost,unit_price";
+const SELECT_DESIGNS =
+  "id,code,size_class,name,tags,thumb_path,stock_qty,bin_location,unit_cost,unit_price";
+
 const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
 export default function SellPage() {
@@ -38,6 +57,7 @@ export default function SellPage() {
   const [block, setBlock] = useState<ReceiptBlock | null>(null);
   const [online, setOnline] = useState(true);
   const [pendingOutbox, setPendingOutbox] = useState(0);
+  const [catalogueAge, setCatalogueAge] = useState<string | null>(null);
 
   const [colors, setColors] = useState<Color[]>([]);
   const [fits, setFits] = useState<Fit[]>([]);
@@ -113,28 +133,60 @@ export default function SellPage() {
   useEffect(() => {
     async function boot() {
       const deviceId = getDeviceId();
-      const res = await fetch(`/api/shift/current?deviceId=${deviceId}`);
-      const j = await res.json();
-      if (!j.shift) {
+      const sb = supabaseBrowser();
+
+      // The catalogue does not depend on the shift, so both legs go out at
+      // once. Awaiting /api/shift/current first cost a full extra round trip
+      // before the Sell screen could start loading — on stall mobile data
+      // that is the difference between the screen being usable and the
+      // volunteer staring at a spinner with a queue in front of them.
+      // Catalogue comes through the offline cache: fresh when there is a
+      // network, last-known snapshot when there isn't. Without this a
+      // volunteer who lost signal and reloaded got an empty Sell screen —
+      // no products, no stickers, nothing to sell (PRD §10).
+      const [shiftRes, cat] = await Promise.all([
+        fetch(`/api/shift/current?deviceId=${deviceId}`)
+          .then((r) => r.json())
+          .catch(() => null),
+        loadWithCache("sell-catalogue", async () => {
+          const [c, f, s, d] = await Promise.all([
+            sb.from("stall_colors").select(SELECT_COLORS).order("sort"),
+            sb.from("stall_fits").select(SELECT_FITS).order("sort"),
+            sb.from("stall_product_skus").select(SELECT_SKUS).eq("is_active", true),
+            sb.from("stall_sticker_designs").select(SELECT_DESIGNS).eq("is_active", true),
+          ]);
+          const err = c.error || f.error || s.error || d.error;
+          if (err) throw err;
+          return {
+            colors: (c.data || []) as unknown as Color[],
+            fits: (f.data || []) as unknown as Fit[],
+            skus: (s.data || []) as unknown as ProductSku[],
+            designs: (d.data || []) as unknown as StickerDesign[],
+          };
+        }),
+      ]);
+
+      if (cat.data) {
+        setColors(cat.data.colors);
+        setFits(cat.data.fits);
+        setSkus(cat.data.skus);
+        setDesigns(cat.data.designs);
+        if (cat.data.colors[0]) setColorId(cat.data.colors[0].id);
+        if (cat.data.fits[0]) setFitId(cat.data.fits[0].id);
+      }
+      setCatalogueAge(cat.stale ? describeAge(cat.cachedAt) || "unknown age" : null);
+
+      // A failed shift lookup offline must not bounce a volunteer mid-shift to
+      // /shift-open, which needs the network anyway. Only redirect when the
+      // server actually answered and said there is no open shift.
+      if (shiftRes && !shiftRes.shift) {
         router.replace("/shift-open");
         return;
       }
-      setShift(j.shift);
-      setBlock(j.block);
-
-      const sb = supabaseBrowser();
-      const [c, f, s, d] = await Promise.all([
-        sb.from("stall_colors").select("*").order("sort"),
-        sb.from("stall_fits").select("*").order("sort"),
-        sb.from("stall_product_skus").select("*").eq("is_active", true),
-        sb.from("stall_sticker_designs").select("*").eq("is_active", true),
-      ]);
-      setColors(c.data || []);
-      setFits(f.data || []);
-      setSkus(s.data || []);
-      setDesigns(d.data || []);
-      if (c.data?.[0]) setColorId(c.data[0].id);
-      if (f.data?.[0]) setFitId(f.data[0].id);
+      if (shiftRes?.shift) {
+        setShift(shiftRes.shift);
+        setBlock(shiftRes.block);
+      }
       setLoading(false);
     }
     boot();
@@ -249,18 +301,42 @@ export default function SellPage() {
 
   async function redeemTicket() {
     setTicketErr("");
-    const code = ticketCode.trim().toUpperCase();
-    if (!code) return;
-    const res = await fetch(`/api/tickets/${code}`);
-    const j = await res.json();
-    if (!res.ok) {
-      setTicketErr(j.error || "No open ticket with that code.");
-      return;
+    const raw = ticketCode.trim();
+    if (!raw) return;
+
+    // The same field accepts a scanned QR and a typed code. A QR carries the
+    // whole cart, so it resolves with no network at all (PRD §10) — which is
+    // the point, because the kiosk and the till are two phones on mobile data
+    // that cannot reach each other locally.
+    const scanned = await decodeTicket(raw);
+    let j: { ticket: { code: string; payload: unknown } };
+    let code: string;
+
+    if (scanned) {
+      const expanded = expandTicket(scanned);
+      code = expanded.code;
+      j = { ticket: expanded };
+    } else {
+      code = raw.toUpperCase();
+      const res = await fetch(`/api/tickets/${code}`).catch(() => null);
+      if (!res) {
+        setTicketErr("Offline — scan the QR on the kiosk screen instead of typing the code.");
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTicketErr(body.error || "No open ticket with that code.");
+        return;
+      }
+      j = body;
     }
     type TicketSticker = {
       sticker_design_id: string;
       code: string;
-      side: string;
+      side?: "front" | "back";
+      pos_x?: number;
+      pos_y?: number;
+      rotation?: number;
       unit_price: number;
       unit_cost: number;
     };
@@ -285,6 +361,10 @@ export default function SellPage() {
         code: s.code,
         unit_price: Number(s.unit_price),
         unit_cost: Number(s.unit_cost),
+        side: s.side ?? "front",
+        pos_x: s.pos_x,
+        pos_y: s.pos_y,
+        rotation: s.rotation,
       })),
     }));
     setGarments((prev) => [...prev, ...newGarments]);
@@ -329,13 +409,15 @@ export default function SellPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ kind: "admin", pin: adminPinValue }),
     });
-    const j = await res.json();
+    const j = await res.json().catch(() => ({}));
     if (j.ok) {
       setDiscountUnlocked(true);
       setAdminPinPrompt(false);
       setAdminPinValue("");
     } else {
-      setAdminPinErr("Incorrect admin PIN");
+      // A lockout must not read as a wrong PIN, or the volunteer keeps
+      // retyping a PIN that was correct and the queue keeps growing.
+      setAdminPinErr(res.status === 429 ? j.error : "Incorrect admin PIN");
     }
   }
 
@@ -380,6 +462,10 @@ export default function SellPage() {
           description: s.custom?.description,
           unit_price: s.unit_price,
           unit_cost: s.unit_cost,
+          side: s.side,
+          pos_x: s.pos_x,
+          pos_y: s.pos_y,
+          rotation: s.rotation,
         })),
       })),
       ...standalone.map((s) => ({
@@ -516,13 +602,23 @@ export default function SellPage() {
                 <span>{pendingOutbox} pending</span>
               </Banner>
             )}
+            {catalogueAge && (
+              // Selling from a cached catalogue is fine; selling from one
+              // without knowing it is not. Stock counts shown here predate
+              // whatever the other seven devices have sold since.
+              <Banner tone="signal">
+                <span>CACHED CATALOGUE — STOCK MAY BE STALE</span>
+                <span>{catalogueAge}</span>
+              </Banner>
+            )}
           </>
         }
       >
         <Panel accent>
-          <PanelLabel color="#1B4DF5">Load design ticket</PanelLabel>
+          <PanelLabel color="var(--color-blue)">Load design ticket</PanelLabel>
           <div className="flex gap-2">
             <Field
+              label="Kiosk design ticket code"
               value={ticketCode}
               onChange={(e) => setTicketCode(e.target.value.toUpperCase())}
               placeholder="A7K2"
@@ -545,7 +641,7 @@ export default function SellPage() {
             <span>{garments.length + standalone.length} item(s) · ₹{total}</span>
           </div>
           {cartEmpty && (
-            <div className="p-4 text-center text-sm text-neutral-600">
+            <div className="p-4 text-center text-sm text-muted">
               Nothing in cart. Add a garment below or load a ticket.
             </div>
           )}
@@ -561,8 +657,16 @@ export default function SellPage() {
                   setTargetGarmentKey(g.key);
                 }
               }}
-              className={`p-2.5 border-b border-neutral-200 cursor-pointer ${
-                targetGarmentKey === g.key ? "bg-blue/10" : ""
+              // Which garment stickers attach to. This was a 10% blue tint —
+              // effectively invisible in direct sunlight, on the control that
+              // decides which shirt gets pressed. A full 2px outline is the
+              // surrounding design language (every Panel, Field and Chip is
+              // bordered this way) and reads at arm's length; outline does not
+              // affect layout, so nothing shifts as selection moves.
+              className={`p-2.5 border-b border-hairline cursor-pointer ${
+                targetGarmentKey === g.key
+                  ? "bg-blue/15 outline-2 -outline-offset-2 outline-blue"
+                  : ""
               }`}
             >
               <div className="flex justify-between gap-2">
@@ -579,14 +683,14 @@ export default function SellPage() {
                       e.stopPropagation();
                       removeGarment(g.key);
                     }}
-                    className="tap-target min-w-[44px] inline-flex items-center justify-center border border-signal text-signal text-[9px] font-extrabold px-1.5 py-1 tracking-wide"
+                    className="tap-target min-w-[48px] inline-flex items-center justify-center border border-signal text-signal text-[9px] font-extrabold px-1.5 py-1 tracking-wide"
                   >
                     REMOVE
                   </button>
                 </div>
               </div>
               {g.stickers.map((st) => (
-                <div key={st.key} className="flex justify-between text-[13px] border-t border-dashed border-neutral-300 pt-1.5 mt-1.5">
+                <div key={st.key} className="flex justify-between text-[13px] border-t border-dashed border-hairline pt-1.5 mt-1.5">
                   <Mono>{st.custom ? `Custom (${st.custom.size_class})` : st.code}</Mono>
                   <span className="flex gap-2 items-center">
                     ₹{st.unit_price}
@@ -595,7 +699,7 @@ export default function SellPage() {
                         e.stopPropagation();
                         removeStickerFromGarment(g.key, st.key);
                       }}
-                      className="tap-target min-w-[44px] inline-flex items-center justify-center text-signal font-bold"
+                      className="tap-target min-w-[48px] inline-flex items-center justify-center text-signal font-bold"
                     >
                       ×
                     </button>
@@ -605,7 +709,7 @@ export default function SellPage() {
             </div>
           ))}
           {standalone.map((s) => (
-            <div key={s.key} className="p-2.5 border-b border-neutral-200 flex justify-between">
+            <div key={s.key} className="p-2.5 border-b border-hairline flex justify-between">
               <div>
                 <div className="font-extrabold text-[15px]">Sticker only · {s.custom ? "Custom" : s.code}</div>
               </div>
@@ -641,7 +745,7 @@ export default function SellPage() {
                 key={sku.id}
                 onClick={() => addGarment(sku)}
                 className={`border-2 border-ink py-2 font-extrabold text-sm min-h-[52px] ${
-                  sku.stock_qty <= 0 ? "bg-neutral-200 text-neutral-500" : "bg-white text-ink"
+                  sku.stock_qty <= 0 ? "bg-hairline text-muted" : "bg-white text-ink"
                 }`}
               >
                 <span>{sku.size}</span>
@@ -649,7 +753,7 @@ export default function SellPage() {
               </button>
             ))}
             {sizesForSelection.length === 0 && (
-              <div className="col-span-4 text-center text-xs text-neutral-500 py-2">No sizes for this combo.</div>
+              <div className="col-span-4 text-center text-xs text-muted py-2">No sizes for this combo.</div>
             )}
           </div>
         </Panel>
@@ -660,6 +764,7 @@ export default function SellPage() {
             <Mono>{targetGarmentKey ? "→ onto selected garment" : "→ standalone sale"}</Mono>
           </div>
           <Field
+            label="Search stickers by code, name or tag"
             value={stickerQuery}
             onChange={(e) => setStickerQuery(e.target.value)}
             placeholder="14, m14, ramen, anime…"
@@ -682,7 +787,7 @@ export default function SellPage() {
                       <button
                         key={code}
                         onClick={() => addSticker(d)}
-                        className="flex-shrink-0 bg-cream border-2 border-ink font-mono text-xs font-bold px-2.5 py-2 min-h-[44px]"
+                        className="flex-shrink-0 bg-cream border-2 border-ink font-mono text-xs font-bold px-2.5 py-2 min-h-[48px]"
                       >
                         {code}
                       </button>
@@ -710,12 +815,12 @@ export default function SellPage() {
               </button>
             ))}
             {designs.length === 0 && (
-              <div className="text-center text-xs text-neutral-500 py-3">
+              <div className="text-center text-xs text-muted py-3">
                 No sticker designs seeded yet — import the catalogue in /admin.
               </div>
             )}
             {designs.length > 0 && stickerResults.length === 0 && (
-              <div className="text-center text-xs text-neutral-500 py-3">
+              <div className="text-center text-xs text-muted py-3">
                 No match. Try a code like <strong>14</strong> or <strong>m14</strong>.
               </div>
             )}
@@ -731,6 +836,7 @@ export default function SellPage() {
           {customOpen && (
             <div className="flex flex-col gap-2 border-2 border-ink p-2.5 bg-cream">
               <Field
+                label="Custom sticker description"
                 placeholder="Description"
                 value={customDesc}
                 onChange={(e) => setCustomDesc(e.target.value)}
@@ -742,6 +848,7 @@ export default function SellPage() {
                   </Chip>
                 ))}
                 <Field
+                  label="Custom sticker price in rupees"
                   type="number"
                   value={customPrice}
                   onChange={(e) => setCustomPrice(e.target.value)}
@@ -765,6 +872,7 @@ export default function SellPage() {
           <PanelLabel>Discount</PanelLabel>
           <div className="flex gap-2">
             <Field
+              label="Discount amount in rupees"
               placeholder="₹ amount"
               value={discountAmt}
               onChange={(e) => {
@@ -773,6 +881,7 @@ export default function SellPage() {
               }}
             />
             <Field
+              label="Discount percentage"
               placeholder="% off"
               value={discountPct}
               onChange={(e) => {
@@ -812,10 +921,10 @@ export default function SellPage() {
           {payment === "split" && (
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
-                <Field placeholder="Cash ₹" value={cashAmt} onChange={(e) => setCashAmt(e.target.value)} />
-                <Field placeholder="UPI ₹" value={upiAmt} onChange={(e) => setUpiAmt(e.target.value)} />
+                <Field label="Cash portion in rupees" placeholder="Cash ₹" value={cashAmt} onChange={(e) => setCashAmt(e.target.value)} />
+                <Field label="UPI portion in rupees" placeholder="UPI ₹" value={upiAmt} onChange={(e) => setUpiAmt(e.target.value)} />
               </div>
-              <div className={`text-xs font-mono ${splitOk ? "text-neutral-600" : "text-signal font-bold"}`}>
+              <div className={`text-xs font-mono ${splitOk ? "text-muted" : "text-signal font-bold"}`}>
                 {splitOk ? `Splits to ₹${total}` : `Must total ₹${total} (currently ₹${splitTotal})`}
               </div>
             </div>
@@ -843,6 +952,7 @@ export default function SellPage() {
           <div className="bg-cream border-2 border-ink p-4 w-full max-w-xs flex flex-col gap-3">
             <PanelLabel>Admin PIN required (discount &gt; 10%)</PanelLabel>
             <Field
+              label="Admin PIN"
               type="password"
               value={adminPinValue}
               onChange={(e) => setAdminPinValue(e.target.value)}

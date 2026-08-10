@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Fraunces } from "next/font/google";
+import QRCode from "qrcode";
+import { encodeTicket, type CompactTicket } from "@/lib/ticketPayload";
 
 // Kiosk-only accent face — full brutalist skin lives here per PRD §11/D19;
 // every other surface (Sell/Orders/Stock/Admin) stays on the restrained POS
@@ -116,6 +118,15 @@ type Placement = {
   holdId: string;
 };
 
+/** A candidate placement being tested before it is committed. */
+type PlacementTrial = {
+  xPct: number;
+  yPct: number;
+  print_w_cm: number;
+  print_h_cm: number;
+  rotation?: number;
+};
+
 const IMG_W = 400;
 const IMG_H = 500;
 
@@ -149,6 +160,7 @@ export default function KioskPage() {
   const [catalogueLoading, setCatalogueLoading] = useState(true);
   const [catalogueError, setCatalogueError] = useState("");
   const [ticketError, setTicketError] = useState("");
+  const [ticketQr, setTicketQr] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ key: string; startX: number; startY: number; origX: number; origY: number } | null>(
@@ -162,7 +174,18 @@ export default function KioskPage() {
         setColors(j.colors || []);
         setFits(j.fits || []);
         setSkus(j.skus || []);
-        setDesigns(j.designs || []);
+        // A design with no print dimensions cannot be rendered true-scale,
+        // and true-scale is the constraint the whole canvas rests on
+        // (PRD §4.3: "The customer sees what they will actually get").
+        // print_w_cm / print_h_cm are nullable and unset on most seeded rows;
+        // rendering one produced a zero-size or NaN-positioned sticker with
+        // no error and a promise nobody could fulfil. Hiding it is the honest
+        // failure — the volunteer can still add it at the till.
+        setDesigns(
+          ((j.designs || []) as Design[]).filter(
+            (d) => Number(d.print_w_cm) > 0 && Number(d.print_h_cm) > 0
+          )
+        );
         setPresets(j.presets || []);
         if (j.colors?.[0]) setColorId(j.colors[0].id);
         if (j.fits?.[0]) setFitId(j.fits[0].id);
@@ -198,24 +221,91 @@ export default function KioskPage() {
     return j.hold.id as string;
   }
 
-  function boxesOverlap(
-    a: { x: number; y: number; w: number; h: number },
-    b: { x: number; y: number; w: number; h: number }
-  ) {
-    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  type Pt = { x: number; y: number };
+
+  /** Corners of a placement as an *oriented* box, rotation included.
+   *
+   *  This used to be an axis-aligned rectangle compared with a simple
+   *  interval test, which silently ignored `rotation`. Two rotated transfers
+   *  could be accepted as clear of each other and be physically impossible to
+   *  press — precisely the order PRD §4.3 exists to prevent. */
+  function pxCorners(p: {
+    xPct: number;
+    yPct: number;
+    print_w_cm: number;
+    print_h_cm: number;
+    rotation?: number;
+  }): Pt[] {
+    if (!printArea) return [];
+    const rectPxW = printArea.w * IMG_W;
+    const rectPxH = printArea.h * IMG_H;
+    const wPx = p.print_w_cm * (rectPxW / printArea.cm_w);
+    const hPx = p.print_h_cm * (rectPxH / printArea.cm_h);
+    const cx = printArea.x * IMG_W + (p.xPct / 100) * rectPxW;
+    const cy = printArea.y * IMG_H + (p.yPct / 100) * rectPxH;
+    const rad = ((p.rotation ?? 0) * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const hw = wPx / 2;
+    const hh = hPx / 2;
+    return [
+      [-hw, -hh],
+      [hw, -hh],
+      [hw, hh],
+      [-hw, hh],
+    ].map(([dx, dy]) => ({ x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos }));
   }
 
-  function pxBox(p: { xPct: number; yPct: number; print_w_cm: number; print_h_cm: number }) {
+  /** Separating Axis Theorem for two convex quads. Two oriented rectangles
+   *  are disjoint iff some edge normal of either separates them. */
+  function polysOverlap(a: Pt[], b: Pt[]) {
+    if (!a.length || !b.length) return false;
+    for (const poly of [a, b]) {
+      for (let i = 0; i < poly.length; i++) {
+        const p1 = poly[i];
+        const p2 = poly[(i + 1) % poly.length];
+        // Outward normal of this edge.
+        const axis = { x: -(p2.y - p1.y), y: p2.x - p1.x };
+        const len = Math.hypot(axis.x, axis.y) || 1;
+        axis.x /= len;
+        axis.y /= len;
+
+        const proj = (pts: Pt[]) => {
+          let min = Infinity;
+          let max = -Infinity;
+          for (const pt of pts) {
+            const d = pt.x * axis.x + pt.y * axis.y;
+            if (d < min) min = d;
+            if (d > max) max = d;
+          }
+          return [min, max] as const;
+        };
+
+        const [aMin, aMax] = proj(a);
+        const [bMin, bMax] = proj(b);
+        // A shared edge is not a collision; require real interpenetration.
+        if (aMax <= bMin + 1e-6 || bMax <= aMin + 1e-6) return false;
+      }
+    }
+    return true;
+  }
+
+  function overlaps(a: Placement | PlacementTrial, b: Placement) {
+    return polysOverlap(pxCorners(a), pxCorners(b));
+  }
+
+  /** Unrotated layout rect. Rendering positions the element axis-aligned and
+   *  lets CSS `rotate()` spin it about its own centre, so the DOM box stays
+   *  unrotated — collision uses pxCorners, layout uses this. */
+  function pxRect(p: { xPct: number; yPct: number; print_w_cm: number; print_h_cm: number }) {
     if (!printArea) return { x: 0, y: 0, w: 0, h: 0 };
     const rectPxW = printArea.w * IMG_W;
     const rectPxH = printArea.h * IMG_H;
-    const pxPerCmX = rectPxW / printArea.cm_w;
-    const pxPerCmY = rectPxH / printArea.cm_h;
-    const wPx = p.print_w_cm * pxPerCmX;
-    const hPx = p.print_h_cm * pxPerCmY;
-    const centerX = printArea.x * IMG_W + (p.xPct / 100) * rectPxW;
-    const centerY = printArea.y * IMG_H + (p.yPct / 100) * rectPxH;
-    return { x: centerX - wPx / 2, y: centerY - hPx / 2, w: wPx, h: hPx };
+    const w = p.print_w_cm * (rectPxW / printArea.cm_w);
+    const h = p.print_h_cm * (rectPxH / printArea.cm_h);
+    const cx = printArea.x * IMG_W + (p.xPct / 100) * rectPxW;
+    const cy = printArea.y * IMG_H + (p.yPct / 100) * rectPxH;
+    return { x: cx - w / 2, y: cy - h / 2, w, h };
   }
 
   async function placeDesign(design: Design) {
@@ -224,10 +314,15 @@ export default function KioskPage() {
     const holdId = await reserveSticker(design);
     if (!holdId) return;
 
-    const trial = { xPct: 50, yPct: 50, print_w_cm: design.print_w_cm, print_h_cm: design.print_h_cm };
-    const box = pxBox(trial);
+    const trial: PlacementTrial = {
+      xPct: 50,
+      yPct: 50,
+      print_w_cm: design.print_w_cm,
+      print_h_cm: design.print_h_cm,
+      rotation: 0,
+    };
     const sameSide = placements.filter((p) => p.side === side);
-    const overlaps = sameSide.some((p) => boxesOverlap(box, pxBox(p)));
+    const collidesAtCenter = sameSide.some((p) => overlaps(trial, p));
 
     const commit = (x: number, y: number) =>
       setPlacements((prev) => [
@@ -248,7 +343,7 @@ export default function KioskPage() {
         },
       ]);
 
-    if (!overlaps) {
+    if (!collidesAtCenter) {
       commit(50, 50);
       return;
     }
@@ -265,8 +360,8 @@ export default function KioskPage() {
       [50, 75],
     ];
     for (const [x, y] of offsets) {
-      const b2 = pxBox({ ...trial, xPct: x, yPct: y });
-      if (!sameSide.some((p) => boxesOverlap(b2, pxBox(p)))) {
+      const candidate: PlacementTrial = { ...trial, xPct: x, yPct: y };
+      if (!sameSide.some((p) => overlaps(candidate, p))) {
         commit(x, y);
         return;
       }
@@ -334,8 +429,7 @@ export default function KioskPage() {
     setPlacements((prev) => {
       const moved = prev.find((p) => p.key === ds.key);
       if (!moved) return prev;
-      const box = pxBox(moved);
-      const collides = prev.some((p) => p.key !== ds.key && p.side === moved.side && boxesOverlap(box, pxBox(p)));
+      const collides = prev.some((p) => p.key !== ds.key && p.side === moved.side && overlaps(moved, p));
       if (collides) {
         setOverlapMsg("That overlaps another sticker — placement reverted.");
         return prev.map((p) => (p.key === ds.key ? { ...p, xPct: ds.origX, yPct: ds.origY } : p));
@@ -387,6 +481,48 @@ export default function KioskPage() {
     const j = await res.json().catch(() => ({}));
     if (res.ok && j.ticket) {
       setTicket({ code: j.ticket.code, expires_at: j.ticket.expires_at });
+
+      // PRD §10: the QR carries the WHOLE cart, not a lookup code, so the till
+      // can redeem it with no network at all. The 4-character code beneath it
+      // is the online-only fallback.
+      const compact: CompactTicket = {
+        v: 1,
+        t: j.ticket.code,
+        q: total,
+        g: [
+          {
+            k: sku.id,
+            c: sku.sku_code,
+            p: sku.unit_price,
+            o: sku.unit_cost,
+            s: placements.map((p) => ({
+              d: p.sticker_design_id,
+              c: p.code,
+              s: p.side === "back" ? (1 as const) : (0 as const),
+              x: Math.round(p.xPct * 10) / 10,
+              y: Math.round(p.yPct * 10) / 10,
+              r: Math.round(p.rotation),
+              p: p.unit_price,
+              o: p.unit_cost,
+              h: p.holdId,
+            })),
+          },
+        ],
+      };
+      try {
+        const encoded = await encodeTicket(compact);
+        setTicketQr(
+          await QRCode.toDataURL(encoded, {
+            errorCorrectionLevel: "M",
+            margin: 1,
+            width: 512,
+            color: { dark: "#0F0F10", light: "#F7F5F1" },
+          })
+        );
+      } catch {
+        // No QR just means the volunteer types the 4-character code.
+        setTicketQr(null);
+      }
       setStage("ticket");
     } else {
       setTicketError(j.error || "Could not get a ticket — a reservation may have expired. Try again.");
@@ -394,6 +530,7 @@ export default function KioskPage() {
   }
 
   function resetAll() {
+    setTicketQr(null);
     setStage("attract");
     setColorId(colors[0]?.id || null);
     setFitId(fits[0]?.id || null);
@@ -481,7 +618,7 @@ export default function KioskPage() {
                 yours
               </span>
             </div>
-            <div className="text-sm text-neutral-400 max-w-xs">
+            <div className="text-sm text-muted max-w-xs">
               Compose a tee, get a ticket, hand it to a volunteer at the till. Nothing is charged until they scan it.
             </div>
             <button
@@ -501,7 +638,7 @@ export default function KioskPage() {
       {stage === "path" && catalogueLoading && (
         <div className="flex flex-col items-center gap-3 text-cream">
           <div className="w-10 h-10 border-4 border-cream/30 border-t-cream rounded-full animate-spin" />
-          <div className="text-sm text-neutral-400">Loading catalogue…</div>
+          <div className="text-sm text-muted">Loading catalogue…</div>
         </div>
       )}
 
@@ -535,7 +672,7 @@ export default function KioskPage() {
                   {p.name}
                 </button>
               ))}
-              {presets.length === 0 && <div className="text-xs text-neutral-400 col-span-2">No presets yet.</div>}
+              {presets.length === 0 && <div className="text-xs text-muted col-span-2">No presets yet.</div>}
             </div>
           </div>
           <button
@@ -583,7 +720,7 @@ export default function KioskPage() {
                   disabled={disabled}
                   onClick={() => setSize(sz)}
                   className={`border-2 border-ink py-3 font-extrabold ${
-                    disabled ? "bg-neutral-300 text-neutral-500" : size === sz ? "bg-blue text-cream" : "bg-white"
+                    disabled ? "bg-hairline text-muted" : size === sz ? "bg-blue text-cream" : "bg-white"
                   }`}
                 >
                   {sz}
@@ -652,7 +789,7 @@ export default function KioskPage() {
             {placements
               .filter((p) => p.side === side)
               .map((p) => {
-                const box = pxBox(p);
+                const box = pxRect(p);
                 return (
                   <img
                     key={p.key}
@@ -688,7 +825,7 @@ export default function KioskPage() {
               />
               <button
                 onClick={() => removePlacement(selectedKey)}
-                className="border border-signal text-signal text-xs font-extrabold py-2 min-h-[44px]"
+                className="border border-signal text-signal text-xs font-extrabold py-2 min-h-[48px]"
               >
                 REMOVE
               </button>
@@ -709,7 +846,7 @@ export default function KioskPage() {
               </button>
             ))}
             {filteredDesigns.length === 0 && (
-              <div className="col-span-4 text-center text-xs text-neutral-500 py-2">No match / sold out.</div>
+              <div className="col-span-4 text-center text-xs text-muted py-2">No match / sold out.</div>
             )}
           </div>
 
@@ -718,7 +855,7 @@ export default function KioskPage() {
             <span>₹{total}</span>
           </div>
           {ticketError && <div className="bg-signal text-cream p-2 font-extrabold text-[11px]">{ticketError}</div>}
-          <button onClick={getTicket} className="bg-blue text-cream py-3 font-extrabold min-h-[44px]">
+          <button onClick={getTicket} className="bg-blue text-cream py-3 font-extrabold min-h-[48px]">
             GET TICKET
           </button>
         </div>
@@ -739,13 +876,22 @@ export default function KioskPage() {
             </div>
           </div>
           <div className="font-extrabold text-sm tracking-wide">SHOW THIS TO A VOLUNTEER</div>
+          {ticketQr && (
+            <img
+              src={ticketQr}
+              alt={`Design ticket ${ticket.code.split("").join(" ")} — scan at the till`}
+              width={220}
+              height={220}
+              className="w-[220px] h-[220px] max-w-full border-2 border-ink bg-cream"
+            />
+          )}
           <div
             className="font-extrabold tracking-[0.2em] sm:tracking-[0.3em] text-center"
             style={{ fontSize: "clamp(32px,12vw,60px)" }}
           >
             {ticket.code}
           </div>
-          <div className="text-xs font-mono text-neutral-600">
+          <div className="text-xs font-mono text-muted">
             Expires {new Date(ticket.expires_at).toLocaleTimeString("en-IN")} · Total ₹{total}
           </div>
           <button onClick={resetAll} className="bg-ink text-cream px-6 py-3 font-extrabold text-sm w-full">

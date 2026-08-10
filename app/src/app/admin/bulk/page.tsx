@@ -38,7 +38,7 @@ export default function BulkEntryPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-cream text-ink p-6 max-w-xl mx-auto flex flex-col gap-3">
+    <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 w-full max-w-[1000px] mx-auto flex flex-col gap-3">
       <div className="font-extrabold text-lg">Bulk one-off entry</div>
       {lines.map((l, i) => (
         <div key={i} className="flex gap-2">

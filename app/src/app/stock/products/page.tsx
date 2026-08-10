@@ -64,17 +64,17 @@ export default function ProductStockPage() {
                         disabled
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
-                        className="border-2 border-ink w-16 p-1.5 text-center bg-neutral-200 text-neutral-400 cursor-not-allowed"
+                        className="border-2 border-ink w-16 p-1.5 text-center bg-hairline text-muted cursor-not-allowed"
                       />
                       <button
                         disabled
                         onClick={() => saveStock(s.id)}
-                        className="bg-neutral-300 text-neutral-500 px-2 font-bold text-xs cursor-not-allowed"
+                        className="bg-hairline text-muted px-2 font-bold text-xs cursor-not-allowed"
                       >
                         OK
                       </button>
                     </div>
-                    <div className="font-mono text-[9px] text-neutral-500 text-right max-w-[140px]">
+                    <div className="font-mono text-[9px] text-muted text-right max-w-[140px]">
                       Stock edits need admin access — not available yet
                     </div>
                   </div>
@@ -93,7 +93,7 @@ export default function ProductStockPage() {
             );
           })}
         </div>
-        <div className="font-mono text-[11px] text-neutral-600 border border-dashed p-2.5">
+        <div className="font-mono text-[11px] text-muted border border-dashed p-2.5">
           CSV / image import is stubbed for Phase 1 per the brief — inline stock edits only. Direct edits attempt a
           write through the anon key to demonstrate RLS is doing its job (SELECT-only); wire a server route with
           admin_audit logging before relying on this in production.

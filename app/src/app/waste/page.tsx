@@ -82,9 +82,9 @@ export default function WastePage() {
     <div className="min-h-dvh flex flex-col">
       <PosFrame kicker="STALL OS · WASTE" title="Log waste">
         <div className="border-2 border-ink bg-white p-2.5 flex flex-col gap-2">
-          <Field placeholder="Sticker or product code" value={code} onChange={(e) => setCode(e.target.value)} />
+          <Field label="Sticker or product code" placeholder="Sticker or product code" value={code} onChange={(e) => setCode(e.target.value)} />
           <div className="flex gap-2">
-            <Field type="number" placeholder="Qty" value={qty} onChange={(e) => setQty(e.target.value)} className="w-20" />
+            <Field label="Quantity wasted" type="number" placeholder="Qty" value={qty} onChange={(e) => setQty(e.target.value)} className="w-20" />
             <select value={reason} onChange={(e) => setReason(e.target.value)} className="border-2 border-ink p-3 flex-1 bg-white">
               {REASONS.map((r) => (
                 <option key={r} value={r}>
@@ -93,7 +93,7 @@ export default function WastePage() {
               ))}
             </select>
           </div>
-          <Field placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+          <Field label="Note (optional)" placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
           <BigButton variant="blue" onClick={submit}>
             LOG WASTE (DECREMENTS STOCK)
           </BigButton>

@@ -78,7 +78,7 @@ function PinInner() {
           </div>
         )}
         {process.env.NODE_ENV !== "production" && (
-          <div className="font-mono text-[11px] text-neutral-600 border border-dashed border-neutral-400 p-2.5">
+          <div className="font-mono text-[11px] text-muted border border-dashed border-hairline p-2.5">
             Demo PINs — stall 1111 · admin 1234 · kiosk 2222
           </div>
         )}

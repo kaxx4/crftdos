@@ -22,7 +22,7 @@ export default function MorePage() {
               className="border-2 border-ink bg-white p-3 flex justify-between items-center font-extrabold text-sm"
             >
               {l.label}
-              <span className="font-mono text-[10px] text-neutral-500">{l.note}</span>
+              <span className="font-mono text-[10px] text-muted">{l.note}</span>
             </Link>
           ))}
         </div>

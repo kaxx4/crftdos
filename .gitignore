@@ -1,0 +1,15 @@
+# Agent tooling: vendored skill caches and machine-local settings.
+# ~6.6MB / 300 files of installed packages, not project source.
+.agents/
+.claude/
+.codex/
+app/.agents/
+app/.claude/
+app/skills-lock.json
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Obsidian per-machine UI state (open panes, window geometry) — churns constantly.
+CrftdOS/.obsidian/workspace.json

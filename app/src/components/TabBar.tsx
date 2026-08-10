@@ -20,7 +20,7 @@ export function TabBar() {
           <Link
             key={t.href}
             href={t.href}
-            className={`flex-1 text-center py-2.5 min-h-[44px] flex items-center justify-center font-extrabold text-[11px] tracking-wide ${
+            className={`flex-1 text-center py-2.5 min-h-[48px] flex items-center justify-center font-extrabold text-[11px] tracking-wide ${
               active ? "text-blue bg-cream" : "text-cream"
             }`}
           >

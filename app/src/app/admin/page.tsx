@@ -24,7 +24,7 @@ export default function AdminHome() {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-cream text-ink p-6 flex flex-col gap-6 max-w-3xl mx-auto">
+    <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
       <div className="flex gap-3">
         <Link href="/admin/pricing" className="border-2 border-ink px-3 py-2 font-extrabold text-sm bg-white">
           Pricing
@@ -49,35 +49,35 @@ export default function AdminHome() {
       {a && (
         <div className="grid grid-cols-2 gap-3">
           <div className="border-2 border-ink bg-white p-3">
-            <div className="font-mono text-xs text-neutral-500">Gross</div>
+            <div className="font-mono text-xs text-muted">Gross</div>
             <div className="font-extrabold text-2xl">₹{a.gross}</div>
           </div>
           <div className="border-2 border-ink bg-white p-3">
-            <div className="font-mono text-xs text-neutral-500">COGS</div>
+            <div className="font-mono text-xs text-muted">COGS</div>
             <div className="font-extrabold text-2xl">₹{a.cogs}</div>
           </div>
           <div className="border-2 border-ink bg-white p-3">
-            <div className="font-mono text-xs text-neutral-500">Discounts given</div>
+            <div className="font-mono text-xs text-muted">Discounts given</div>
             <div className="font-extrabold text-2xl">₹{a.discounts}</div>
           </div>
           <div className="border-2 border-ink bg-white p-3">
-            <div className="font-mono text-xs text-neutral-500">Orders</div>
+            <div className="font-mono text-xs text-muted">Orders</div>
             <div className="font-extrabold text-2xl">{a.orderCount}</div>
           </div>
           <div className="border-2 border-signal bg-white p-3">
-            <div className="font-mono text-xs text-neutral-500">Waste cost</div>
+            <div className="font-mono text-xs text-muted">Waste cost</div>
             <div className="font-extrabold text-2xl">
               ₹{a.wasteCost} <span className="text-xs font-normal">({a.wasteCount} entries)</span>
             </div>
           </div>
           <div className="border-2 border-signal bg-white p-3">
-            <div className="font-mono text-xs text-neutral-500">Return rate</div>
+            <div className="font-mono text-xs text-muted">Return rate</div>
             <div className="font-extrabold text-2xl">{a.returnRate.toFixed(1)}%</div>
           </div>
         </div>
       )}
 
-      <div className="font-mono text-[11px] text-neutral-500 border border-dashed border-neutral-400 p-2.5">
+      <div className="font-mono text-[11px] text-muted border border-dashed border-hairline p-2.5">
         This is headline + waste + returns only, per the current build pass. Full §13 analytics (kiosk conversion,
         fulfilment timing, holds conversion, B2B pipeline value) is a later pass.
       </div>

@@ -144,7 +144,7 @@ export default function HoldsPage() {
               </div>
             </div>
           ))}
-          {holds.length === 0 && <div className="text-center text-sm text-neutral-600 py-6">No active holds.</div>}
+          {holds.length === 0 && <div className="text-center text-sm text-muted py-6">No active holds.</div>}
         </div>
         {!addOpen ? (
           <BigButton variant="ghost" onClick={() => setAddOpen(true)}>
@@ -152,9 +152,9 @@ export default function HoldsPage() {
           </BigButton>
         ) : (
           <div className="border-2 border-ink bg-white p-2.5 flex flex-col gap-2">
-            <Field placeholder="SKU or sticker code" value={skuCode} onChange={(e) => setSkuCode(e.target.value)} />
-            <Field placeholder="Customer name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Field placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Field label="SKU or sticker code" placeholder="SKU or sticker code" value={skuCode} onChange={(e) => setSkuCode(e.target.value)} />
+            <Field label="Customer name" placeholder="Customer name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Field label="Customer phone" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
             <div className="flex gap-2">
               <BigButton variant="blue" className="flex-1" onClick={addHold}>
                 HOLD 2H

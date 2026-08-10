@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="crftd Stall OS">
+  <rect width="512" height="512" fill="#1B4DF5"/>
+  <!-- crop marks, matching the POS header band and receipt frame -->
+  <g stroke="#F7F5F1" stroke-width="12" fill="none" opacity="0.85">
+    <path d="M48 96V48h48"/>
+    <path d="M464 96V48h-48"/>
+    <path d="M48 416v48h48"/>
+    <path d="M464 416v48h-48"/>
+  </g>
+  <!-- baseline band -->
+  <rect x="96" y="352" width="320" height="20" fill="#F7F5F1"/>
+  <text x="256" y="310"
+        font-family="Anton, 'Arial Black', system-ui, sans-serif"
+        font-size="188" font-weight="900" letter-spacing="-6"
+        text-anchor="middle" fill="#F7F5F1">crftd</text>
+</svg>

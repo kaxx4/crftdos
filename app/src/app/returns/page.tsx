@@ -59,7 +59,7 @@ export default function ReturnsPage() {
           recommended.
         </div>
         <div className="border-2 border-ink bg-white p-2.5 flex flex-col gap-2">
-          <Field placeholder="Receipt no. e.g. CR/26-27/000101" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Field label="Search by receipt number" placeholder="Receipt no. e.g. CR/26-27/000101" value={search} onChange={(e) => setSearch(e.target.value)} />
           <BigButton variant="ghost" onClick={search_}>
             FIND ORDER
           </BigButton>
@@ -71,7 +71,7 @@ export default function ReturnsPage() {
         </div>
         {found && (
           <div className="border-2 border-ink bg-white p-2.5 flex flex-col gap-2">
-            <Field placeholder="Reason" value={reason} onChange={(e) => setReason(e.target.value)} />
+            <Field label="Reason for return" placeholder="Reason" value={reason} onChange={(e) => setReason(e.target.value)} />
             <div className="flex gap-1.5 flex-wrap">
               {ACTIONS.map((a) => (
                 <button
@@ -83,18 +83,18 @@ export default function ReturnsPage() {
                 </button>
               ))}
             </div>
-            <Field type="number" placeholder="Refund ₹" value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} />
+            <Field label="Refund amount in rupees" type="number" placeholder="Refund ₹" value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} />
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={resaleable} onChange={(e) => setResaleable(e.target.checked)} />
               Resaleable (restock)
             </label>
-            <Field type="password" placeholder="Approver admin PIN" value={pin} onChange={(e) => setPin(e.target.value)} />
+            <Field label="Approver admin PIN" type="password" placeholder="Approver admin PIN" value={pin} onChange={(e) => setPin(e.target.value)} />
             <BigButton variant="blue" onClick={submit}>
               LOG RETURN
             </BigButton>
           </div>
         )}
-        {result && <div className="font-mono text-xs text-neutral-600">{result}</div>}
+        {result && <div className="font-mono text-xs text-muted">{result}</div>}
       </PosFrame>
       <TabBar />
     </div>

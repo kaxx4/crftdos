@@ -52,28 +52,56 @@ export async function POST(req: NextRequest) {
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  for (const i of items as { product_sku_id?: string; qty: number; unit_price: number; unit_cost: number }[]) {
-    await admin.from("stall_order_items").insert({
+  const lines = items as { product_sku_id?: string; qty: number; unit_price: number; unit_cost: number }[];
+
+  // One insert for every line, not one per line.
+  const { error: itemsErr } = await admin.from("stall_order_items").insert(
+    lines.map((i) => ({
       order_id: orderId,
       product_sku_id: i.product_sku_id || null,
       qty: i.qty,
       unit_price: i.unit_price,
       unit_cost: i.unit_cost || 0,
       line_total: i.unit_price * i.qty,
+    }))
+  );
+  if (itemsErr) return NextResponse.json({ error: itemsErr.message }, { status: 500 });
+
+  // Stock via the floor-guarded RPC. This path used to SELECT stock_qty and
+  // write back a value computed in Node — a lost-update race that could
+  // oversell whenever a bulk entry overlapped a till sale, and the one stock
+  // write migration 001 never converted.
+  const stockLines = lines.filter((i) => i.product_sku_id);
+  const failed: string[] = [];
+  for (const i of stockLines) {
+    const { data: adjusted, error: adjErr } = await admin.rpc("stall_adjust_product_stock", {
+      p_id: i.product_sku_id,
+      p_delta: -i.qty,
     });
-    if (i.product_sku_id) {
-      const { data: sku } = await admin.from("stall_product_skus").select("stock_qty").eq("id", i.product_sku_id).single();
-      await admin.from("stall_product_skus").update({ stock_qty: (sku?.stock_qty ?? 0) - i.qty }).eq("id", i.product_sku_id);
-      await admin.from("stall_inventory_movements").insert({
-        sku_type: "product",
-        sku_id: i.product_sku_id,
-        delta: -i.qty,
-        reason: "sale",
-        ref_order: orderId,
-        actor: "admin-bulk",
-      });
-    }
+    const row = Array.isArray(adjusted) ? adjusted[0] : adjusted;
+    if (adjErr || !row) failed.push(i.product_sku_id!);
   }
 
-  return NextResponse.json({ order });
+  if (stockLines.length) {
+    await admin.from("stall_inventory_movements").insert(
+      stockLines
+        .filter((i) => !failed.includes(i.product_sku_id!))
+        .map((i) => ({
+          sku_type: "product",
+          sku_id: i.product_sku_id!,
+          delta: -i.qty,
+          reason: "sale" as const,
+          ref_order: orderId,
+          actor: "admin-bulk",
+        }))
+    );
+  }
+
+  // Bulk entries are retrospective admin records, so an insufficient-stock
+  // line is reported rather than failing the whole entry — but it is reported,
+  // not swallowed, because the stock count is now knowingly out of step.
+  return NextResponse.json({
+    order,
+    ...(failed.length ? { warning: "Some lines exceeded available stock and were not decremented", failed } : {}),
+  });
 }

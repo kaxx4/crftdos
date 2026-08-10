@@ -73,13 +73,13 @@ export default function RestockPage() {
                 </button>
               </div>
             ))}
-            {belowPar.length === 0 && <div className="text-center text-sm text-neutral-600 py-6">Nothing below par.</div>}
+            {belowPar.length === 0 && <div className="text-center text-sm text-muted py-6">Nothing below par.</div>}
           </div>
         )}
 
         {tab === "dead" && (
           <div className="flex flex-col gap-1.5">
-            <div className="font-mono text-[11px] text-neutral-600">
+            <div className="font-mono text-[11px] text-muted">
               In stock but zero sales recorded — simplest correct definition, not a real analytics window yet.
             </div>
             {deadStock.map((i) => (
@@ -88,7 +88,7 @@ export default function RestockPage() {
                 <Mono>{i.stock} in stock, 0 sold</Mono>
               </div>
             ))}
-            {deadStock.length === 0 && <div className="text-center text-sm text-neutral-600 py-6">No dead stock.</div>}
+            {deadStock.length === 0 && <div className="text-center text-sm text-muted py-6">No dead stock.</div>}
           </div>
         )}
       </PosFrame>

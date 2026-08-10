@@ -5,6 +5,7 @@ import { PosFrame } from "@/components/PosFrame";
 import { TabBar } from "@/components/TabBar";
 import { BigButton, Mono } from "@/components/ui";
 import { getDeviceId } from "@/lib/deviceId";
+import { TOKENS } from "@/lib/tokens";
 
 type Summary = {
   shift: { name: string; venue: string };
@@ -88,9 +89,9 @@ export default function OrdersPage() {
     if (!ctx) return;
     canvas.width = 600;
     canvas.height = 750;
-    ctx.fillStyle = "#F7F5F1";
+    ctx.fillStyle = TOKENS.cream;
     ctx.fillRect(0, 0, 600, 750);
-    ctx.strokeStyle = "#0F0F10";
+    ctx.strokeStyle = TOKENS.ink;
     ctx.lineWidth = 4;
     ctx.strokeRect(10, 10, 580, 730);
     // crop marks
@@ -107,15 +108,15 @@ export default function OrdersPage() {
       ctx.stroke();
     });
 
-    ctx.fillStyle = "#1B4DF5";
+    ctx.fillStyle = TOKENS.blue;
     ctx.fillRect(30, 60, 540, 90);
-    ctx.fillStyle = "#F7F5F1";
+    ctx.fillStyle = TOKENS.cream;
     ctx.font = "bold 28px monospace";
     ctx.fillText("CRFTD — SHIFT SUMMARY", 45, 100);
     ctx.font = "14px monospace";
     ctx.fillText(`${s.shift?.name || ""} · ${s.shift?.venue || ""}`, 45, 130);
 
-    ctx.fillStyle = "#0F0F10";
+    ctx.fillStyle = TOKENS.ink;
     ctx.font = "bold 16px monospace";
     const rows: [string, string][] = [
       ["Gross", `₹${s.gross}`],
@@ -131,15 +132,15 @@ export default function OrdersPage() {
       ctx.textAlign = "left";
     });
 
-    ctx.fillStyle = "#1B4DF5";
+    ctx.fillStyle = TOKENS.blue;
     ctx.fillRect(30, 380, 540, 80);
-    ctx.fillStyle = "#F7F5F1";
+    ctx.fillStyle = TOKENS.cream;
     ctx.font = "bold 12px monospace";
     ctx.fillText("RAISED FOR AQUATERRA", 45, 410);
     ctx.font = "bold 34px monospace";
     ctx.fillText(`₹${s.raisedForAquaterra}`, 45, 445);
 
-    ctx.fillStyle = "#0F0F10";
+    ctx.fillStyle = TOKENS.ink;
     ctx.font = "bold 14px monospace";
     ctx.fillText("TOP DESIGNS", 45, 500);
     ctx.font = "13px monospace";
@@ -148,7 +149,7 @@ export default function OrdersPage() {
     });
 
     ctx.font = "11px monospace";
-    ctx.fillStyle = "#777";
+    ctx.fillStyle = TOKENS.muted;
     ctx.fillText("crftd Stall OS · placeholder skin, full crop-mark brutalist card is a later polish pass", 45, 710);
   }
 
@@ -199,7 +200,7 @@ export default function OrdersPage() {
                 ) : (
                   <button
                     onClick={() => voidOrder(o.id)}
-                    className="tap-target min-w-[44px] inline-flex items-center justify-center border border-signal text-signal text-[9px] font-extrabold px-1.5 py-1"
+                    className="tap-target min-w-[48px] inline-flex items-center justify-center border border-signal text-signal text-[9px] font-extrabold px-1.5 py-1"
                   >
                     VOID
                   </button>
@@ -208,7 +209,7 @@ export default function OrdersPage() {
             </div>
           ))}
           {orders.length === 0 && (
-            <div className="text-center text-sm text-neutral-600 py-6">No orders yet this shift.</div>
+            <div className="text-center text-sm text-muted py-6">No orders yet this shift.</div>
           )}
         </div>
 

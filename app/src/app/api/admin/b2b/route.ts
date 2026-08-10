@@ -2,19 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { verifySession, SESSION_COOKIE } from "@/lib/session";
 import { verify } from "@node-rs/argon2";
-import { checkRateLimit, recordFailure, clearRateLimit } from "@/lib/rateLimit";
+import { checkRateLimit, recordFailure, clearRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
 async function requireAdmin(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE.admin)?.value;
   return verifySession("admin", token);
-}
-
-function clientIp(req: NextRequest) {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  );
 }
 
 export async function GET(req: NextRequest) {
@@ -55,22 +47,25 @@ export async function POST(req: NextRequest) {
   }
 
   if (margin < 10) {
-    const rlKey = `${clientIp(req)}:admin-pin`;
-    const rl = checkRateLimit(rlKey);
+    const rlKey = rateLimitKey(req, "admin-pin");
+    const rl = await checkRateLimit(rlKey);
     if (!rl.allowed) {
-      return NextResponse.json({ error: "Too many failed attempts. Try again in 15 minutes." }, { status: 429 });
+      return NextResponse.json(
+        { error: `Too many failed attempts. Try again in ${Math.ceil(rl.retryAfterSeconds / 60)} minutes.` },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+      );
     }
     const admin = supabaseAdmin();
     const { data: pinRow } = await admin.from("stall_settings").select("value").eq("key", "pin_admin").single();
     const ok = pinRow && adminPin ? await verify(pinRow.value as string, adminPin).catch(() => false) : false;
     if (!ok) {
-      recordFailure(rlKey);
+      await recordFailure(rlKey);
       return NextResponse.json(
         { error: `Margin is ${margin.toFixed(1)}% — below 10% requires admin PIN to save.` },
         { status: 401 }
       );
     }
-    clearRateLimit(rlKey);
+    await clearRateLimit(rlKey);
   }
 
   const admin = supabaseAdmin();

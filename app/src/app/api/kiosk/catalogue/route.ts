@@ -7,11 +7,21 @@ export async function GET() {
   const admin = supabaseAdmin();
   const [{ data: colors }, { data: fits }, { data: skus }, { data: designs }, { data: presets }, { data: holds }] =
     await Promise.all([
-      admin.from("stall_colors").select("*").eq("is_active", true).order("sort"),
-      admin.from("stall_fits").select("*").eq("is_active", true).order("sort"),
-      admin.from("stall_product_skus").select("*").eq("is_active", true),
-      admin.from("stall_sticker_designs").select("*").eq("is_active", true).eq("kiosk_visible", true),
-      admin.from("stall_presets").select("*").eq("is_active", true).order("sort"),
+      // Explicit projections. select("*") shipped unit_cost, par levels, bin
+      // locations and timestamps to a CUSTOMER-FACING tablet — cost data has
+      // no business leaving the till, and none of it is rendered.
+      admin.from("stall_colors").select("id,name,hex,sort").eq("is_active", true).order("sort"),
+      admin.from("stall_fits").select("id,name,applies_to,sort").eq("is_active", true).order("sort"),
+      admin
+        .from("stall_product_skus")
+        .select("id,color_id,fit_id,size,sku_code,unit_price,unit_cost,stock_qty,mockup_front,mockup_back,print_area")
+        .eq("is_active", true),
+      admin
+        .from("stall_sticker_designs")
+        .select("id,code,name,size_class,unit_price,unit_cost,print_w_cm,print_h_cm,cutout_path,stock_qty,tags")
+        .eq("is_active", true)
+        .eq("kiosk_visible", true),
+      admin.from("stall_presets").select("id,name,payload,preview_path,sort").eq("is_active", true).order("sort"),
       admin
         .from("stall_holds")
         .select("sticker_id, qty")
