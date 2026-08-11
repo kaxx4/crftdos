@@ -8,15 +8,13 @@
 
 import type { Backend } from "./contract";
 import { MockBackend } from "./mock";
+import { LiveBackend } from "./live";
 
 let instance: Backend | null = null;
 
 export function getBackend(): Backend {
   if (instance) return instance;
-  // When live lands:
-  //   if (process.env.NEXT_PUBLIC_BACKEND === "live") instance = new LiveBackend();
-  //   else instance = new MockBackend();
-  instance = new MockBackend();
+  instance = process.env.NEXT_PUBLIC_BACKEND === "live" ? new LiveBackend() : new MockBackend();
   return instance;
 }
 
