@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+/* ══════════════════════════════════════════════════════════════════════════
+   crftd Stall OS — design system
+
+   The governing idea is ASYMMETRIC SKIN (PRD D19): the brand goes loud exactly
+   where it sells and quiet where it works. One token set, three applications.
+
+     KIOSK  — customer-facing, the surface people photograph. Ecommerce-grade
+              storefront energy. Carries the brand load.
+     POS    — a volunteer's phone in direct sunlight with a queue waiting.
+              Restrained, huge targets, maximum contrast. Collision layout
+              here would be actively hostile.
+     ADMIN  — a dense desktop console. Information first.
+
+   Colour values come from the executed visual prototype, which supersedes the
+   PRD §11 table where they conflict. The blue is markedly more saturated and
+   the signal colour has moved from orange toward red.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@theme inline {
+  /* ── Core palette ───────────────────────────────────────────────────── */
+  --color-ink: #0f0f10;
+  --color-ink-2: #1a1a1d;
+  --color-ink-3: #26262b;
+  --color-cream: #f7f5f1;
+  --color-cream-2: #ebe7df;
+  --color-blue: #1b4df5;
+  --color-blue-deep: #1339c4;
+  --color-blue-wash: #e8edff;
+  --color-teal: #0f7d78;
+  --color-sand: #e9dcc3;
+
+  /* SIGNAL IS RESERVED. Void, negative stock, overdue collection, destructive
+     confirmation. It must never appear decoratively on a volunteer screen,
+     because its entire job is to be the only thing on screen that means STOP. */
+  --color-signal: #c6302b;
+  --color-signal-wash: #fbeae9;
+
+  --color-line: #d9d4c9;
+  --color-line-dark: #33333a;
+  --color-muted: #6b6b73;
+
+  /* ── Radius ─────────────────────────────────────────────────────────────
+     Modest rounding on both surfaces. No pills — the 999px geometry from the
+     v3 prototypes is deliberately killed. Kiosk runs one step softer than POS
+     because it is a storefront, not an instrument. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* ── Motion ─────────────────────────────────────────────────────────────
+     Durations are short on POS and generous on kiosk, on purpose. A volunteer
+     mid-queue experiences animation as latency; a customer experiences it as
+     quality. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* A single restrained overshoot, reserved for ONE thing: a sticker landing
+     on the canvas. A pre-cut transfer being placed is a physical object coming
+     to rest, and the slight settle is what makes a tap read as "that became a
+     real thing" rather than "a state changed". Kept deliberately mild (1.28,
+     not the usual 1.56) so it snaps rather than bounces — bounce reads as
+     decoration, and nothing else in this system is allowed to use it. */
+  --ease-place: cubic-bezier(0.34, 1.28, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --dur-instant: 90ms;
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 380ms;
+  --dur-stage: 560ms;
+
+  /* ── Type ───────────────────────────────────────────────────────────── */
+  --font-body: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, "SF Mono", monospace;
+  --font-display: var(--font-fraunces), Georgia, serif;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Motion vocabulary
+
+   The approved prototype defined a whole motion language the shipped build
+   never used — it shipped 0 keyframes against the prototype's 8. These are
+   the ones that earn their place. Each is entrance or feedback; NONE of them
+   block an interaction or delay a number appearing.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Confirmation entrance. No overshoot: a panel is not an object with momentum,
+   and scaling past 1 on a receipt-like surface reads as decoration. */
+@keyframes pop {
+  0%   { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* A sticker landing on the canvas — the one place a settle is earned, because
+   a pre-cut transfer really is being placed. See --ease-place. */
+@keyframes place {
+  0%   { transform: scale(0.82) rotate(-4deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* Refusal. Short, lateral, unmistakably "no" — used when a placement would
+   overlap or leave the print area. Never used decoratively. */
+@keyframes refuse {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(2px); }
+}
+
+/* A ticket arriving on the POS board from the kiosk. It has to be noticeable
+   across a counter without being alarming. */
+@keyframes arrive {
+  0%   { opacity: 0; transform: translateX(-14px); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-blue) 45%, transparent); }
+  70%  { box-shadow: 0 0 0 12px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.animate-rise   { animation: rise var(--dur-base) var(--ease-out) both; }
+.animate-pop    { animation: pop var(--dur-base) var(--ease-out) both; }
+.animate-place  { animation: place var(--dur-base) var(--ease-place) both; }
+.animate-refuse { animation: refuse var(--dur-slow) var(--ease-in-out); }
+.animate-arrive { animation: arrive var(--dur-slow) var(--ease-out) both; }
+.animate-marquee { animation: marquee 24s linear infinite; }
+
+/* Staggered entrance for grids. Capped at 8 so a 200-design catalogue does
+   not make the last tile arrive a full second late. */
+.stagger > * { animation: rise var(--dur-base) var(--ease-out) both; }
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 35ms; }
+.stagger > *:nth-child(3) { animation-delay: 70ms; }
+.stagger > *:nth-child(4) { animation-delay: 105ms; }
+.stagger > *:nth-child(5) { animation-delay: 140ms; }
+.stagger > *:nth-child(6) { animation-delay: 175ms; }
+.stagger > *:nth-child(7) { animation-delay: 210ms; }
+.stagger > *:nth-child(n + 8) { animation-delay: 240ms; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Reduced motion — a blanket kill.
+
+   `.animate-spin` is the sole exception: a spinner that does not spin reads as
+   a frozen app, which is worse for a vestibular user than the motion is.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin),
+  *:not(.animate-spin)::before,
+  *:not(.animate-spin)::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Base
+   ══════════════════════════════════════════════════════════════════════════ */
+
+* { min-width: 0; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* A POS is not a document. Rubber-band scroll on a fixed-height till screen
+     reads as the app breaking. */
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  /* 16px floor. PRD §11 asks for sunlight legibility, not WCAG minimums. */
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+/* Touch surfaces must not fight the user with a text cursor or a 300ms
+   double-tap-zoom delay, but text that matters must stay selectable. */
+button, [role="button"], label { touch-action: manipulation; }
+
+/* Focus is never removed, only styled. The old build had zero focus treatment
+   on any surface, which makes admin unusable from a keyboard. */
+:focus-visible {
+  outline: 3px solid var(--color-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* Number spinners are a mis-tap hazard on a POS. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+/* ── Utilities ───────────────────────────────────────────────────────────── */
+
+/* The 48px floor from PRD §11. Note this is 48, not 44 — the old TabBar used
+   44 and disagreed with its own token. */
+.tap-target { min-height: 48px; min-width: 48px; }
+
+/* Recurring print-shop motif on header bands. */
+.crop-marks { position: relative; }
+.crop-marks::before,
+.crop-marks::after {
+  content: "";
+  position: absolute;
+  width: 10px; height: 10px;
+  border-color: currentColor;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.crop-marks::before { top: 6px; left: 6px; border-top: 2px solid; border-left: 2px solid; }
+.crop-marks::after { bottom: 6px; right: 6px; border-bottom: 2px solid; border-right: 2px solid; }
+
+/* A default range thumb is ungrabbable on a touchscreen. This is the canvas
+   rotation control, so it has to be usable with a thumb, at arm's length. */
+.kiosk-slider { -webkit-appearance: none; appearance: none; background: transparent; }
+.kiosk-slider::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 999px; background: var(--color-line);
+}
+.kiosk-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 32px; height: 32px; margin-top: -13px;
+  border-radius: 999px;
+  background: var(--color-blue);
+  border: 3px solid var(--color-cream);
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.28);
+}
+.kiosk-slider::-moz-range-thumb {
+  width: 32px; height: 32px; border-radius: 999px;
+  background: var(--color-blue); border: 3px solid var(--color-cream);
+}
+
+/* Numerals that must not jitter as they update — totals, counts, timers. */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--color-cream-2) 25%,
+    color-mix(in srgb, var(--color-cream-2) 55%, white) 50%,
+    var(--color-cream-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* Hides scrollbars on horizontal filter rails without disabling scrolling. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Diagonal hatch for the "demo data" state. An operator must never be unsure
+   whether a number on screen is real. */
+.mock-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--color-signal) 12%, transparent) 0 8px,
+    transparent 8px 16px
+  );
+}

@@ -19,6 +19,11 @@ Point-of-sale, customer design kiosk and operations app for **crftd**, the comme
 | The client | [[Frontend Map]] · [[Offline and Sync]] · [[Design System]] |
 | What users do | [[User Flows]] |
 | What's wrong | [[Known Issues]] · [[Performance Backlog]] |
+| The rework | [[Rework - Fresh Plan 2026-08-11]] · [[Backend Requirements - Rework 2026-08]] · [[Rework - Build Log 2026-08-11]] |
+| **Next session** | **[[HANDOFF - Backend Session]]** — start here if you have Supabase access |
+
+> [!warning] Two app trees exist
+> The reference notes below describe **`app/`** (v1), which is untouched and still runs. The rework is a from-scratch rebuild in **`app-v2/`** — see [[Rework - Build Log 2026-08-11]] for what it does and does not yet cover. Nothing has been swapped.
 
 ## The three surfaces
 

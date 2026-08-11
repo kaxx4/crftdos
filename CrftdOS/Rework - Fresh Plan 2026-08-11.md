@@ -173,5 +173,11 @@ No offline/local-store engine needed here — the existing IndexedDB **outbox** 
 
 **Confirmed:** the kiosk gets the same settings page + environment chip as POS and admin — it's not a special case, just another device on the same shared link, bound to whichever environment its settings page selects. No separate mechanism for kiosk vs POS binding. And to be explicit since it came up: there's no custom sync engine anywhere in this — Supabase itself *is* the real-time layer every device writes to and reads from directly; "sync" in the environment sense is nothing more than a shared `environment_id` on rows in one live database.
 
+## Status, 11 Aug 2026
+
+Phase 0 delivered as [[Backend Requirements - Rework 2026-08]]. Phases 1–6 built from scratch in `app-v2/` against a mock backend and verified in a browser — see [[Rework - Build Log 2026-08-11]], including the three product decisions taken on the day (per-environment stock, holds-not-decrement at kiosk order, dynamic UPI link) and an honest list of what is not yet covered.
+
 ## Related
+[[Backend Requirements - Rework 2026-08]] — Phase 0 deliverable, written 11 Aug
+[[Rework - Build Log 2026-08-11]] — execution record
 [[crftd Stall OS]] · [[Rework - Master Plan]] · [[Known Issues]] · [[Database Map]] · [[User Flows]]
