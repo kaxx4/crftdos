@@ -30,6 +30,7 @@ export default function AdminHome() {
 
   return (
     <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
+      <h1 className="font-extrabold text-2xl tracking-wide">Admin dashboard</h1>
       <div className="flex flex-wrap gap-3">
         <Link href="/admin/pricing" className="border-2 border-ink px-3 py-2 font-extrabold text-sm bg-white">
           Pricing
@@ -51,7 +52,7 @@ export default function AdminHome() {
       <div className="bg-blue text-cream p-6 border-2 border-ink">
         <div className="font-extrabold text-xs tracking-[0.14em] opacity-80">RAISED FOR AQUATERRA</div>
         <div className="font-extrabold text-5xl mt-1">₹{a?.raisedForAquaterra ?? "…"}</div>
-        <div className="font-mono text-xs opacity-70 mt-1">Net profit after COGS, all-time, non-voided orders</div>
+        <div className="font-mono text-xs opacity-70 mt-1">Net profit after cost, all time, excludes voided sales</div>
       </div>
 
       {a && (
@@ -61,7 +62,7 @@ export default function AdminHome() {
             <div className="font-extrabold text-2xl">₹{a.gross}</div>
           </div>
           <div className="border-2 border-ink bg-white p-3">
-            <div className="font-mono text-xs text-muted">COGS</div>
+            <div className="font-mono text-xs text-muted">Cost</div>
             <div className="font-extrabold text-2xl">₹{a.cogs}</div>
           </div>
           <div className="border-2 border-ink bg-white p-3">
@@ -85,9 +86,9 @@ export default function AdminHome() {
         </div>
       )}
 
-      <div className="font-mono text-[11px] text-muted border border-dashed border-hairline p-2.5">
-        This is headline + waste + returns only, per the current build pass. Full §13 analytics (kiosk conversion,
-        fulfilment timing, holds conversion, B2B pipeline value) is a later pass.
+      <div className="font-mono text-[13px] text-muted border border-dashed border-hairline p-2.5">
+        This dashboard currently shows totals, waste and returns only. Kiosk conversion, fulfilment timing,
+        holds and B2B pipeline numbers are coming in a future update.
       </div>
 
       {email && (
@@ -96,7 +97,7 @@ export default function AdminHome() {
             email.verifiedCount && email.verifiedCount > 0 ? "border-ok" : "border-signal"
           } bg-white`}
         >
-          <div className="font-extrabold text-xs tracking-[0.1em]">EMAIL DELIVERY (RESEND)</div>
+          <div className="font-extrabold text-xs tracking-[0.1em]">EMAIL DELIVERY</div>
           <div className="font-mono text-xs text-muted">{email.message}</div>
         </div>
       )}

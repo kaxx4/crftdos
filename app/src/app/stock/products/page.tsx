@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { PosFrame } from "@/components/PosFrame";
+import { FirstRunHint } from "@/components/FirstRunHint";
 import { TabBar } from "@/components/TabBar";
-import { Mono } from "@/components/ui";
+import { Mono, PanelLabel } from "@/components/ui";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { Color, Fit, ProductSku } from "@/lib/types";
 
@@ -10,8 +11,6 @@ export default function ProductStockPage() {
   const [skus, setSkus] = useState<ProductSku[]>([]);
   const [colors, setColors] = useState<Color[]>([]);
   const [fits, setFits] = useState<Fit[]>([]);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
 
   useEffect(() => {
     const sb = supabaseBrowser();
@@ -26,80 +25,62 @@ export default function ProductStockPage() {
     });
   }, []);
 
-  async function saveStock(id: string) {
-    const qty = Number(draft);
-    if (Number.isNaN(qty)) return;
-    const sb = supabaseBrowser();
-    // NOTE: anon key is SELECT-only per RLS (PRD §12) — this write will fail
-    // against RLS by design. A proper server route (service role + audit
-    // log) is required for stock adjustments; stubbed here as the
-    // documented next step rather than silently bypassing RLS.
-    const { error } = await sb.from("stall_product_skus").update({ stock_qty: qty }).eq("id", id);
-    if (!error) {
-      setSkus((prev) => prev.map((s) => (s.id === id ? { ...s, stock_qty: qty } : s)));
-    } else {
-      alert("Stock edits need the admin write route (not yet built) — RLS correctly blocked this direct write.");
-    }
-    setEditing(null);
-  }
-
   return (
-    <div className="min-h-dvh flex flex-col">
-      <PosFrame kicker="STALL OS · STOCK" title="Products">
+    <div className="contents">
+      <PosFrame
+        helpTopic="sell" nav={<TabBar />} kicker="VOLUNTEER · STOCK" title="Products">
+        <FirstRunHint
+          id="stockproducts"
+          title="What this shows"
+          points={[
+            "This is the live count of blank garments, straight from the shared stock.",
+            "It's read-only on purpose. Numbers change through Restock, a sale, Waste or a void — each recorded with a reason.",
+            "Red means none left.",
+          ]}
+        />
+        {/* Read-only by design: RLS gives anon SELECT-only on this table
+            (PRD §12), and there is no server write route for it. The previous
+            version showed a tappable "edit" affordance — a number field and an
+            OK button, both permanently disabled — that always ended in an
+            alert() saying the write was blocked. A control someone can tap
+            that never works is worse than no control, and its disabled state
+            was also how the 11×28px touch targets on this page got that
+            small: no one had sized a real button, because there wasn't one.
+            Stock now changes hands through restock, sale, waste and void,
+            every one of which is a server route that writes the ledger. */}
+        <PanelLabel>Garments in stock</PanelLabel>
         <div className="flex flex-col gap-1.5">
           {skus.map((s) => {
             const color = colors.find((c) => c.id === s.color_id)?.name;
             const fit = fits.find((f) => f.id === s.fit_id)?.name;
             return (
-              <div key={s.id} className="border-2 border-ink bg-white p-2.5 flex justify-between items-center gap-2">
+              <div
+                key={s.id}
+                className="border-2 border-ink bg-white p-2.5 flex justify-between items-center gap-2"
+              >
                 <div>
                   <div className="font-extrabold text-sm">{s.sku_code}</div>
-                  <Mono>{color} · {fit} · {s.size}</Mono>
+                  <Mono>
+                    {color} · {fit} · {s.size}
+                  </Mono>
                 </div>
-                {editing === s.id ? (
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="flex gap-1.5">
-                      <input
-                        autoFocus
-                        disabled
-                        value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
-                        className="border-2 border-ink w-16 p-1.5 text-center bg-hairline text-muted cursor-not-allowed"
-                      />
-                      <button
-                        disabled
-                        onClick={() => saveStock(s.id)}
-                        className="bg-hairline text-muted px-2 font-bold text-xs cursor-not-allowed"
-                      >
-                        OK
-                      </button>
-                    </div>
-                    <div className="font-mono text-[9px] text-muted text-right max-w-[140px]">
-                      Stock edits need admin access — not available yet
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setEditing(s.id);
-                      setDraft(String(s.stock_qty));
-                    }}
-                    className={`font-extrabold text-lg ${s.stock_qty <= 0 ? "text-signal" : ""}`}
-                  >
-                    {s.stock_qty}
-                  </button>
-                )}
+                <div className={`font-extrabold text-lg ${s.stock_qty <= 0 ? "text-signal" : ""}`}>
+                  {s.stock_qty}
+                </div>
               </div>
             );
           })}
+          {skus.length === 0 && (
+            <div className="text-center text-sm text-muted py-6">
+              No products yet. Import them from Admin → Catalogue, or ask an admin to add the starter tees.
+            </div>
+          )}
         </div>
-        <div className="font-mono text-[11px] text-muted border border-dashed p-2.5">
-          CSV / image import is stubbed for Phase 1 per the brief — inline stock edits only. Direct edits attempt a
-          write through the anon key to demonstrate RLS is doing its job (SELECT-only); wire a server route with
-          admin_audit logging before relying on this in production.
+        <div className="font-mono text-[13px] text-muted border border-dashed border-hairline p-2.5">
+          To change stock, use Restock, ring up a sale, or log a Waste entry — each one is recorded with a
+          reason, so you can always see why a number changed. Bulk import lives in Admin → Catalogue.
         </div>
       </PosFrame>
-      <TabBar />
     </div>
   );
 }

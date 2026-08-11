@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PosFrame } from "@/components/PosFrame";
 import { TabBar } from "@/components/TabBar";
-import { BigButton, Mono } from "@/components/ui";
+import { BigButton, Mono, Banner } from "@/components/ui";
 import { getDeviceId } from "@/lib/deviceId";
 import { TOKENS } from "@/lib/tokens";
 import { PressQueue, type PressOrder } from "@/components/PressQueue";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { FirstRunHint } from "@/components/FirstRunHint";
 import { Collections } from "@/components/Collections";
 import { Chip } from "@/components/ui";
 import { flushOutbox, outboxCount } from "@/lib/outbox";
@@ -42,6 +44,8 @@ export default function OrdersPage() {
   const [tab, setTab] = useState<"press" | "collections">("press");
   const [outboxPending, setOutboxPending] = useState(0);
   const [closeBlockedErr, setCloseBlockedErr] = useState("");
+  const [fulfilErr, setFulfilErr] = useState("");
+  const [fulfilBusy, setFulfilBusy] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -60,50 +64,80 @@ export default function OrdersPage() {
     load();
   }, [router]);
 
-  async function voidOrder(id: string) {
-    const reason = window.prompt("Void reason?") || "unspecified";
-    const res = await fetch(`/api/orders/${id}/void`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason, actor: "volunteer" }),
-    });
-    if (res.ok) {
-      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, voided_at: new Date().toISOString() } : o)));
+  // Voiding reverses a sale and puts stock back. It used to be
+  // `window.prompt("Void reason?") || "unspecified"` — so pressing Cancel
+  // returned null, fell through the ||, and voided the order anyway. Backing
+  // out did not back out. It now goes through a real dialog that says what
+  // will happen and requires a reason, because the pattern of what gets
+  // voided is the data worth keeping.
+  const [voidTarget, setVoidTarget] = useState<Order | null>(null);
+
+  async function confirmVoid(reason: string) {
+    const target = voidTarget;
+    setVoidTarget(null);
+    if (!target) return;
+    setFulfilErr("");
+    try {
+      const res = await fetch(`/api/orders/${target.id}/void`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason, actor: "volunteer" }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setFulfilErr(j.error || "Couldn't void that sale — nothing changed. Try again.");
+        return;
+      }
+      setOrders((prev) =>
+        prev.map((o) => (o.id === target.id ? { ...o, voided_at: new Date().toISOString() } : o))
+      );
+    } catch {
+      setFulfilErr("No connection — the sale was not voided. Try again once you're back online.");
     }
   }
 
-  async function pressOrder(id: string) {
-    const res = await fetch(`/api/orders/${id}/press`, { method: "POST" });
-    if (res.ok) {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, pressed_at: new Date().toISOString() } : o))
-      );
+  // Every one of these three previously did `if (res.ok)` with no else: a
+  // failed request left the button looking untapped, so a volunteer would
+  // press again, and again, with no idea the server never heard them. On a
+  // stall with patchy data that is the normal case, not the edge case.
+  async function fulfilStep(
+    id: string,
+    step: "press" | "handover" | "collect",
+    apply: (o: Order) => Order
+  ) {
+    setFulfilErr("");
+    setFulfilBusy(id + step);
+    try {
+      const res = await fetch(`/api/orders/${id}/${step}`, { method: "POST" });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setFulfilErr(j.error || "Couldn't save that — check the connection and try again.");
+        return;
+      }
+      setOrders((prev) => prev.map((o) => (o.id === id ? apply(o) : o)));
+    } catch {
+      setFulfilErr("No connection — that didn't save. Try again once you're back online.");
+    } finally {
+      setFulfilBusy(null);
     }
   }
 
-  async function handOverOrder(id: string) {
-    const res = await fetch(`/api/orders/${id}/handover`, { method: "POST" });
-    if (res.ok) {
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === id
-            ? { ...o, fulfillment_status: "handed_over", pressed_at: o.pressed_at ?? new Date().toISOString() }
-            : o
-        )
-      );
-    }
-  }
+  const pressOrder = (id: string) =>
+    fulfilStep(id, "press", (o) => ({ ...o, pressed_at: new Date().toISOString() }));
 
-  async function collectOrder(id: string) {
-    const res = await fetch(`/api/orders/${id}/collect`, { method: "POST" });
-    if (res.ok) {
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === id ? { ...o, fulfillment_status: "collected", collected_at: new Date().toISOString() } : o
-        )
-      );
-    }
-  }
+  const handOverOrder = (id: string) =>
+    fulfilStep(id, "handover", (o) => ({
+      ...o,
+      fulfillment_status: "handed_over",
+      pressed_at: o.pressed_at ?? new Date().toISOString(),
+    }));
+
+  const collectOrder = (id: string) =>
+    fulfilStep(id, "collect", (o) => ({
+      ...o,
+      fulfillment_status: "collected",
+      collected_at: new Date().toISOString(),
+    }));
 
   async function closeShift() {
     if (!shift) return;
@@ -204,9 +238,22 @@ export default function OrdersPage() {
       ctx.fillText(`${i + 1}. ${d.code} × ${d.count}`, 45, 530 + i * 24);
     });
 
+    // This card is downloaded and posted to the team WhatsApp group at every
+    // shift close — the most widely-seen artefact the product makes. The
+    // footer previously read "placeholder skin, full crop-mark brutalist card
+    // is a later polish pass", so an internal build note was being shared
+    // outside the team at the end of every single shift.
     ctx.font = "11px monospace";
     ctx.fillStyle = TOKENS.muted;
-    ctx.fillText("crftd Stall OS · placeholder skin, full crop-mark brutalist card is a later polish pass", 45, 710);
+    ctx.fillText(
+      `crftd Stall OS · ${new Date().toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}`,
+      45,
+      710
+    );
   }
 
   function downloadSummary() {
@@ -236,8 +283,10 @@ export default function OrdersPage() {
   const collecting = orders.filter((o) => o.fulfillment_status === "collect_later" && !o.voided_at);
 
   return (
-    <div className="min-h-dvh flex flex-col">
-      <PosFrame kicker="STALL OS · ORDERS" title="Orders">
+    <div className="contents">
+      <PosFrame
+        helpTopic="close"
+        nav={<TabBar />} kicker="STALL OS · ORDERS" title="Orders">
         {(pending.length > 0 || collecting.length > 0) && (
           <div className="flex gap-2" role="tablist" aria-label="Press and collection queues">
             <Chip role="tab" aria-selected={tab === "press"} active={tab === "press"} onClick={() => setTab("press")}>
@@ -253,12 +302,31 @@ export default function OrdersPage() {
             </Chip>
           </div>
         )}
-        {/* PRD §3.2: pending items pin to the top with a live timer and the
-            press sheet the heat-press operator actually works from. */}
+        {/* Pending items pin to the top with a live wait timer and the press
+            sheet the heat-press operator actually works from. */}
+        <FirstRunHint
+          id="orders"
+          title="What this screen is for"
+          points={[
+            "Anything waiting to be pressed is pinned at the top, oldest first, with how long it's been waiting.",
+            "The press sheet shows exactly where each sticker goes — that's what the person on the heat press works from.",
+            "Charged the wrong thing? Find the receipt number below and tap VOID. Stock goes back automatically.",
+          ]}
+        />
+        {fulfilErr && (
+          <Banner tone="signal" transient>
+            <span>{fulfilErr}</span>
+          </Banner>
+        )}
         {tab === "press" ? (
-          <PressQueue orders={pending} onPress={pressOrder} onHandOver={handOverOrder} />
+          <PressQueue
+            orders={pending}
+            onPress={pressOrder}
+            onHandOver={handOverOrder}
+            busyId={fulfilBusy}
+          />
         ) : (
-          <Collections orders={collecting} onCollect={collectOrder} />
+          <Collections orders={collecting} onCollect={collectOrder} busyId={fulfilBusy} />
         )}
         <div className="flex flex-col gap-2">
           {orders.map((o) => (
@@ -270,11 +338,11 @@ export default function OrdersPage() {
               <div className="text-right flex flex-col items-end gap-1">
                 <div className="font-extrabold text-lg">₹{o.total}</div>
                 {o.voided_at ? (
-                  <span className="text-[10px] font-extrabold text-signal">VOID</span>
+                  <span className="text-[12px] font-extrabold text-signal">VOID</span>
                 ) : (
                   <button
-                    onClick={() => voidOrder(o.id)}
-                    className="tap-target min-w-[48px] inline-flex items-center justify-center border border-signal text-signal text-[9px] font-extrabold px-1.5 py-1"
+                    onClick={() => setVoidTarget(o)}
+                    className="tap-target min-w-[48px] inline-flex items-center justify-center border border-signal text-signal text-[12px] font-extrabold px-1.5 py-1"
                   >
                     VOID
                   </button>
@@ -288,7 +356,7 @@ export default function OrdersPage() {
         </div>
 
         <div className="border-2 border-ink bg-white p-3 flex flex-col gap-2.5 mt-2">
-          <div className="font-extrabold text-[10px] tracking-[0.14em]">CLOSE SHIFT</div>
+          <div className="font-extrabold text-[12px] tracking-[0.14em]">CLOSE SHIFT</div>
           <input
             placeholder="Counted cash ₹"
             value={countedCash}
@@ -299,7 +367,7 @@ export default function OrdersPage() {
             CLOSE SHIFT
           </BigButton>
           {closeBlockedErr && (
-            <div role="alert" className="bg-signal text-cream p-2.5 font-extrabold text-[11px] tracking-wide uppercase">
+            <div role="alert" className="bg-signal text-cream p-2.5 font-extrabold text-[13px] tracking-wide uppercase">
               {closeBlockedErr}
             </div>
           )}
@@ -337,8 +405,20 @@ export default function OrdersPage() {
             </div>
           </div>
         )}
+        <ConfirmDialog
+          open={!!voidTarget}
+          title="Void this sale?"
+          body={
+            voidTarget
+              ? `${voidTarget.receipt_no} for ₹${voidTarget.total} will be cancelled and every item on it goes back into stock. The receipt number stays used — that's deliberate, so the numbering has no gaps.`
+              : ""
+          }
+          confirmLabel="VOID SALE"
+          reasonLabel="Why is this being voided?"
+          onConfirm={confirmVoid}
+          onCancel={() => setVoidTarget(null)}
+        />
       </PosFrame>
-      <TabBar />
     </div>
   );
 }

@@ -61,7 +61,7 @@ export default function B2BPage() {
 
   async function create() {
     setErr("");
-    if (!accountOwner) return setErr("Account owner is required — this is intentional friction per PRD §7.");
+    if (!accountOwner) return setErr("Account owner is required — every B2B deal needs one person accountable for it.");
     const res = await fetch("/api/admin/b2b", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -88,13 +88,14 @@ export default function B2BPage() {
 
   return (
     <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 w-full max-w-[1400px] mx-auto flex flex-col gap-6">
+      <h1 className="font-extrabold text-2xl tracking-wide">B2B</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="border-2 border-ink bg-white p-3">
-          <div className="font-mono text-xs text-muted">Committed value (confirmed+)</div>
+          <div className="font-mono text-xs text-muted">Committed value (confirmed deals and later)</div>
           <div className="font-extrabold text-2xl">₹{committed}</div>
         </div>
         <div className="border-2 border-ink bg-white p-3">
-          <div className="font-mono text-xs text-muted">Collected (deposits + balances)</div>
+          <div className="font-mono text-xs text-muted">Collected so far (deposits and balances)</div>
           <div className="font-extrabold text-2xl">₹{collected}</div>
         </div>
       </div>
@@ -131,7 +132,11 @@ export default function B2BPage() {
             className="border-2 border-ink p-2"
           />
         )}
-        {margin < 0 && <div className="bg-signal text-cream p-2 font-extrabold text-xs">HARD BLOCKED — cannot save below 0% margin.</div>}
+        {margin < 0 && (
+          <div className="bg-signal text-cream p-2 font-extrabold text-xs">
+            Can&apos;t save — this deal would sell at a loss. Raise the price or lower the cost.
+          </div>
+        )}
         {err && <div className="bg-signal text-cream p-2 font-extrabold text-xs">{err}</div>}
         <button onClick={create} disabled={margin < 0} className="bg-blue text-cream py-2 font-extrabold disabled:opacity-40">
           SAVE ENQUIRY
@@ -156,7 +161,9 @@ export default function B2BPage() {
             </select>
           </div>
         ))}
-        {orders.length === 0 && <div className="text-center text-sm text-muted py-6">No B2B enquiries yet.</div>}
+        {orders.length === 0 && (
+          <div className="text-center text-sm text-muted py-6">No enquiries yet. New ones you save will show up here.</div>
+        )}
       </div>
     </div>
   );

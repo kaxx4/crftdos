@@ -70,12 +70,13 @@ export default function CataloguePage() {
 
   return (
     <div className="min-h-dvh bg-cream text-ink p-6 flex flex-col gap-8">
+      <h1 className="sr-only">Catalogue</h1>
       <div className="print:hidden flex flex-col gap-8 w-full max-w-[1400px]">
         <div>
           <div className="font-extrabold text-lg mb-1">Bulk import sticker designs</div>
           <div className="font-mono text-xs text-muted mb-2">
-            PRD §16.10: code, name, size class, stock, cost, price, bin location. Upserts by code — re-import the
-            same file after fixing a typo, existing rows update rather than duplicate.
+            Columns needed: code, name, size class, stock, cost, price, bin location. Matched by code — re-import
+            the same file after fixing a typo and it updates existing rows instead of creating duplicates.
           </div>
           <textarea
             value={csvText}
@@ -115,8 +116,8 @@ export default function CataloguePage() {
         <div>
           <div className="font-extrabold text-lg mb-1">Bulk upload cutout PNGs</div>
           <div className="font-mono text-xs text-muted mb-2">
-            PRD §16.10: transparent PNGs named by code (e.g. <strong>M-014.png</strong>). Select every file at once —
-            each is matched to its design by filename.
+            Transparent PNGs, named after the design code (e.g. <strong>M-014.png</strong>). Select every file at
+            once — each one matches to a design by its filename.
           </div>
           <input type="file" accept="image/png" multiple onChange={(e) => uploadCutouts(e.target.files)} disabled={uploading} />
           {uploading && <div className="font-mono text-xs mt-2">Uploading…</div>}
@@ -141,15 +142,15 @@ export default function CataloguePage() {
           </button>
         </div>
         <div className="font-mono text-xs text-muted mb-4 print:hidden">
-          Encodes crftd:s:&lt;code&gt; per PRD §9. Camera scanning stays off by default until labels are printed and a
-          settings flag is flipped — not built this pass.
+          Each QR code links straight to that sticker. Camera scanning at the till stays off until labels are
+          printed and it's turned on in Settings.
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 print:grid-cols-3">
           {designs.map((d) => (
             <div key={d.id} className="border-2 border-ink p-2 flex flex-col items-center gap-1 bg-white">
               {qrs[d.id] && <img src={qrs[d.id]} alt="" className="w-20 h-20 max-w-full" />}
               <div className="font-extrabold text-sm font-mono">{d.code}</div>
-              <div className="text-[10px] text-muted text-center">{d.bin_location || "no bin set"}</div>
+              <div className="text-[12px] text-muted text-center">{d.bin_location || "Bin not set"}</div>
             </div>
           ))}
         </div>

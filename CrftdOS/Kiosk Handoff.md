@@ -34,20 +34,9 @@ On charge, `/api/orders`:
 
 Nothing decrements until the volunteer charges. Expired tickets release their session reservations. This is what makes it safe to hand tickets to browsers who wander off.
 
-## What is missing
+## QR and offline handoff — fixed as of [[Changelog 2026-08-10]]
 
-### No QR
-PRD D14 and §4.4 specify a QR **alongside** the code, as the fast path. The `qrcode` package appears exactly once in the codebase — in `admin/catalogue`, for the sticker label sheet. **The kiosk renders no QR at all.** Task #15.
-
-### No offline handoff — and this is the important one
-PRD §10 states the requirement in bold: *the QR encodes the full compressed payload, not just a lookup code.* The reasoning is spelled out — a ticket generated offline on the kiosk cannot be resolved by a till device on a different mobile connection, so the payload must travel **in the QR itself**, making the whole kiosk→till flow network-independent. The 4-character code was meant to be the *online-only fallback*.
-
-What was built is the fallback and only the fallback. Redemption is a server lookup. So:
-
-- Kiosk offline at ticket time → ticket row never reaches Postgres → code is unresolvable at the till.
-- Till offline at redemption → lookup fails → cart cannot load.
-
-The flow the spec most deliberately engineered to survive no network is currently the one most dependent on it. See [[Offline and Sync]].
+This section previously described two gaps: no QR at all, and redemption being a server lookup with no offline path. Both are closed. The kiosk QR now carries the **full compressed payload**, not a lookup code: JSON → `deflate-raw` → base64url under a `crftd:t:` prefix, with one- and two-character keys to fit QR capacity — satisfying PRD §10's bold requirement that the handoff survive kiosk and till being on two different, possibly-offline mobile connections. The 4-character code remains as the online-only fallback the till's field also accepts. See [[Offline and Sync]].
 
 ### No press sheet
 PRD §4.4 specifies a **composite PNG** of the tee with stickers in position — what the person at the heat press actually looks at — stored at `composite_path` and shown in the pending queue and on the order detail. The column exists; nothing writes to it. The machine-readable placement list *is* captured (in `payload` and on `stall_order_item_stickers`), so the press operator has coordinates but no picture.

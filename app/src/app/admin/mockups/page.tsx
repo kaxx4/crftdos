@@ -126,9 +126,10 @@ export default function MockupsPage() {
   return (
     <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
       <div>
-        <div className="font-extrabold text-lg">Tee mockups &amp; print areas</div>
+        <h1 className="font-extrabold text-lg">Tee mockups &amp; print areas</h1>
         <div className="font-mono text-xs text-muted mt-1">
-          PRD §16.7–8. One mockup + print rectangle per colour/fit/side, applied to every size that shares it.
+          One mockup and print area per colour, fit and side — it's applied to every size that shares that
+          combination.
         </div>
       </div>
 
@@ -149,7 +150,7 @@ export default function MockupsPage() {
                 <div className="font-extrabold text-sm">
                   {c.colorName} · {c.fitName}
                 </div>
-                <div className="font-mono text-[11px] text-muted">
+                <div className="font-mono text-[13px] text-muted">
                   {c.sizes.join(", ")} · {done ? "complete" : "incomplete"}
                 </div>
               </button>
@@ -193,7 +194,7 @@ export default function MockupsPage() {
                     style={{ left: `${rect.x * 100}%`, top: `${rect.y * 100}%`, width: `${rect.w * 100}%`, height: `${rect.h * 100}%` }}
                   />
                 )}
-                <div className="absolute bottom-1 left-1 right-1 bg-ink/80 text-cream text-[10px] font-mono px-1.5 py-1 pointer-events-none">
+                <div className="absolute bottom-1 left-1 right-1 bg-ink/80 text-cream text-[12px] font-mono px-1.5 py-1 pointer-events-none">
                   Drag to mark the printable area
                 </div>
               </div>

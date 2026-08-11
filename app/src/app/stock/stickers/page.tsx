@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { PosFrame } from "@/components/PosFrame";
+import { FirstRunHint } from "@/components/FirstRunHint";
 import { TabBar } from "@/components/TabBar";
-import { BigButton, Field, Mono } from "@/components/ui";
+import { BigButton, Field, Mono, PanelLabel } from "@/components/ui";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { StickerDesign } from "@/lib/types";
 
@@ -63,8 +64,20 @@ export default function StickerStockPage() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col">
-      <PosFrame kicker="STALL OS · STOCK" title="Stickers">
+    <div className="contents">
+      <PosFrame
+        helpTopic="sell"
+        nav={<TabBar />} kicker="VOLUNTEER · STOCK" title="Stickers">
+        <FirstRunHint
+          id="stockstickers"
+          title="Counts and bin locations"
+          points={[
+            "Tap a number to correct the count, and set the bin location while you're there.",
+            "The bin location is what Sell shows the volunteer — Box 2 / Tab M tells them where to physically walk.",
+            "Importing many designs at once lives in Admin - Catalogue.",
+          ]}
+        />
+        <PanelLabel>Designs in stock</PanelLabel>
         <div className="flex flex-col gap-1.5">
           {designs.map((d) => (
             <div key={d.id} className="border-2 border-ink bg-white p-2.5 flex justify-between items-center gap-2">
@@ -72,24 +85,29 @@ export default function StickerStockPage() {
                 <div className="font-extrabold text-sm">{d.code} {d.name ? `· ${d.name}` : ""}</div>
                 {editing === d.id ? (
                   <input
+                    aria-label="Bin location"
                     value={draftBin}
                     onChange={(e) => setDraftBin(e.target.value)}
                     placeholder="Bin location"
-                    className="border border-ink px-1.5 py-1 text-xs mt-1 w-full"
+                    className="border border-ink px-1.5 py-1 min-h-[48px] text-[13px] mt-1 w-full"
                   />
                 ) : (
-                  <Mono>{d.bin_location || "no bin set"}</Mono>
+                  <Mono>{d.bin_location || "Bin not set"}</Mono>
                 )}
               </div>
               {editing === d.id ? (
                 <div className="flex gap-1.5">
                   <input
                     autoFocus
+                    aria-label="Stock quantity"
                     value={draftQty}
                     onChange={(e) => setDraftQty(e.target.value)}
-                    className="border-2 border-ink w-14 p-1.5 text-center"
+                    className="border-2 border-ink w-16 min-h-[48px] p-1.5 text-center"
                   />
-                  <button onClick={() => save(d.id)} className="bg-blue text-cream px-2 font-bold text-xs">
+                  <button
+                    onClick={() => save(d.id)}
+                    className="bg-blue text-cream px-3 min-h-[48px] min-w-[48px] font-bold text-[13px]"
+                  >
                     OK
                   </button>
                 </div>
@@ -100,7 +118,7 @@ export default function StickerStockPage() {
                     setDraftQty(String(d.stock_qty));
                     setDraftBin(d.bin_location || "");
                   }}
-                  className={`font-extrabold text-lg ${d.stock_qty <= 0 ? "text-signal" : ""}`}
+                  className={`font-extrabold text-lg min-h-[48px] min-w-[48px] ${d.stock_qty <= 0 ? "text-signal" : ""}`}
                 >
                   {d.stock_qty}
                 </button>
@@ -109,8 +127,8 @@ export default function StickerStockPage() {
           ))}
           {designs.length === 0 && (
             <div className="text-center text-sm text-muted py-6">
-              No sticker designs yet. The 200-design catalogue import (PRD §16.10) is still pending — add a few
-              manually below to test Sell.
+              No sticker designs yet. Import the full catalogue from Admin → Catalogue, or add a few here by
+              hand to try out Sell.
             </div>
           )}
         </div>
@@ -127,7 +145,8 @@ export default function StickerStockPage() {
                 <button
                   key={sz}
                   onClick={() => setNewSize(sz)}
-                  className={`border-2 border-ink px-3 py-2 font-bold text-xs ${newSize === sz ? "bg-ink text-cream" : "bg-white"}`}
+                  aria-pressed={newSize === sz}
+                  className={`border-2 border-ink min-h-[48px] min-w-[48px] px-3 py-2 font-bold text-[13px] ${newSize === sz ? "bg-ink text-cream" : "bg-white"}`}
                 >
                   {sz}
                 </button>
@@ -144,12 +163,11 @@ export default function StickerStockPage() {
             </div>
           </div>
         )}
-        <div className="font-mono text-[11px] text-muted border border-dashed p-2.5">
-          CSV/image bulk import and QR label sheets (PRD §9) are stubbed — this page covers count + bin location
-          CRUD only, which is what Sell needs.
+        <div className="font-mono text-[13px] text-muted border border-dashed border-hairline p-2.5">
+          To import many designs at once or print QR labels, use Admin → Catalogue. This page is for
+          count and bin location on shift — what Sell reads from.
         </div>
       </PosFrame>
-      <TabBar />
     </div>
   );
 }

@@ -7,7 +7,15 @@ export type OutboxOrder = {
   queuedAt: string;
   status: "queued" | "syncing" | "failed";
   lastError?: string;
+  attempts?: number;
 };
+
+// A "failed" item is a server rejection (validation, out-of-stock, etc.), not
+// a transient network blip — retrying it unattended forever just spams the
+// same rejection. Past this many attempts it stops auto-retrying and needs a
+// volunteer to look at it; it still counts toward outboxCount() so shift
+// close correctly blocks on it.
+const MAX_FAILED_RETRIES = 5;
 
 const DB_NAME = "stallos-outbox";
 const STORE = "orders";
@@ -72,7 +80,9 @@ async function flushOutboxInner(onProgress?: (remaining: number) => void) {
   const items = await listOutbox();
   for (const item of items) {
     if (item.status === "syncing") continue;
-    await markOutbox(item.id, { status: "syncing" });
+    if (item.status === "failed" && (item.attempts ?? 0) >= MAX_FAILED_RETRIES) continue;
+    const attempts = (item.attempts ?? 0) + 1;
+    await markOutbox(item.id, { status: "syncing", attempts });
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -83,12 +93,13 @@ async function flushOutboxInner(onProgress?: (remaining: number) => void) {
         await removeFromOutbox(item.id);
       } else {
         const j = await res.json().catch(() => ({}));
-        await markOutbox(item.id, { status: "failed", lastError: j.error || res.statusText });
+        await markOutbox(item.id, { status: "failed", lastError: j.error || res.statusText, attempts });
       }
     } catch (e) {
       await markOutbox(item.id, {
         status: "queued",
         lastError: e instanceof Error ? e.message : "network error",
+        attempts,
       });
     }
     onProgress?.(await outboxCount());

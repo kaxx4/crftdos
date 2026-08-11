@@ -19,7 +19,7 @@ The UUID is the idempotency key at both ends: it is the order's primary key in P
 
 ## Charge is optimistic, and correctly so
 
-`charge()` in `src/app/page.tsx` does this, in this order:
+`charge()` in `src/app/sell/page.tsx` does this, in this order:
 
 ```
 build payload  →  resetCart()  →  setCharging(false)   ← UI is already clear
@@ -59,21 +59,15 @@ Note the asymmetry: a server-side rejection (out of stock, exhausted receipt blo
 
 ## How much of "offline-first" is actually built
 
-Less than the spec, and the gap is structural. Three things are missing, and together they undercut the outbox:
+**Fixed as of [[Changelog 2026-08-10]]** — this section previously described three structural gaps (no PWA, no catalogue cache, no kiosk QR). All three are now closed:
 
-**1. There is no PWA.** No `manifest.json`, no service worker, no `next-pwa` or workbox anywhere. `public/` holds svgs and mockups. PRD Phase 1 scoped "Offline outbox and PWA"; only the outbox shipped.
-→ The outbox protects a sale made while the tab is *already open*. A reload, a tab eviction, or a cold open on a dead network yields a browser error page. Task #14.
+**1. PWA — built.** A manifest, an SVG icon (rasterised to `public/icon-192.png`/`icon-512.png` via `sharp`), and a hand-written `sw.js` with three rules, the first being *never cache `/api/*`*. Navigations are network-first with a cached shell; static assets are cache-first. `public/sw.js`'s precache list is hand-maintained — a new volunteer route must be added there or it will not work offline (see [[Known Issues]] watch list).
 
-**2. There is no catalogue cache.** `src/lib/outbox.ts` is the only IndexedDB user in the codebase. Both the Sell page and the kiosk fetch the catalogue fresh from the anon Supabase client on every boot. PRD §10 specifies the full catalogue plus thumbs and cutouts (~15–25 MB), with the kiosk pre-fetching cutouts on wifi at setup.
-→ Offline, there is nothing to sell from. Task #16.
+**2. Catalogue cache — built.** `src/lib/catalogueCache.ts` snapshots the catalogue into IndexedDB (a separate database from the outbox on purpose — the outbox holds money, this is disposable derived data) so the Sell screen boots from the snapshot when the network is gone. A banner names the snapshot's age so a volunteer knows they're selling from stale data. A failed shift lookup no longer bounces a mid-shift volunteer to `/shift-open`.
 
-**3. The kiosk generates no QR.** The `qrcode` package appears exactly once, in `admin/catalogue` for the sticker label sheet. PRD §10 makes it a hard requirement that the handoff QR encode the **full compressed payload** rather than a lookup code, precisely so kiosk→till survives no network. As built, redemption is a server lookup on the 4-char code.
-→ The one flow the spec most deliberately designed to be network-independent is the one that hard-requires the network. Task #15. See [[Kiosk Handoff]].
+**3. Kiosk QR — built.** The QR now carries the whole cart: JSON → `deflate-raw` → base64url under a `crftd:t:` prefix, one- and two-character keys to fit QR capacity. The till's field accepts either a scan or a typed code, so the 4-character code remains the online-only fallback rather than the only path. See [[Kiosk Handoff]].
 
-**Net:** the outbox is solid and the optimistic charge is correct, but "the app survives no network" (PRD Appendix A item 10) is not true today. It survives *losing* the network mid-session. It does not survive starting without one.
+**Net:** the outbox, the PWA, the catalogue cache and the offline-capable QR together mean "the app survives no network" (PRD Appendix A item 10) now holds for both starting offline and losing the network mid-session. Not yet browser-verified per the Changelog's own note (ninth pass): the stale-catalogue banner and service-worker behaviour in production are still on the "not verified in a browser" list.
 
 ## Related
-[[Known Issues]] · [[Performance Backlog]]
-
-## Related
-[[Receipt Numbering]] · [[Kiosk Handoff]] · [[User Flows]] · [[Known Issues]]
+[[Known Issues]] · [[Performance Backlog]] · [[Receipt Numbering]] · [[Kiosk Handoff]] · [[User Flows]]

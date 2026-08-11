@@ -13,9 +13,11 @@ export type CollectOrder = {
 export function Collections({
   orders,
   onCollect,
+  busyId,
 }: {
   orders: CollectOrder[];
   onCollect: (id: string) => void;
+  busyId?: string | null;
 }) {
   if (!orders.length) {
     return <div className="text-center text-sm text-muted py-6">No collections pending.</div>;
@@ -44,7 +46,12 @@ export function Collections({
                 <div className="font-extrabold text-[16px]">{o.receipt_no}</div>
                 <Mono>{o.customer_id ? "customer on file" : "no contact on file"}</Mono>
               </div>
-              <BigButton variant="blue" className="min-w-[140px]" onClick={() => onCollect(o.id)}>
+              <BigButton
+                variant="blue"
+                className="min-w-[140px]"
+                disabled={busyId === o.id + "collect"}
+                onClick={() => onCollect(o.id)}
+              >
                 COLLECTED
               </BigButton>
             </div>

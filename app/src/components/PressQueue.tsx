@@ -105,7 +105,7 @@ function GarmentSheet({
         const rows = placementList(placements, side);
         return (
           <div key={side} className="flex flex-col gap-1.5">
-            <div className="font-extrabold text-[11px] tracking-[0.14em] uppercase">
+            <div className="font-extrabold text-[13px] tracking-[0.14em] uppercase">
               {sku?.sku_code ?? "Garment"} · {side}
             </div>
 
@@ -168,10 +168,15 @@ export function PressQueue({
   orders,
   onPress,
   onHandOver,
+  busyId,
 }: {
   orders: PressOrder[];
   onPress: (id: string) => void;
   onHandOver: (id: string) => void;
+  /** `${orderId}${step}` of an in-flight request, so the tapped button can
+   *  show it is working. Without this a slow network looks like a dead
+   *  button and the volunteer taps it repeatedly. */
+  busyId?: string | null;
 }) {
   // Re-render once a minute so the wait timers stay honest without a timer
   // per order.
@@ -212,12 +217,16 @@ export function PressQueue({
           <div className="grid grid-cols-2 gap-2">
             <BigButton
               variant={o.pressed_at ? "ghost" : "blue"}
-              disabled={!!o.pressed_at}
+              disabled={!!o.pressed_at || busyId === o.id + "press"}
               onClick={() => onPress(o.id)}
             >
               {o.pressed_at ? "PRESSED" : "MARK PRESSED"}
             </BigButton>
-            <BigButton variant="ink" onClick={() => onHandOver(o.id)}>
+            <BigButton
+              variant="ink"
+              disabled={busyId === o.id + "handover"}
+              onClick={() => onHandOver(o.id)}
+            >
               HANDED OVER
             </BigButton>
           </div>

@@ -13,19 +13,30 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const { stock_qty } = await req.json().catch(() => ({}));
-  if (typeof stock_qty !== "number") return NextResponse.json({ error: "stock_qty required" }, { status: 400 });
+  if (typeof stock_qty !== "number" || !Number.isInteger(stock_qty)) {
+    return NextResponse.json({ error: "stock_qty required" }, { status: 400 });
+  }
 
   const admin = supabaseAdmin();
-  const { data: before } = await admin.from("stall_product_skus").select("stock_qty").eq("id", id).single();
-  const { data, error } = await admin
-    .from("stall_product_skus")
-    .update({ stock_qty })
-    .eq("id", id)
-    .select()
-    .single();
+  // Atomic read-modify-write with a floor guard, so a concurrent edit can't
+  // corrupt the audit delta and stock can't go negative (see migration 006).
+  const { data: adjusted, error: adjErr } = await admin.rpc("stall_set_product_stock", {
+    p_id: id,
+    p_new_qty: stock_qty,
+  });
+  const adjustedRow = Array.isArray(adjusted) ? adjusted[0] : adjusted;
+  if (adjErr || !adjustedRow) {
+    const status = adjErr?.code === "P0101" ? 400 : adjErr?.code === "P0103" ? 404 : 500;
+    return NextResponse.json(
+      { error: status === 500 ? adjErr?.message || "Failed to update stock" : "Stock quantity cannot be negative" },
+      { status }
+    );
+  }
+
+  const { data, error } = await admin.from("stall_product_skus").select("*").eq("id", id).single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const delta = stock_qty - (before?.stock_qty ?? 0);
+  const delta = adjustedRow.after_qty - adjustedRow.before_qty;
   await admin.from("stall_inventory_movements").insert({
     sku_type: "product",
     sku_id: id,
@@ -41,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await admin.from("stall_admin_audit").insert({
       actor: "volunteer",
       action: "stock_adjustment",
-      detail: { type: "product", id, delta, before: before?.stock_qty ?? null, after: stock_qty },
+      detail: { type: "product", id, delta, before: adjustedRow.before_qty, after: adjustedRow.after_qty },
     });
   }
 

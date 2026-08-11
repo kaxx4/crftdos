@@ -15,11 +15,11 @@ Eight devices, a rotating cast of teenage volunteers, no time to onboard anyone.
 
 | Kind | Cookie | TTL | Gates |
 |---|---|---|---|
-| `stall` | `stallos_stall_session` | 14 h — one long shift | `/`, `/orders`, `/stock/*`, `/restock`, `/holds`, `/waste`, `/returns`, `/more`, `/shift-open`, `/receipt` |
+| `stall` | `stallos_stall_session` | 14 h — one long shift | `/sell`, `/orders`, `/stock/*`, `/restock`, `/holds`, `/waste`, `/returns`, `/more`, `/shift-open`, `/receipt` |
 | `admin` | `stallos_admin_session` | 4 h | `/admin/*` |
-| `kiosk` | `stallos_kiosk_session` | 14 h | `/kiosk` |
+| `kiosk` | `stallos_kiosk_session` | 14 h | none — see below |
 
-The kiosk PIN exists for exactly one reason: to stop a *customer* navigating out of kiosk mode. It is not protecting anything valuable.
+> **Fixed as of [[Changelog 2026-08-10]] fifth pass:** the kiosk moved to `/` (the site root) and became public/unauthenticated by product decision — it is a customer-facing showcase, not a staff-unlocked device. `/api/kiosk/reserve` and `/api/kiosk/ticket` no longer check a kiosk session. The `kiosk` PIN kind still exists in the auth system (demo PIN `2222` in dev) but nothing gates on it anymore; the attract screen instead carries a small "Staff passcode" link to `/pin`. `/` was previously Sell and carried the `stall` gate — Sell now lives at `/sell` and inherits that gate instead.
 
 Admin is a genuinely separate gate — holding a stall session does not get you into `/admin`.
 

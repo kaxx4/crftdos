@@ -5,7 +5,7 @@ updated: 2026-08-10
 
 # Flow - Kiosk Design
 
-`src/app/kiosk/page.tsx` (758 lines). The Customer Design Studio. Part of [[User Flows]] and [[Surface - Kiosk]].
+`src/app/page.tsx` (758 lines) — the kiosk moved to the site root in [[Changelog 2026-08-10]] fifth pass; `/kiosk` now 308-redirects here. The Customer Design Studio. Part of [[User Flows]] and [[Surface - Kiosk]].
 
 PRD §4 calls this the highest-leverage addition and the highest-risk one. Leverage: the customer self-serves the slow part (choosing and arranging) while a volunteer serves someone else. Risk: a design tool that accepts an order you physically cannot press.
 

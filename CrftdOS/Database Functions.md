@@ -5,9 +5,9 @@ updated: 2026-08-10
 
 # Database Functions
 
-Part of [[Database Map]]. Five functions live, all in `public`, all `SECURITY INVOKER` (none are `security definer`), all reachable only via the service-role client.
+Part of [[Database Map]]. Eight functions live, all in `public`, all `SECURITY INVOKER` (none are `security definer`), all reachable only via the service-role client.
 
-Four came from `_import/migrations/001_atomicity_and_indexes.sql`, whose whole purpose was to kill read-then-write races. The fifth is undocumented drift.
+Four came from `_import/migrations/001_atomicity_and_indexes.sql`, whose whole purpose was to kill read-then-write races. Two more — `stall_create_order` and `stall_void_order` — came from `002_atomic_order_creation.sql` (see [[Changelog 2026-08-10]]), closing the transaction gap this doc used to describe below. `stall_next_custom_sticker_no` is undocumented drift.
 
 ---
 
@@ -42,13 +42,21 @@ The only plpgsql one. Takes `select ... for update` on the design row, so concur
 
 ## stall_next_custom_sticker_no() → int
 
-Wraps `stall_custom_sticker_seq` for the `C-####` sequence. **This function is not in `schema.sql` and not in migration 001** — it exists live but has no source of truth in the repo. A rebuild from the SQL files would produce a database where `/api/orders` fails on every custom sticker. See [[Known Issues]].
+Wraps `stall_custom_sticker_seq` for the `C-####` sequence. **This function is not in `schema.sql` and not in migration 001** — it exists live but has no source of truth in the repo. A rebuild from the SQL files would produce a database where `/api/orders` fails on every custom sticker. See [[Known Issues]]. (Per [[Database Map]], migration `002_atomic_order_creation.sql` recreates it, so a rebuild that applies 002 is fine — only a rebuild from `schema.sql` + 001 alone would be broken.)
+
+## stall_create_order(p_payload jsonb) → jsonb
+
+The whole charge — idempotency check, receipt-number consumption, customer upsert, order insert, ticket redemption, every line, every sticker, every stock guard, every ledger row — in one call inside one transaction. Added in `002_atomic_order_creation.sql`, wired into `POST /api/orders` as of [[Changelog 2026-08-10]]. An out-of-stock line rolls the entire attempt back rather than leaving partial state. See [[API Routes]].
+
+## stall_void_order(p_order_id uuid, p_reason text, p_actor text) → jsonb
+
+Restocks every line, writes the ledger, and soft-voids the order atomically. Added alongside `stall_create_order` in migration 002; replaced a per-line read-modify-write that had the same lost-update race migration 001 had already removed from the sale path. See [[Changelog 2026-08-10]].
 
 ---
 
-## The gap
+## Formerly "the gap"
 
-There is no function that creates an order. `/api/orders` orchestrates ~30 sequential statements from the Node process instead, which means the whole charge is **not a transaction** — a mid-loop failure leaves stock already decremented and compensates by soft-voiding the order. This is the single biggest item in the [[Performance Backlog]].
+Until [[Changelog 2026-08-10]], there was no function that created an order — `/api/orders` orchestrated ~30 sequential statements from the Node process, not inside a transaction, so a mid-loop failure left stock already decremented with no rollback. `stall_create_order` closed this; it is no longer an open item. See [[API Routes]].
 
 ## Related
-[[Stock and Inventory]] · [[API Routes]]
+[[Stock and Inventory]] · [[API Routes]] · [[Order Creation RPC]]

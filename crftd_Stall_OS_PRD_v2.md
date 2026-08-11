@@ -44,9 +44,15 @@ Your answers added three modules and tightened five assumptions. In order of imp
 
 ## 2. Information architecture
 
+> **Amended 11 Aug 2026.** The routes below were inverted during build and the
+> change is now ratified: the **kiosk is the public root `/`** and Sell moved to
+> **`/sell`**. Rationale: the kiosk is the only surface an unauthenticated
+> visitor should ever land on, and rooting it there removes a PIN hop for
+> customers. Everything else in this section stands.
+
 ```
 VOLUNTEER (stall PIN)
-/                    Sell
+/sell                Sell
 /orders              Shift log, pending press queue, voids
 /holds               Active reservations
 /stock/stickers      Sticker inventory
@@ -55,8 +61,8 @@ VOLUNTEER (stall PIN)
 /waste               Log a failed press
 /returns             Log a return or exchange
 
-KIOSK (kiosk PIN, locked mode)
-/kiosk               Customer-facing: presets + design canvas
+KIOSK (public root, PIN only to exit)
+/                    Customer-facing: presets + design canvas
 
 ADMIN (admin PIN)
 /admin               Dashboard

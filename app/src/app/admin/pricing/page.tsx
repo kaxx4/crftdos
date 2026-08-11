@@ -48,10 +48,11 @@ export default function AdminPricingPage() {
 
   return (
     <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 flex flex-col gap-6 w-full max-w-[1600px] mx-auto">
+      <h1 className="font-extrabold text-2xl tracking-wide">Pricing</h1>
       <div className="bg-signal text-cream p-3 font-extrabold text-xs tracking-wide">
-        PLACEHOLDER PRICING — seeded per PRD §5 defaults, not yet signed off by AQUATERRA. Replace before treating
-        any of this as real invoicing data. Prices snapshot onto order lines at sale time — editing here never
-        rewrites past orders.
+        These prices are starting defaults, not signed off yet — replace them before treating this as real
+        invoicing data. Once you change a price, it only affects new sales; past orders keep whatever price
+        they were charged.
       </div>
 
       <div>

@@ -27,6 +27,10 @@ export async function POST(req: NextRequest) {
 
   const variance = countedCash != null ? Number(countedCash) - expectedCash : null;
 
+  // Guarding the update itself with .is("closed_at", null) — rather than a
+  // separate check-then-update — closes the race where two near-simultaneous
+  // close requests (or a retried one) could both pass a prior check and the
+  // second would silently overwrite the first close's counted_cash/variance.
   const { data: shift, error } = await admin
     .from("stall_shifts")
     .update({
@@ -37,9 +41,17 @@ export async function POST(req: NextRequest) {
       notes: notes || null,
     })
     .eq("id", shiftId)
+    .is("closed_at", null)
     .select()
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    // PGRST116: no row matched the filter — either the shift doesn't exist
+    // or (far more likely) it's already closed.
+    if (error.code === "PGRST116") {
+      return NextResponse.json({ error: "Shift is already closed" }, { status: 409 });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   // Void every unused number in every open block for this shift in one
   // bulk update — a loop of per-row updates left a window where a crash

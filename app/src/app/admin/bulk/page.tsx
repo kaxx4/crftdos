@@ -33,13 +33,13 @@ export default function BulkEntryPage() {
       body: JSON.stringify({ items, paymentMethod: "pending", note: "Bulk one-off entry" }),
     });
     const j = await res.json();
-    setResult(res.ok ? `Order ${j.order.receipt_no} created.` : j.error);
+    setResult(res.ok ? `Order ${j.order.receipt_no} created.` : j.error || "Could not create this order — try again.");
     if (res.ok) setLines([{ sku_id: "", qty: 1 }]);
   }
 
   return (
     <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 w-full max-w-[1000px] mx-auto flex flex-col gap-3">
-      <div className="font-extrabold text-lg">Bulk one-off entry</div>
+      <h1 className="font-extrabold text-lg">Bulk one-off entry</h1>
       {lines.map((l, i) => (
         <div key={i} className="flex gap-2">
           <select value={l.sku_id} onChange={(e) => updateLine(i, { sku_id: e.target.value })} className="border-2 border-ink p-2 flex-1">

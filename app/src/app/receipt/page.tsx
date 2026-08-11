@@ -61,19 +61,25 @@ export default function ReceiptPage() {
         <span className="absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 border-ink" />
         <div className="pt-5 px-4 pb-2 text-center">
           <div className="font-extrabold text-4xl tracking-wide text-blue">CRFTD</div>
-          <div className="font-extrabold text-[9px] tracking-[0.2em] mt-1">
-            TERRAROOTS FOUNDATION · LEGAL NAME PENDING (PRD §16.5)
+          {/* This is a document a customer keeps. It previously read
+              "LEGAL NAME PENDING (PRD §16.5)" — an internal to-do printed on
+              a receipt. The registered legal name and any registration number
+              are still outstanding from the client (PRD §16.5); until they
+              arrive, show the trading name only rather than advertising the
+              gap. Do not put spec references on customer-facing output. */}
+          <div className="font-extrabold text-[12px] tracking-[0.2em] mt-1">
+            TERRAROOTS FOUNDATION
           </div>
         </div>
         <div className="h-2 bg-blue mx-4" />
         <div className="px-4 pb-4 pt-1 flex flex-col gap-2.5">
-          <div className="flex justify-between font-mono text-[11px]">
+          <div className="flex justify-between font-mono text-[13px]">
             <span>{data.receipt_no}</span>
             <span>{new Date(data.clientCreatedAt).toLocaleString("en-IN")}</span>
           </div>
-          <div className="font-mono text-[11px] text-muted">{data.shiftName}</div>
+          <div className="font-mono text-[13px] text-muted">{data.shiftName}</div>
           {!data.synced && (
-            <div className="bg-signal text-cream p-2 font-extrabold text-[10px] tracking-wide uppercase">
+            <div className="bg-signal text-cream p-2 font-extrabold text-[12px] tracking-wide uppercase">
               Offline sale — number confirms once this device syncs
             </div>
           )}
@@ -87,7 +93,7 @@ export default function ReceiptPage() {
                   </span>
                 </div>
                 {it.stickers.length > 0 && (
-                  <div className="font-mono text-[10px] text-muted">
+                  <div className="font-mono text-[12px] text-muted">
                     {it.stickers.map((s) => s.code || s.description).join(", ")}
                   </div>
                 )}
@@ -111,10 +117,10 @@ export default function ReceiptPage() {
             </div>
           </div>
           <div className="bg-blue text-cream p-2.5 flex justify-between items-center">
-            <span className="font-extrabold text-[9px] tracking-[0.14em] max-w-[14ch]">RAISED FOR AQUATERRA</span>
+            <span className="font-extrabold text-[12px] tracking-[0.14em] max-w-[14ch]">RAISED FOR AQUATERRA</span>
             <span className="font-extrabold text-2xl">₹{raised}</span>
           </div>
-          <div className="text-[11px] text-muted leading-relaxed">
+          <div className="text-[13px] text-muted leading-relaxed">
             Proceeds support AquaTerra welfare work. Hand wash recommended. DTF transfers rated 10–15 washes
             minimum. No change-of-mind returns.
           </div>
@@ -125,16 +131,20 @@ export default function ReceiptPage() {
           href={waNumber ? `https://wa.me/${waNumber}?text=${waText}` : `https://wa.me/?text=${waText}`}
           target="_blank"
           rel="noreferrer"
-          className="bg-blue text-cream border-2 border-ink font-extrabold text-[11px] tracking-wide min-h-[52px] flex items-center justify-center"
+          className="bg-blue text-cream border-2 border-ink font-extrabold text-[13px] tracking-wide min-h-[52px] flex items-center justify-center"
         >
           SEND ON WHATSAPP
         </a>
+        {/* Label and tooltip said "EMAIL (PHASE 4)" and cited PRD §16.9 — the
+            customer is being shown our roadmap. A disabled control should say
+            what the customer can do about it, in their terms, or not appear at
+            all. Email needs a verified sending domain before it can work. */}
         <button
           disabled
-          title="Email delivery is Phase 4 (needs a verified sending domain — PRD §16.9)"
-          className="bg-cream text-muted border-2 border-ink font-extrabold text-[11px] tracking-wide min-h-[52px]"
+          title="Emailed receipts aren't set up yet — send on WhatsApp or show this screen."
+          className="bg-cream text-muted border-2 border-ink font-extrabold text-[13px] tracking-wide min-h-[52px]"
         >
-          EMAIL (PHASE 4)
+          EMAIL — NOT AVAILABLE YET
         </button>
       </div>
       <BigButton variant="ghost" onClick={() => router.push("/sell")}>

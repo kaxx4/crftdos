@@ -7,7 +7,9 @@ scope: app/src — 17 pages, 3 components, globals.css
 
 # Frontend Audit — August 2026
 
-Part of [[crftd Stall OS]]. Technical quality audit. Report only; no fixes applied.
+Part of [[crftd Stall OS]]. Technical quality audit. Report only; no fixes applied — at the time this audit ran.
+
+> **AUDIT NOTE:** This is a point-in-time snapshot. [[Changelog 2026-08-10]] ("Frontend P1s" section, same day) closed most of what's flagged below: `PanelLabel` now renders a real `h2`, `Field` requires a `label` prop, `Banner` has `role="alert"`/`role="status"`, `focus-visible` was added to all three primitives, the 9px type tier and the header kicker were raised, the 55 off-token `neutral-*` colours were swept to real tokens, and Admin was widened past the 768px cap. Treat the **score (10/20) and baseline metrics** as the pre-fix starting point — [[Rework - Master Plan]] cites this same 10/20 as its baseline to beat — not as the current state of the app. Individual findings below were left as originally written rather than edited line-by-line, since the changelog is the authoritative record of what was actually fixed.
 
 ## Audit Health Score
 

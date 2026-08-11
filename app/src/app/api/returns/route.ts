@@ -70,50 +70,24 @@ export async function POST(req: NextRequest) {
   let replacementOrderId: string | null = null;
 
   if (action === "exchange" && exchangeItem) {
-    replacementOrderId = crypto.randomUUID();
-    await admin.from("stall_orders").insert({
-      id: replacementOrderId,
-      shift_id: shiftId || original.shift_id,
-      channel: "stall",
-      device_id: deviceId || "returns",
-      subtotal: 0,
-      discount_amount: 0,
-      total: 0, // zero-value: inventory moves without inflating revenue
-      cost_total: 0,
-      payment_method: "pending",
-      notes: `Exchange replacement for ${original.receipt_no}`,
+    // Single transaction: order + item + stock decrement + ledger row all
+    // roll back together if the item is out of stock, instead of leaving an
+    // orphaned zero-value order behind (see migration 006).
+    const { data: exch, error: exchErr } = await admin.rpc("stall_create_exchange", {
+      p_original_order: originalOrderId,
+      p_shift_id: shiftId || original.shift_id,
+      p_device_id: deviceId || "returns",
+      p_product_sku_id: exchangeItem.product_sku_id || null,
+      p_qty: exchangeItem.qty || 1,
     });
-    const { data: item } = await admin
-      .from("stall_order_items")
-      .insert({
-        order_id: replacementOrderId,
-        product_sku_id: exchangeItem.product_sku_id,
-        qty: exchangeItem.qty || 1,
-        unit_price: 0,
-        unit_cost: 0,
-        line_total: 0,
-      })
-      .select()
-      .single();
-    if (item && exchangeItem.product_sku_id) {
-      const { data: adjusted, error: adjErr } = await admin.rpc("stall_adjust_product_stock", {
-        p_id: exchangeItem.product_sku_id,
-        p_delta: -(exchangeItem.qty || 1),
-      });
-      const adjustedRow = Array.isArray(adjusted) ? adjusted[0] : adjusted;
-      if (adjErr || !adjustedRow) {
-        return NextResponse.json({ error: "Exchange item is out of stock" }, { status: 409 });
-      }
-      await admin.from("stall_inventory_movements").insert({
-        sku_type: "product",
-        sku_id: exchangeItem.product_sku_id,
-        delta: -(exchangeItem.qty || 1),
-        reason: "sale",
-        ref_order: replacementOrderId,
-        actor: "returns",
-        note: "exchange replacement",
-      });
+    if (exchErr) {
+      const status = exchErr.code === "P0101" ? 409 : exchErr.code === "P0103" ? 404 : 500;
+      return NextResponse.json(
+        { error: status === 500 ? exchErr.message : "Exchange item is out of stock" },
+        { status }
+      );
     }
+    replacementOrderId = (exch as { order: { id: string } }).order.id;
   }
 
   // Restock what's coming back, if marked resaleable.

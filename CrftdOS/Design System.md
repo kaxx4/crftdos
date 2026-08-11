@@ -44,7 +44,7 @@ Both global faces load through `next/font/google`, so they are self-hosted, prel
 **Two licensing decisions are recorded in code, and both are correct:**
 
 1. `layout.tsx` — the design reference calls for **Eina**, a paid Fontspring face. The `.ttf` files exist in `_import/` but are not shipped, because there is no evidence of a licence covering this deployment. Plus Jakarta Sans is the OFL substitute with similar geometric-grotesk proportions.
-2. `kiosk/page.tsx` — Fraunces is explicitly noted as OFL/free, *and* deliberately scoped to the kiosk subtree so the restrained surface cannot inherit it.
+2. `app/page.tsx` (the kiosk, site root as of [[Changelog 2026-08-10]]) — Fraunces is explicitly noted as OFL/free, *and* deliberately scoped to the kiosk subtree so the restrained surface cannot inherit it.
 
 PRD §11's Anton and Archivo Expanded Black are not loaded; their roles (display numerals, field labels) are served by weight and tracking on the two loaded faces.
 

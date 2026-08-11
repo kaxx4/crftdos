@@ -5,7 +5,9 @@ updated: 2026-08-10
 
 # Flow - Sell
 
-`src/app/page.tsx` (880 lines). The screen that has to be fast. Part of [[User Flows]].
+`src/app/sell/page.tsx` (880 lines). The screen that has to be fast. Part of [[User Flows]].
+
+> **AUDIT NOTE:** As of [[Changelog 2026-08-10]] fifth pass, Sell lives at `app/sell/page.tsx` (kiosk moved to `app/page.tsx`, the site root). This doc's 880-line figure matches the Aug 10 state; [[Rework - Master Plan]] (Aug 11, in-progress rework) cites 1,222 lines for the same file as its pre-rework baseline. Both may be correct for their respective dates — not verified against the current uncommitted working tree, which is out of this audit's scope.
 
 ## Layout
 

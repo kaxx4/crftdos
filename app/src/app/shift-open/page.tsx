@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PosFrame } from "@/components/PosFrame";
+import { FirstRunHint } from "@/components/FirstRunHint";
 import { BigButton, Field, PanelLabel } from "@/components/ui";
 import { getDeviceId } from "@/lib/deviceId";
 
@@ -51,7 +52,17 @@ export default function ShiftOpenPage() {
   }
 
   return (
-    <PosFrame kicker="STALL OS · SHIFT" title="Open shift">
+    <PosFrame
+        helpTopic="first" kicker="VOLUNTEER · SHIFT" title="Open shift">
+        <FirstRunHint
+          id="shiftopen"
+          title="Opening the stall"
+          points={[
+            "Only the first phone needs to fill this in. Every other phone joins the same shift automatically.",
+            "Press on site means custom and kiosk designs go to a live press queue. Off means collect-later, and a promised date becomes compulsory.",
+            "Opening gives this phone its own block of receipt numbers — without one it can't take payment.",
+          ]}
+        />
       <div className="flex flex-col gap-3">
         <label className="flex flex-col gap-1.5">
           <PanelLabel as="div">Shift name</PanelLabel>
@@ -74,8 +85,8 @@ export default function ShiftOpenPage() {
             <PanelLabel>Press on site</PanelLabel>
             <div className="text-[13px] text-muted max-w-[26ch]">
               {pressOnSite
-                ? "Custom/canvas orders go to a live pending-press queue."
-                : "Custom/canvas orders become collect-later with a promised date."}
+                ? "ON — custom stickers or kiosk designs go into a live press queue: someone presses them while the customer waits."
+                : "OFF — custom stickers or kiosk designs become collect-later: the customer picks a pickup date and we press it before then."}
             </div>
           </div>
           <button
@@ -88,13 +99,13 @@ export default function ShiftOpenPage() {
           </button>
         </div>
         {err && (
-          <div className="bg-signal text-cream p-2.5 font-extrabold text-[11px] tracking-wide uppercase">{err}</div>
+          <div className="bg-signal text-cream p-2.5 font-extrabold text-[13px] tracking-wide uppercase">{err}</div>
         )}
         <BigButton onClick={open} disabled={busy || !name}>
           {busy ? "OPENING…" : "OPEN SHIFT"}
         </BigButton>
-        <div className="font-mono text-[11px] text-muted">
-          Allocates a fresh block of 100 receipt numbers to this device.
+        <div className="font-mono text-[13px] text-muted">
+          This assigns this device 100 receipt numbers of its own, so it can charge sales even if it goes offline.
         </div>
       </div>
     </PosFrame>

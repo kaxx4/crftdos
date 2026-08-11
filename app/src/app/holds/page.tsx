@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { PosFrame } from "@/components/PosFrame";
+import { FirstRunHint } from "@/components/FirstRunHint";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TabBar } from "@/components/TabBar";
-import { BigButton, Field, Mono } from "@/components/ui";
+import { Banner, BigButton, Field, Mono, PanelLabel } from "@/components/ui";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { getDeviceId } from "@/lib/deviceId";
 import type { ProductSku, StickerDesign } from "@/lib/types";
@@ -27,6 +29,7 @@ export default function HoldsPage() {
   const [phone, setPhone] = useState("");
   const [skuCode, setSkuCode] = useState("");
   const [nowMs, setNowMs] = useState<number | null>(null);
+  const [toast, setToast] = useState("");
 
   useEffect(() => {
     // Ticking clock for the "N min left" countdown — legitimately syncs
@@ -36,6 +39,12 @@ export default function HoldsPage() {
     const id = setInterval(() => setNowMs(Date.now()), 30000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(""), 3000);
+    return () => clearTimeout(id);
+  }, [toast]);
 
   async function load() {
     const [h, sb, shiftRes] = await Promise.all([
@@ -82,7 +91,7 @@ export default function HoldsPage() {
   async function addHold() {
     const sku = skus.find((s) => s.sku_code.toLowerCase() === skuCode.trim().toLowerCase());
     const design = designs.find((d) => d.code.toLowerCase() === skuCode.trim().toLowerCase());
-    if (!sku && !design) return alert("No SKU/sticker code matched");
+    if (!sku && !design) return alert("Nothing matches that code — check the spelling and try again");
     await fetch("/api/holds", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -101,13 +110,29 @@ export default function HoldsPage() {
     load();
   }
 
-  async function release(id: string) {
-    await fetch(`/api/holds/${id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "release" }),
-    });
-    load();
+  // Releasing hands someone else's reserved item back to the shelf, and it
+  // used to happen on a single tap with no confirmation at all.
+  const [releaseTarget, setReleaseTarget] = useState<string | null>(null);
+
+  async function confirmRelease() {
+    const id = releaseTarget;
+    setReleaseTarget(null);
+    if (!id) return;
+    try {
+      const res = await fetch(`/api/holds/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "release" }),
+      });
+      if (!res.ok) {
+        setToast("Couldn't release that hold — it's still reserved. Try again.");
+        return;
+      }
+      setToast("Hold released — item is available to sell again.");
+      load();
+    } catch {
+      setToast("No connection — the hold is still in place. Try again once you're back online.");
+    }
   }
 
   async function convert(id: string) {
@@ -119,13 +144,29 @@ export default function HoldsPage() {
     if (res.ok) load();
     else {
       const j = await res.json();
-      alert(j.error || "Could not convert");
+      alert(
+        j.error ||
+          "Could not turn this hold into a sale — the item may already be sold, or the hold may have expired. Try again or start a new hold."
+      );
     }
   }
 
   return (
-    <div className="min-h-dvh flex flex-col">
-      <PosFrame kicker="STALL OS · HOLDS" title="Holds">
+    <div className="contents">
+      <PosFrame
+        helpTopic="sell"
+        nav={<TabBar />} kicker="VOLUNTEER · HOLDS" title="Holds"
+        banner={toast ? <Banner tone="blue" transient>{toast}</Banner> : undefined}>
+        <FirstRunHint
+          id="holds"
+          title="Putting something aside"
+          points={[
+            "A hold reserves an item for a customer who says they'll come back. It stays on the shelf but stops anyone else selling it.",
+            "Held items still count as on-hand stock — they're only removed from what's available to sell.",
+            "Holds expire on their own at the end of the shift. Release one early if the customer doesn't return.",
+          ]}
+        />
+        <PanelLabel>Active holds</PanelLabel>
         <div className="flex flex-col gap-2">
           {holds.map((h) => (
             <div key={h.id} className="border-2 border-ink bg-white p-2.5 flex justify-between gap-2">
@@ -135,16 +176,20 @@ export default function HoldsPage() {
                 <Mono>{minutesLeft(h)} min left</Mono>
               </div>
               <div className="flex flex-col gap-1.5">
-                <button onClick={() => convert(h.id)} className="bg-blue text-cream text-[10px] font-extrabold px-2 py-1.5">
+                <button onClick={() => convert(h.id)} className="bg-blue text-cream text-[12px] font-extrabold px-2 py-1.5">
                   CONVERT
                 </button>
-                <button onClick={() => release(h.id)} className="border border-signal text-signal text-[10px] font-extrabold px-2 py-1">
+                <button onClick={() => setReleaseTarget(h.id)} className="border border-signal text-signal text-[12px] font-extrabold px-2 py-1">
                   RELEASE
                 </button>
               </div>
             </div>
           ))}
-          {holds.length === 0 && <div className="text-center text-sm text-muted py-6">No active holds.</div>}
+          {holds.length === 0 && (
+            <div className="text-center text-sm text-muted py-6">
+              No active holds. Tap + NEW HOLD to set an item aside for a customer who's coming back for it.
+            </div>
+          )}
         </div>
         {!addOpen ? (
           <BigButton variant="ghost" onClick={() => setAddOpen(true)}>
@@ -165,8 +210,15 @@ export default function HoldsPage() {
             </div>
           </div>
         )}
+        <ConfirmDialog
+          open={!!releaseTarget}
+          title="Release this hold?"
+          body="The item goes back on sale immediately and anyone can buy it. Do this only if the customer isn't coming back for it."
+          confirmLabel="RELEASE"
+          onConfirm={confirmRelease}
+          onCancel={() => setReleaseTarget(null)}
+        />
       </PosFrame>
-      <TabBar />
     </div>
   );
 }
