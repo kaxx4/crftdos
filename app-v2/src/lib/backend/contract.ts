@@ -26,6 +26,7 @@
 
 import type {
   B2bOrder,
+  Lead,
   B2bStage,
   Color,
   DesignPayload,
@@ -323,6 +324,11 @@ export interface Backend {
   // not yet pressed, oldest first, with the item/sticker relations the press
   // sheet render needs.
   getPressQueue(environmentId?: string): Promise<Result<Order[]>>;
+
+  // Leads [org-wide, not environment-scoped]
+  listLeads(): Promise<Result<Lead[]>>;
+  createLead(input: { name: string; phone?: string | null; notes?: string | null }): Promise<Result<Lead>>;
+  updateLead(id: string, patch: { name?: string; phone?: string | null; notes?: string | null }): Promise<Result<Lead>>;
 
   // Settings
   getSettings(): Promise<Result<Record<string, unknown>>>;

@@ -45,6 +45,23 @@ export async function POST(req: NextRequest) {
   const { data: row, error: selErr } = await admin.from("stall_orders").select(ORDER_SELECT).eq("id", result.order.id).single();
   if (selErr || !row) return NextResponse.json({ error: selErr?.message ?? "Order not found after create" }, { status: 500 });
 
+  // Discount/freebie log — every below-catalogue-price sale is auditable,
+  // not just visible as a smaller number on the receipt. Skipped on an
+  // idempotent re-hit (outbox retry) so a retried charge doesn't log twice.
+  const discountAmount = Number((row as Record<string, unknown>).discount_amount ?? 0);
+  if (!result.alreadyExisted && discountAmount > 0) {
+    await admin.from("stall_admin_audit").insert({
+      actor: (body as Record<string, unknown>).deviceId ?? auth.kind,
+      action: (row as Record<string, unknown>).discount_reason === "freebie" ? "freebie_given" : "discount_applied",
+      detail: {
+        order_id: result.order.id,
+        amount: discountAmount,
+        reason: (row as Record<string, unknown>).discount_reason,
+        note: (row as Record<string, unknown>).discount_note,
+      },
+    });
+  }
+
   return NextResponse.json({ order: mapOrderRow(row as unknown as OrderRow), alreadyExisted: result.alreadyExisted });
 }
 

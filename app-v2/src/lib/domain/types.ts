@@ -193,8 +193,14 @@ export type Template = {
  *  AREA, not pixels, so they survive any mockup resize. This is the press
  *  sheet's machine-readable form. */
 export type Placement = {
-  sticker_design_id: string;
+  /** Null for a custom (non-catalogue) sticker — `description` carries what
+   *  the volunteer typed instead, and the server assigns the next C-series
+   *  code (`stall_next_custom_sticker_no()`) since nobody at the till is
+   *  expected to remember which C number is next. */
+  sticker_design_id: string | null;
   code: string;
+  description?: string | null;
+  size_class?: "S" | "M" | "L" | null;
   side: PrintSide;
   pos_x: number;
   pos_y: number;
@@ -465,6 +471,21 @@ export type B2bActivity = {
   event: string;
   detail: Record<string, unknown> | null;
   created_at: string;
+};
+
+// ─── Leads [org-wide, not environment-scoped] ──────────────────────────────
+
+/** A potential customer worth following up with — bulk order enquiry or a
+ *  single custom-tee request. Distinct from B2bOrder, which is a committed
+ *  deal pipeline with a margin gate; a lead is just a name and a note. */
+export type Lead = {
+  id: string;
+  name: string;
+  phone: string | null;
+  notes: string | null;
+  logged_by: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 // ─── Money ──────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
+import { requireAnySession, pgErrorCode } from "@/lib/apiAuth";
 
 // PRD §3.3 — held qty subtracts from available, not on-hand. Kiosk soft-holds
 // (session-scoped, no customer name) are internal and never shown here —
@@ -25,11 +25,20 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ holds: data ?? [] });
 }
 
+const RPC_ERROR_STATUS: Record<string, number> = {
+  P0101: 409, // not enough available
+  P0107: 404, // no stock location for environment
+  "22023": 400, // malformed payload (missing name, bad sku_type)
+};
+
 // Named holds — a volunteer reserving stock for a specific customer, distinct
 // from the kiosk's anonymous session-scoped soft-holds (reserveSticker/
-// /api/holds/reserve). v1 inserted these with no availability check at all;
-// this one refuses the same way reserveSticker does — on-hand minus every
-// other active hold at this environment, not just on-hand.
+// /api/holds/reserve). v1 inserted these with no availability check at all.
+// This goes through stall_reserve_named_hold, which locks the stock row
+// before checking availability and inserting — a plain check-then-insert
+// here (an earlier version of this route did exactly that) is a real race:
+// two volunteers could both succeed holding the last unit for two different
+// customers.
 export async function POST(req: NextRequest) {
   const auth = await requireAnySession(req, ["stall", "admin"]);
   if (!auth.ok) return auth.response;
@@ -55,54 +64,26 @@ export async function POST(req: NextRequest) {
   const q = Math.max(1, Number(qty) || 1);
   const admin = supabaseAdmin();
 
-  const { data: loc } = await admin
-    .from("stall_stock_locations")
-    .select("id")
-    .eq("environment_id", environmentId)
-    .limit(1)
-    .single();
-  if (!loc) return NextResponse.json({ error: "No stock location for this environment" }, { status: 404 });
+  const { data, error } = await admin.rpc("stall_reserve_named_hold", {
+    p_environment_id: environmentId,
+    p_sku_type: productSkuId ? "product" : "sticker",
+    p_sku_id: productSkuId || stickerId,
+    p_qty: q,
+    p_customer_name: customerName,
+    p_customer_phone: customerPhone || null,
+    p_shift_id: shiftId || null,
+    p_hours: Number(hours) || 2,
+  });
 
-  const skuType: "product" | "sticker" = productSkuId ? "product" : "sticker";
-  const skuId = productSkuId || stickerId;
-
-  const { data: stockRow } = await admin
-    .from("stall_stock")
-    .select("qty")
-    .eq("location_id", loc.id)
-    .eq("sku_type", skuType)
-    .eq("sku_id", skuId)
-    .single();
-  const onHand = stockRow?.qty ?? 0;
-
-  const { data: activeHolds } = await admin
-    .from("stall_holds")
-    .select("qty")
-    .eq("environment_id", environmentId)
-    .eq(skuType === "product" ? "product_sku_id" : "sticker_id", skuId)
-    .is("released_at", null)
-    .is("converted_order", null);
-  const heldQty = (activeHolds ?? []).reduce((n, h) => n + h.qty, 0);
-
-  if (onHand - heldQty < q) {
-    return NextResponse.json({ error: "Not enough available at this stall to hold that many" }, { status: 409 });
+  if (error) {
+    const code = pgErrorCode(error);
+    const status = RPC_ERROR_STATUS[code ?? ""] ?? 500;
+    return NextResponse.json(
+      { error: status === 500 ? "Failed to reserve" : error.message, code },
+      { status }
+    );
   }
 
-  const { data: hold, error } = await admin
-    .from("stall_holds")
-    .insert({
-      environment_id: environmentId,
-      shift_id: shiftId || null,
-      product_sku_id: productSkuId || null,
-      sticker_id: stickerId || null,
-      qty: q,
-      customer_name: customerName,
-      customer_phone: customerPhone || null,
-      expires_at: new Date(Date.now() + (Number(hours) || 2) * 60 * 60 * 1000).toISOString(),
-    })
-    .select()
-    .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
+  const hold = Array.isArray(data) ? data[0] : data;
   return NextResponse.json({ hold });
 }

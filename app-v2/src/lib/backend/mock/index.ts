@@ -40,6 +40,7 @@ import type {
   Hold,
   KioskDesign,
   KioskEvent,
+  Lead,
   Order,
   OrderItem,
   OrderSticker,
@@ -545,7 +546,10 @@ export class MockBackend implements Backend {
       for (const d of input.designs) {
         const sku = skus.find((x) => x.id === d.product_sku_id);
         bump("product", d.product_sku_id, sku?.sku_code ?? "garment");
-        for (const p of d.placements) bump("sticker", p.sticker_design_id, p.code);
+        // A custom sticker (no sticker_design_id) has no catalogue stock to
+        // check or decrement — it's a one-off print, not a transfer pulled
+        // from a box.
+        for (const p of d.placements) if (p.sticker_design_id) bump("sticker", p.sticker_design_id, p.code);
       }
 
       for (const item of need.values()) {
@@ -596,12 +600,20 @@ export class MockBackend implements Backend {
         const color = colors.find((c) => c.id === sku?.color_id);
         const fit = fits.find((f) => f.id === sku?.fit_id);
         const stickers: OrderSticker[] = d.placements.map((p) => {
-          const design = designs.find((x) => x.id === p.sticker_design_id);
+          const design = p.sticker_design_id ? designs.find((x) => x.id === p.sticker_design_id) : null;
+          const isCustom = !p.sticker_design_id;
+          let customId: string | null = null;
+          let code = p.code;
+          if (isCustom) {
+            s.customStickerSeq += 1;
+            customId = uid("custom");
+            code = `C-${String(s.customStickerSeq).padStart(4, "0")}`;
+          }
           return {
             id: uid("ois"),
             sticker_design_id: p.sticker_design_id,
-            custom_sticker_id: null,
-            code: p.code,
+            custom_sticker_id: customId,
+            code,
             side: p.side,
             pos_x: p.pos_x,
             pos_y: p.pos_y,
@@ -1265,6 +1277,44 @@ export class MockBackend implements Backend {
     );
     if (environmentId) list = list.filter((o) => o.environment_id === environmentId);
     return ok(list.sort((a, b) => a.created_at.localeCompare(b.created_at)));
+  }
+
+  // ── Leads [org-wide] ─────────────────────────────────────────────────────
+
+  async listLeads(): Promise<Result<Lead[]>> {
+    await latency(50);
+    return ok([...getState().leads].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+  }
+
+  async createLead(input: { name: string; phone?: string | null; notes?: string | null }): Promise<Result<Lead>> {
+    await latency(90);
+    if (!input.name.trim()) return err("Name is required.", "conflict");
+    return mutate((s) => {
+      const lead: Lead = {
+        id: uid("lead"),
+        name: input.name.trim(),
+        phone: input.phone?.trim() || null,
+        notes: input.notes?.trim() || null,
+        logged_by: null,
+        created_at: now(),
+        updated_at: now(),
+      };
+      s.leads.unshift(lead);
+      return ok(lead);
+    });
+  }
+
+  async updateLead(id: string, patch: { name?: string; phone?: string | null; notes?: string | null }): Promise<Result<Lead>> {
+    await latency(70);
+    return mutate((s) => {
+      const lead = s.leads.find((l) => l.id === id);
+      if (!lead) return err<Lead>("Lead not found.", "not_found");
+      if (patch.name !== undefined) lead.name = patch.name;
+      if (patch.phone !== undefined) lead.phone = patch.phone;
+      if (patch.notes !== undefined) lead.notes = patch.notes;
+      lead.updated_at = now();
+      return ok(lead);
+    });
   }
 
   // ── Settings ─────────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ import type {
   Environment,
   Hold,
   KioskEvent,
+  Lead,
   Order,
   ReceiptBlock,
   Return,
@@ -46,7 +47,9 @@ export type MockState = {
   waste: WasteEntry[];
   b2bOrders: B2bOrder[];
   b2bActivity: B2bActivity[];
+  leads: Lead[];
   volunteers: Volunteer[];
+  customStickerSeq: number;
   settings: Record<string, unknown>;
   /** Per-environment order sequence, so receipt numbers are environment-scoped
    *  off that environment's prefix — the mechanism that guarantees uniqueness
@@ -95,6 +98,8 @@ function initialState(): MockState {
     waste: [],
     b2bOrders: [],
     b2bActivity: [],
+    leads: [],
+    customStickerSeq: 0,
     volunteers: [
       { id: "vol-1", name: "Aanya", is_active: true },
       { id: "vol-2", name: "Rohan", is_active: true },

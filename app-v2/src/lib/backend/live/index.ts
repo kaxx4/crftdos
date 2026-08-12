@@ -31,6 +31,7 @@ import type {
   Hold,
   KioskDesign,
   KioskEvent,
+  Lead,
   Order,
   ProductSku,
   Return,
@@ -222,6 +223,10 @@ export class LiveBackend implements Backend {
     const items = input.designs.map((d) => {
       const stickers = d.placements.map((p) => ({
         sticker_design_id: p.sticker_design_id,
+        // Only present for a custom sticker (no sticker_design_id) — the RPC
+        // auto-assigns the next C-series code from this.
+        description: p.sticker_design_id ? undefined : p.description,
+        size_class: p.sticker_design_id ? undefined : p.size_class,
         side: p.side,
         pos_x: p.pos_x,
         pos_y: p.pos_y,
@@ -442,6 +447,23 @@ export class LiveBackend implements Backend {
     const qs = environmentId ? `?environment_id=${encodeURIComponent(environmentId)}` : "";
     const r = await call<{ orders: Order[] }>(`/api/orders/press-queue${qs}`);
     return r.ok ? ok(r.data.orders) : r;
+  }
+
+  // ── Leads [org-wide] ─────────────────────────────────────────────────────
+
+  async listLeads(): Promise<Result<Lead[]>> {
+    const r = await call<{ leads: Lead[] }>("/api/leads");
+    return r.ok ? ok(r.data.leads) : r;
+  }
+
+  async createLead(input: { name: string; phone?: string | null; notes?: string | null }): Promise<Result<Lead>> {
+    const r = await call<{ lead: Lead }>("/api/leads", { method: "POST", body: JSON.stringify(input) });
+    return r.ok ? ok(r.data.lead) : r;
+  }
+
+  async updateLead(id: string, patch: { name?: string; phone?: string | null; notes?: string | null }): Promise<Result<Lead>> {
+    const r = await call<{ lead: Lead }>(`/api/leads/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+    return r.ok ? ok(r.data.lead) : r;
   }
 
   // ── Settings ─────────────────────────────────────────────────────────────

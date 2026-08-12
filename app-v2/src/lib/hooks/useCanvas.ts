@@ -175,6 +175,10 @@ export function useCanvas(environmentId: string | null) {
       const accepted: Placement[] = [];
       for (const p of payload.placements) {
         if (!environmentId) break;
+        // Templates are catalogue-only — a saved template can never reference
+        // a custom (description-based) sticker, so this is a type-narrowing
+        // guard, not a real skip path.
+        if (!p.sticker_design_id) continue;
         const res = await getBackend().reserveSticker({
           sticker_id: p.sticker_design_id,
           environment_id: environmentId,
