@@ -15,7 +15,7 @@
  *    order       name, phone, payment                        (this is new)
  *    done        ticket + what happens next */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getBackend } from "@/lib/backend";
 import { track } from "@/lib/analytics";
@@ -23,7 +23,7 @@ import { getKioskSessionId, resetKioskSession } from "@/lib/device";
 import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { useCanvas } from "@/lib/hooks/useCanvas";
-import type { DesignPayload, Order, Template } from "@/lib/domain/types";
+import type { DesignPayload, Order, StockRow, Template } from "@/lib/domain/types";
 import { Banner, Button } from "@/components/ui";
 import { EnvironmentChip } from "@/components/EnvironmentChip";
 import { Storefront } from "./Storefront";
@@ -47,6 +47,24 @@ export function KioskApp() {
     [envId]
   );
   const templates = useAsync(() => getBackend().listTemplates(), []);
+
+  // getCatalogue()'s stock_qty is an org-wide total (every stall + the
+  // warehouse, kept in sync by a DB trigger) — GarmentPicker filtering on it
+  // directly would let a customer pick a garment that's actually all sold
+  // out at THIS environment, only to have it refused at checkout.
+  // getKioskCatalogue already solves this correctly for stickers; this does
+  // the same for garments, overlaying this environment's own stock rows.
+  const locations = useAsync(() => getBackend().listStockLocations(), []);
+  const location = locations.data?.find((l) => l.environment_id === envId);
+  const localStock = useAsync(
+    () => (location ? getBackend().getStock(location.id) : Promise.resolve({ ok: true as const, data: [] as StockRow[] })),
+    [location?.id]
+  );
+  const scopedCatalogue = useMemo(() => {
+    if (!catalogue.data || !localStock.data) return null;
+    const byId = new Map(localStock.data.filter((r) => r.sku_type === "product").map((r) => [r.sku_id, r.qty]));
+    return { ...catalogue.data, skus: catalogue.data.skus.map((s) => ({ ...s, stock_qty: byId.get(s.id) ?? 0 })) };
+  }, [catalogue.data, localStock.data]);
 
   useEffect(() => {
     if (envId) {
@@ -146,7 +164,7 @@ export function KioskApp() {
       {stage === "canvas" && (
         <CanvasStage
           canvas={canvas}
-          catalogue={catalogue.data}
+          catalogue={scopedCatalogue}
           designs={designs.data ?? []}
           designsLoading={designs.loading}
           onBack={startOver}
