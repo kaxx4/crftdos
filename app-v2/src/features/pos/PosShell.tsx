@@ -53,41 +53,48 @@ export function PosShell({ children, title }: { children: React.ReactNode; title
     };
   }, []);
 
+  // Capped to phone width even on a wide viewport (a volunteer's phone in
+  // landscape, or the same route opened on a laptop while testing). PosShell
+  // is documented as "restrained by design... nothing decorative competing
+  // for attention" — a full-bleed layout on a wide screen is exactly that
+  // competing decoration, just accidental instead of deliberate.
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--color-cream)]">
-      <header className="crop-marks sticky top-0 z-30 bg-[var(--color-blue)] px-3 py-2.5 text-white">
-        <div className="flex items-center justify-between gap-3">
-          <EnvironmentChip tone="dark" />
-          <h1 className="truncate text-sm font-bold uppercase tracking-[0.14em]">{title}</h1>
-        </div>
-      </header>
+    <div className="flex min-h-dvh flex-col items-center bg-[var(--color-cream)]">
+      <div className="flex w-full max-w-md flex-1 flex-col">
+        <header className="crop-marks sticky top-0 z-30 bg-[var(--color-blue)] px-3 py-2.5 text-white">
+          <div className="flex items-center justify-between gap-3">
+            <EnvironmentChip tone="dark" />
+            <h1 className="truncate text-sm font-bold uppercase tracking-[0.14em]">{title}</h1>
+          </div>
+        </header>
 
-      {(!online || queued > 0) && (
-        <div
-          role="status"
-          aria-live="polite"
-          className={clsx(
-            "px-3 py-2 text-center text-sm font-bold",
-            online ? "bg-[var(--color-blue-wash)] text-[var(--color-ink)]" : "bg-[var(--color-signal)] text-white"
-          )}
-        >
-          {online
-            ? `${queued} sale${queued === 1 ? "" : "s"} still syncing — keep this app open until it clears.`
-            : `Offline. Sales are being saved on this phone${queued ? ` (${queued} waiting)` : ""} and will send when you're back.`}
-        </div>
-      )}
+        {(!online || queued > 0) && (
+          <div
+            role="status"
+            aria-live="polite"
+            className={clsx(
+              "px-3 py-2 text-center text-sm font-bold",
+              online ? "bg-[var(--color-blue-wash)] text-[var(--color-ink)]" : "bg-[var(--color-signal)] text-white"
+            )}
+          >
+            {online
+              ? `${queued} sale${queued === 1 ? "" : "s"} still syncing — keep this app open until it clears.`
+              : `Offline. Sales are being saved on this phone${queued ? ` (${queued} waiting)` : ""} and will send when you're back.`}
+          </div>
+        )}
 
-      {getBackend().isMock && (
-        <div className="mock-hatch border-b-2 border-[var(--color-signal)] px-3 py-1.5 text-center text-xs font-bold">
-          DEMO DATA — nothing here is a real sale
-        </div>
-      )}
+        {getBackend().isMock && (
+          <div className="mock-hatch border-b-2 border-[var(--color-signal)] px-3 py-1.5 text-center text-xs font-bold">
+            DEMO DATA — nothing here is a real sale
+          </div>
+        )}
 
-      <main className="flex-1 pb-24">{children}</main>
+        <main className="flex-1 pb-24">{children}</main>
+      </div>
 
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t-2 border-[var(--color-ink)] bg-[var(--color-cream)]"
+        className="fixed inset-x-0 bottom-0 z-30 mx-auto grid w-full max-w-md grid-cols-5 border-t-2 border-x-2 border-[var(--color-ink)] bg-[var(--color-cream)]"
       >
         {TABS.map((t) => {
           const active = pathname === t.href;
