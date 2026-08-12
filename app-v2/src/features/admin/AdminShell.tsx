@@ -22,6 +22,9 @@ const NAV = [
   { href: "/admin/stock", label: "Stock allocation" },
   { href: "/admin/templates", label: "Templates" },
   { href: "/admin/catalogue", label: "Catalogue" },
+  { href: "/admin/pricing", label: "Pricing" },
+  { href: "/admin/b2b", label: "B2B" },
+  { href: "/admin/bulk", label: "Bulk entry" },
 ];
 
 export function AdminShell({ children, title }: { children: React.ReactNode; title: string }) {

@@ -149,6 +149,31 @@ export function MoreScreen() {
         {error && <Banner tone="danger" className="mt-3">{error}</Banner>}
       </Panel>
 
+      <Panel title="Stall tools">
+        <ul className="flex flex-col gap-2">
+          <li>
+            <Link href="/pos/returns" className="tap-target flex items-center font-semibold underline">
+              Returns &amp; exchanges
+            </Link>
+          </li>
+          <li>
+            <Link href="/pos/waste" className="tap-target flex items-center font-semibold underline">
+              Log waste
+            </Link>
+          </li>
+          <li>
+            <Link href="/pos/holds" className="tap-target flex items-center font-semibold underline">
+              Active holds
+            </Link>
+          </li>
+          <li>
+            <Link href="/pos/press" className="tap-target flex items-center font-semibold underline">
+              Press queue
+            </Link>
+          </li>
+        </ul>
+      </Panel>
+
       <Panel title="This device">
         <ul className="flex flex-col gap-2">
           <li>

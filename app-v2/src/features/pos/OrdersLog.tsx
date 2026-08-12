@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { getBackend } from "@/lib/backend";
 import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
@@ -68,11 +69,18 @@ export function OrdersLog() {
               </div>
               <div className="text-right">
                 <p className="font-[family-name:var(--font-mono)] text-lg font-bold tnum">{money(o.total)}</p>
-                {!o.voided_at && (
-                  <Button size="md" variant="ghost" onClick={() => setVoiding(o)}>
-                    Void
-                  </Button>
-                )}
+                <div className="flex justify-end gap-1">
+                  <Link href={`/pos/receipt?order=${o.id}`}>
+                    <Button size="md" variant="ghost">
+                      Receipt
+                    </Button>
+                  </Link>
+                  {!o.voided_at && (
+                    <Button size="md" variant="ghost" onClick={() => setVoiding(o)}>
+                      Void
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </Panel>
