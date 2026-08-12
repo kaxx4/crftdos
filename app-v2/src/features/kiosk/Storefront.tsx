@@ -12,6 +12,7 @@
  *  people photograph, so it carries the brand load (PRD D19) while POS stays
  *  restrained. */
 
+import Link from "next/link";
 import type { ProductSku, Template } from "@/lib/domain/types";
 import { money } from "@/lib/money";
 import { Button, Skeleton } from "@/components/ui";
@@ -109,6 +110,16 @@ export function Storefront({
         <p>Tees from {money(499)} · transfers from {money(99)}</p>
         <p>crftd is the commercial arm of AQUATERRA / TerraRoots</p>
       </footer>
+
+      {/* Volunteers/admins need a way into /pin from the public kiosk that
+          isn't "type the URL from memory." Deliberately subtle — this is a
+          customer-facing surface, not a staff one. */}
+      <Link
+        href="/pin"
+        className="tap-target fixed bottom-4 left-4 z-10 flex min-h-[48px] min-w-[48px] items-center px-2 py-1 font-[family-name:var(--font-mono)] text-[13px] uppercase tracking-[0.14em] text-[var(--color-muted)]"
+      >
+        Staff passcode
+      </Link>
     </main>
   );
 }
