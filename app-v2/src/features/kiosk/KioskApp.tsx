@@ -60,11 +60,19 @@ export function KioskApp() {
     () => (location ? getBackend().getStock(location.id) : Promise.resolve({ ok: true as const, data: [] as StockRow[] })),
     [location?.id]
   );
+  // Not just "has data" — `localStock` resolves to an empty placeholder array
+  // the instant `location` is still unresolved (see its fetcher above), so
+  // gating on `.data` alone lets this settle one tick early with every SKU's
+  // stock_qty defaulted to 0. That's a real, if brief, false "sold out"
+  // reading, so this also waits out `locations`/`localStock` still loading.
   const scopedCatalogue = useMemo(() => {
-    if (!catalogue.data || !localStock.data) return null;
-    const byId = new Map(localStock.data.filter((r) => r.sku_type === "product").map((r) => [r.sku_id, r.qty]));
+    if (!catalogue.data || !localStock.data || locations.loading || localStock.loading) return null;
+    // available_qty, not qty — nets active holds, same as getKioskCatalogue
+    // already does for stickers. A garment on hold for another customer
+    // isn't available to pick again.
+    const byId = new Map(localStock.data.filter((r) => r.sku_type === "product").map((r) => [r.sku_id, r.available_qty]));
     return { ...catalogue.data, skus: catalogue.data.skus.map((s) => ({ ...s, stock_qty: byId.get(s.id) ?? 0 })) };
-  }, [catalogue.data, localStock.data]);
+  }, [catalogue.data, localStock.data, locations.loading, localStock.loading]);
 
   useEffect(() => {
     if (envId) {

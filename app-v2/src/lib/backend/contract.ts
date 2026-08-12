@@ -131,6 +131,9 @@ export type CreateReturnInput = {
   /** Required — any return needs admin approval (PRD's "approved_by" intent). */
   approver_pin: string;
   refund_amount?: number;
+  /** How refund_amount left the till — required whenever refund_amount > 0,
+   *  so shift close can subtract a cash refund from expected cash. */
+  refund_method?: PaymentMethod | null;
   /** Items coming back into stock, restocked only when `resaleable` is set. */
   resaleable?: boolean;
   restock_items?: RestockItem[];

@@ -15,7 +15,7 @@ import { getDeviceId } from "@/lib/device";
 import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useDeviceId } from "@/lib/hooks/useDeviceId";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
-import { listOutbox, discardOutboxItem, type OutboxOrder } from "@/lib/outbox";
+import { listOutbox, discardOutboxItem, onOutboxChange, type OutboxOrder } from "@/lib/outbox";
 import { money } from "@/lib/money";
 import { Banner, Button, Field, Panel } from "@/components/ui";
 import { useEffect } from "react";
@@ -36,7 +36,16 @@ export function MoreScreen() {
   const [queue, setQueue] = useState<OutboxOrder[]>([]);
 
   useEffect(() => {
-    void listOutbox().then(setQueue);
+    const refresh = () => void listOutbox().then(setQueue);
+    refresh();
+    // Without this, a sale that finishes syncing (or a new one that queues)
+    // while this screen is open leaves the outbox banner stale — a volunteer
+    // could be told to "keep the app open" for a queue that already cleared,
+    // or not see a newly-queued sale that should block shift close.
+    const stop = onOutboxChange(refresh);
+    return () => {
+      stop();
+    };
   }, []);
 
   const open = async () => {

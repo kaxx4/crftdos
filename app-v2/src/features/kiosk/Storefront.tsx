@@ -116,7 +116,7 @@ export function Storefront({
           customer-facing surface, not a staff one. */}
       <Link
         href="/pin"
-        className="tap-target fixed bottom-4 left-4 z-10 flex min-h-[48px] min-w-[48px] items-center px-2 py-1 font-[family-name:var(--font-mono)] text-[13px] uppercase tracking-[0.14em] text-[var(--color-muted)]"
+        className="tap-target fixed bottom-4 left-4 z-10 flex min-h-[48px] min-w-[48px] items-center rounded-lg bg-[var(--color-cream)]/90 px-2 py-1 font-[family-name:var(--font-mono)] text-[13px] uppercase tracking-[0.14em] text-[var(--color-muted)] shadow-[0_1px_8px_-2px_rgba(0,0,0,0.25)] backdrop-blur-sm"
       >
         Staff passcode
       </Link>

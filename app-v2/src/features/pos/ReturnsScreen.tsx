@@ -48,6 +48,7 @@ export function ReturnsScreen() {
   const [reason, setReason] = useState("");
   const [action, setAction] = useState<ReturnAction>("refund");
   const [refundAmount, setRefundAmount] = useState("0");
+  const [refundMethod, setRefundMethod] = useState<"cash" | "upi">("cash");
   const [resaleable, setResaleable] = useState(true);
   const [pin, setPin] = useState("");
   const [exchangeSkuId, setExchangeSkuId] = useState("");
@@ -92,6 +93,7 @@ export function ReturnsScreen() {
       action,
       approver_pin: pin,
       refund_amount: Number(refundAmount) || 0,
+      refund_method: Number(refundAmount) > 0 ? refundMethod : null,
       resaleable,
       restock_items: resaleable
         ? found.items
@@ -122,6 +124,7 @@ export function ReturnsScreen() {
       setReason("");
       setPin("");
       setRefundAmount("0");
+      setRefundMethod("cash");
       setExchangeSkuId("");
       setExchangeQty("1");
       setAction("refund");
@@ -231,6 +234,25 @@ export function ReturnsScreen() {
               value={refundAmount}
               onChange={(e) => setRefundAmount(e.target.value)}
             />
+
+            {Number(refundAmount) > 0 && (
+              <fieldset>
+                <legend className="mb-2 text-sm font-semibold">
+                  How was it refunded?
+                </legend>
+                <div className="flex gap-2">
+                  {(["cash", "upi"] as const).map((m) => (
+                    <Chip key={m} selected={refundMethod === m} onClick={() => setRefundMethod(m)}>
+                      {m.toUpperCase()}
+                    </Chip>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-[var(--color-muted)]">
+                  A cash refund is subtracted from what&apos;s expected when this shift closes, so the till still
+                  balances.
+                </p>
+              </fieldset>
+            )}
 
             <label className="flex items-center gap-2 text-sm font-semibold">
               <input

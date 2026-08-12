@@ -39,7 +39,7 @@ export default function StockAllocationPage() {
   }, [version]);
 
   const { run, busy, error, clearError } = useAction();
-  const [moving, setMoving] = useState<{ skuId: string; code: string } | null>(null);
+  const [moving, setMoving] = useState<{ skuType: "product" | "sticker"; skuId: string; code: string } | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [qty, setQty] = useState("1");
@@ -50,8 +50,28 @@ export default function StockAllocationPage() {
     return m;
   }, [allStock.data]);
 
-  const designs = catalogue.data?.designs ?? [];
   const locs = locations.data ?? [];
+
+  // Both transfer types (stickers) and product SKUs (apparel) live on the
+  // same per-location stall_stock table — the matrix has to show both, or an
+  // admin has no way to move apparel between the warehouse and a stall at all.
+  const items = useMemo(() => {
+    const colorById = new Map((catalogue.data?.colors ?? []).map((c) => [c.id, c.name]));
+    const fitById = new Map((catalogue.data?.fits ?? []).map((f) => [f.id, f.name]));
+    const designItems = (catalogue.data?.designs ?? []).map((d) => ({
+      id: d.id,
+      type: "sticker" as const,
+      code: d.code,
+      name: d.name,
+    }));
+    const skuItems = (catalogue.data?.skus ?? []).map((s) => ({
+      id: s.id,
+      type: "product" as const,
+      code: s.sku_code,
+      name: [colorById.get(s.color_id), fitById.get(s.fit_id), s.size].filter(Boolean).join(" · "),
+    }));
+    return [...skuItems, ...designItems];
+  }, [catalogue.data]);
 
   const doTransfer = async () => {
     if (!moving) return;
@@ -59,7 +79,7 @@ export default function StockAllocationPage() {
       getBackend().transferStock({
         from_location_id: from,
         to_location_id: to,
-        sku_type: "sticker",
+        sku_type: moving.skuType,
         sku_id: moving.skuId,
         qty: Number(qty) || 0,
         actor: "admin",
@@ -87,8 +107,8 @@ export default function StockAllocationPage() {
 
       {allStock.loading || catalogue.loading ? (
         <Skeleton className="h-72" />
-      ) : designs.length === 0 ? (
-        <EmptyState headline="No transfers in the catalogue" teach="Add designs on the Catalogue page before allocating stock." />
+      ) : items.length === 0 ? (
+        <EmptyState headline="Nothing in the catalogue yet" teach="Add transfers or product SKUs on the Catalogue page before allocating stock." />
       ) : (
         <Panel title="Transfers by location">
           <ScrollX>
@@ -110,16 +130,19 @@ export default function StockAllocationPage() {
                 </tr>
               </thead>
               <tbody>
-                {designs.map((d) => {
-                  const total = locs.reduce((n, l) => n + (byKey.get(`${l.id}|${d.id}`) ?? 0), 0);
+                {items.map((item) => {
+                  const total = locs.reduce((n, l) => n + (byKey.get(`${l.id}|${item.id}`) ?? 0), 0);
                   return (
-                    <tr key={d.id} className="border-b border-[var(--color-line)]">
+                    <tr key={`${item.type}:${item.id}`} className="border-b border-[var(--color-line)]">
                       <th scope="row" className="py-2.5 pr-4 text-left font-normal">
-                        <span className="font-[family-name:var(--font-mono)] font-bold">{d.code}</span>
-                        <span className="ml-2 text-[var(--color-muted)]">{d.name}</span>
+                        <span className="font-[family-name:var(--font-mono)] font-bold">{item.code}</span>
+                        <span className="ml-2 text-[var(--color-muted)]">{item.name}</span>
+                        <span className="ml-2 rounded bg-[var(--color-cream)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
+                          {item.type === "product" ? "Apparel" : "Transfer"}
+                        </span>
                       </th>
                       {locs.map((l) => {
-                        const q = byKey.get(`${l.id}|${d.id}`) ?? 0;
+                        const q = byKey.get(`${l.id}|${item.id}`) ?? 0;
                         return (
                           <td
                             key={l.id}
@@ -140,7 +163,7 @@ export default function StockAllocationPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            setMoving({ skuId: d.id, code: d.code });
+                            setMoving({ skuType: item.type, skuId: item.id, code: item.code });
                             setFrom(locs.find((l) => l.is_warehouse)?.id ?? "");
                             setTo(locs.find((l) => !l.is_warehouse)?.id ?? "");
                             setQty("1");

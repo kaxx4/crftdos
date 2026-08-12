@@ -12,7 +12,11 @@ export async function POST(req: NextRequest) {
 
   const admin = supabaseAdmin();
 
-  const { data: shiftRow } = await admin.from("stall_shifts").select("opening_float").eq("id", shift_id).single();
+  const { data: shiftRow } = await admin
+    .from("stall_shifts")
+    .select("opening_float, environment_id, opened_at")
+    .eq("id", shift_id)
+    .single();
   if (!shiftRow) return NextResponse.json({ error: "Shift not found." }, { status: 404 });
 
   const { data: orders } = await admin
@@ -21,13 +25,27 @@ export async function POST(req: NextRequest) {
     .eq("shift_id", shift_id)
     .is("voided_at", null);
 
+  // Cash refunds during this shift leave the till legitimately short —
+  // stall_returns has no shift_id (the sale being returned may be from an
+  // earlier shift), so this is attributed by when the refund happened
+  // within this shift's own open window, not which shift the original
+  // order was on.
+  const { data: refunds } = await admin
+    .from("stall_returns")
+    .select("refund_amount")
+    .eq("environment_id", shiftRow.environment_id)
+    .eq("refund_method", "cash")
+    .gte("created_at", shiftRow.opened_at);
+  const cashRefunds = (refunds ?? []).reduce((sum, r) => sum + Number(r.refund_amount || 0), 0);
+
   const expectedCash =
     Number(shiftRow.opening_float ?? 0) +
     (orders ?? []).reduce((sum, o) => {
       if (o.payment_method === "cash") return sum + Number(o.total);
       if (o.payment_method === "split") return sum + Number(o.paid_cash || 0);
       return sum;
-    }, 0);
+    }, 0) -
+    cashRefunds;
 
   const variance = counted_cash != null ? Number(counted_cash) - expectedCash : null;
 

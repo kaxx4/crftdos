@@ -17,10 +17,12 @@ function PriceCostCell({
   value,
   onSave,
   busy,
+  label,
 }: {
   value: number;
   onSave: (n: number) => void;
   busy: boolean;
+  label: string;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? String(value);
@@ -39,8 +41,13 @@ function PriceCostCell({
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") {
+          setDraft(null);
+          (e.target as HTMLInputElement).blur();
+        }
       }}
       inputMode="decimal"
+      aria-label={label}
       className="min-h-[40px] w-24 rounded-md border-2 border-[var(--color-line)] bg-white px-2 text-sm font-[family-name:var(--font-mono)] tnum focus:border-[var(--color-blue)]"
     />
   );
@@ -192,10 +199,20 @@ export default function AdminPricingPage() {
                     <td className="py-2.5 pr-4">{fitName(s.fit_id)}</td>
                     <td className="py-2.5 pr-4">{s.size}</td>
                     <td className="py-2.5 pr-4">
-                      <PriceCostCell value={s.unit_cost} busy={busy} onSave={(n) => saveSku(s.id, "unit_cost", n)} />
+                      <PriceCostCell
+                        value={s.unit_cost}
+                        busy={busy}
+                        label={`Cost for ${s.sku_code}`}
+                        onSave={(n) => saveSku(s.id, "unit_cost", n)}
+                      />
                     </td>
                     <td className="py-2.5 pr-4">
-                      <PriceCostCell value={s.unit_price} busy={busy} onSave={(n) => saveSku(s.id, "unit_price", n)} />
+                      <PriceCostCell
+                        value={s.unit_price}
+                        busy={busy}
+                        label={`Price for ${s.sku_code}`}
+                        onSave={(n) => saveSku(s.id, "unit_price", n)}
+                      />
                     </td>
                     <td className="py-2.5 pr-4 font-[family-name:var(--font-mono)] font-bold tnum">
                       {money(s.unit_price - s.unit_cost)}
@@ -233,10 +250,20 @@ export default function AdminPricingPage() {
                     </th>
                     <td className="py-2.5 pr-4">{d.name}</td>
                     <td className="py-2.5 pr-4">
-                      <PriceCostCell value={d.unit_cost} busy={busy} onSave={(n) => saveDesign(d.id, "unit_cost", n)} />
+                      <PriceCostCell
+                        value={d.unit_cost}
+                        busy={busy}
+                        label={`Cost for ${d.code}`}
+                        onSave={(n) => saveDesign(d.id, "unit_cost", n)}
+                      />
                     </td>
                     <td className="py-2.5 pr-4">
-                      <PriceCostCell value={d.unit_price} busy={busy} onSave={(n) => saveDesign(d.id, "unit_price", n)} />
+                      <PriceCostCell
+                        value={d.unit_price}
+                        busy={busy}
+                        label={`Price for ${d.code}`}
+                        onSave={(n) => saveDesign(d.id, "unit_price", n)}
+                      />
                     </td>
                     <td className="py-2.5 pr-4 font-[family-name:var(--font-mono)] font-bold tnum">
                       {money(d.unit_price - d.unit_cost)}

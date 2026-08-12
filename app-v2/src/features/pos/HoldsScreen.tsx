@@ -97,7 +97,7 @@ export function HoldsScreen() {
       <Panel
         title={`Active holds${holds.data ? ` (${holds.data.length})` : ""}`}
         action={
-          <Button size="sm" variant="primary" onClick={() => setReserving(true)}>
+          <Button size="md" variant="primary" onClick={() => setReserving(true)}>
             Reserve for a customer
           </Button>
         }
@@ -141,7 +141,7 @@ export function HoldsScreen() {
                   </div>
                   <Button
                     variant="danger"
-                    size="sm"
+                    size="md"
                     busy={release.busy}
                     onClick={() => void doRelease(h.id)}
                   >

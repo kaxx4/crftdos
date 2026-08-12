@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     reason,
     action, // 'replace' | 'refund' | 'exchange' | 'reject'
     refund_amount: refundAmount,
+    refund_method: refundMethod,
     resaleable,
     approver_pin: approverPin,
     note,
@@ -40,6 +41,9 @@ export async function POST(req: NextRequest) {
 
   if (!environmentId || !originalOrderId || !reason || !action) {
     return NextResponse.json({ error: "environment_id, original_order_id, reason, action required" }, { status: 400 });
+  }
+  if (refundAmount && !refundMethod) {
+    return NextResponse.json({ error: "refund_method is required when refund_amount is set" }, { status: 400 });
   }
 
   const admin = supabaseAdmin();
@@ -131,6 +135,7 @@ export async function POST(req: NextRequest) {
       reason,
       action,
       refund_amount: refundAmount || 0,
+      refund_method: refundAmount ? refundMethod || null : null,
       restocked: !!resaleable,
       note: note || null,
     })

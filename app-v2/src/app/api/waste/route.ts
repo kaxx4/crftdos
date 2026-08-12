@@ -54,6 +54,12 @@ export async function POST(req: NextRequest) {
   // Decrement stock from the acting device's own environment's allocation —
   // same environment-scoped stock model migration 009 established for every
   // other adjusting reason.
+  // "A successful call with zero rows means refused, not fine" — the adjust
+  // RPCs refuse silently (empty result set) rather than throwing when the
+  // decrement would take stock negative. Ignoring that result would let a
+  // waste log claim stock moved when `stall_stock` never actually changed,
+  // corrupting the ledger with no error surfaced anywhere.
+  let stockWarning: string | undefined;
   if ((stickerId && stickerQty > 0) || (productSkuId && productQty > 0)) {
     const { data: loc } = await admin
       .from("stall_stock_locations")
@@ -63,33 +69,51 @@ export async function POST(req: NextRequest) {
       .single();
     if (loc) {
       if (stickerId && stickerQty > 0) {
-        await admin.rpc("stall_adjust_sticker_stock", { p_id: stickerId, p_delta: -stickerQty, p_location_id: loc.id });
-        await admin.from("stall_inventory_movements").insert({
-          sku_type: "sticker",
-          sku_id: stickerId,
-          delta: -stickerQty,
-          reason: "damage",
-          note: `waste: ${reason}`,
-          actor: "volunteer",
-          environment_id: environmentId,
-          location_id: loc.id,
+        const { data: adjusted } = await admin.rpc("stall_adjust_sticker_stock", {
+          p_id: stickerId,
+          p_delta: -stickerQty,
+          p_location_id: loc.id,
         });
+        const row = Array.isArray(adjusted) ? adjusted[0] : adjusted;
+        if (!row) {
+          stockWarning = "Logged, but stock could not be decremented (insufficient stock on hand).";
+        } else {
+          await admin.from("stall_inventory_movements").insert({
+            sku_type: "sticker",
+            sku_id: stickerId,
+            delta: -stickerQty,
+            reason: "damage",
+            note: `waste: ${reason}`,
+            actor: "volunteer",
+            environment_id: environmentId,
+            location_id: loc.id,
+          });
+        }
       }
       if (productSkuId && productQty > 0) {
-        await admin.rpc("stall_adjust_product_stock", { p_id: productSkuId, p_delta: -productQty, p_location_id: loc.id });
-        await admin.from("stall_inventory_movements").insert({
-          sku_type: "product",
-          sku_id: productSkuId,
-          delta: -productQty,
-          reason: "damage",
-          note: `waste: ${reason}`,
-          actor: "volunteer",
-          environment_id: environmentId,
-          location_id: loc.id,
+        const { data: adjusted } = await admin.rpc("stall_adjust_product_stock", {
+          p_id: productSkuId,
+          p_delta: -productQty,
+          p_location_id: loc.id,
         });
+        const row = Array.isArray(adjusted) ? adjusted[0] : adjusted;
+        if (!row) {
+          stockWarning = "Logged, but stock could not be decremented (insufficient stock on hand).";
+        } else {
+          await admin.from("stall_inventory_movements").insert({
+            sku_type: "product",
+            sku_id: productSkuId,
+            delta: -productQty,
+            reason: "damage",
+            note: `waste: ${reason}`,
+            actor: "volunteer",
+            environment_id: environmentId,
+            location_id: loc.id,
+          });
+        }
       }
     }
   }
 
-  return NextResponse.json({ log });
+  return NextResponse.json({ log, ...(stockWarning ? { warning: stockWarning } : {}) });
 }

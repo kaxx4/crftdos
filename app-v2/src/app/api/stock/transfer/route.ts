@@ -48,5 +48,10 @@ export async function POST(req: NextRequest) {
     admin.from("stall_stock").select("*").eq("location_id", to_location_id).eq("sku_type", sku_type).eq("sku_id", sku_id).single(),
   ]);
 
-  return NextResponse.json({ from, to });
+  // Not hold-netted — this response confirms the physical move, same as the
+  // mock's equivalent. Callers re-fetch getStock for a netted display.
+  return NextResponse.json({
+    from: from ? { ...from, available_qty: from.qty } : from,
+    to: to ? { ...to, available_qty: to.qty } : to,
+  });
 }

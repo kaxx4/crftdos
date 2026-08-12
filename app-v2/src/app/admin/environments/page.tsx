@@ -26,6 +26,7 @@ export default function EnvironmentsPage() {
   const [name, setName] = useState("");
   const [prefix, setPrefix] = useState("");
   const [kind, setKind] = useState<EnvironmentKind>("stall");
+  const [closing, setClosing] = useState<string | null>(null);
 
   const create = async () => {
     const res = await run(() => getBackend().createEnvironment({ name, prefix, kind }));
@@ -39,7 +40,10 @@ export default function EnvironmentsPage() {
 
   const close = async (id: string) => {
     const res = await run(() => getBackend().closeEnvironment(id));
-    if (res) void environments.reload();
+    if (res) {
+      setClosing(null);
+      void environments.reload();
+    }
   };
 
   return (
@@ -81,9 +85,24 @@ export default function EnvironmentsPage() {
               </p>
               {e.notes && <p className="mt-2 text-sm">{e.notes}</p>}
               {e.is_active && e.kind !== "cloud" && (
-                <Button size="sm" variant="ghost" className="mt-3" busy={busy} onClick={() => close(e.id)}>
-                  Close this stall
-                </Button>
+                closing === e.id ? (
+                  <Banner tone="danger" title="Close this stall?" className="mt-3">
+                    This is blocked while stock is still allocated to it — you&apos;ll need to transfer stock back
+                    first if so. Closing stops sales from this stall.
+                    <div className="mt-2 flex gap-2">
+                      <Button size="sm" variant="danger" busy={busy} onClick={() => close(e.id)}>
+                        Yes, close it
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setClosing(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </Banner>
+                ) : (
+                  <Button size="sm" variant="ghost" className="mt-3" onClick={() => setClosing(e.id)}>
+                    Close this stall
+                  </Button>
+                )
               )}
             </Panel>
           ))}

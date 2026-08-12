@@ -91,13 +91,20 @@ export function StockScreen() {
                   <span className="ml-2 text-sm">{design!.name}</span>
                   <span className="block text-xs text-[var(--color-muted)]">{design!.bin_location}</span>
                 </span>
-                <span
-                  className={clsx(
-                    "font-[family-name:var(--font-mono)] text-lg font-bold tnum",
-                    row.qty === 0 ? "text-[var(--color-signal)]" : row.qty <= row.par_level && "text-[var(--color-signal)]"
+                <span className="text-right">
+                  <span
+                    className={clsx(
+                      "font-[family-name:var(--font-mono)] text-lg font-bold tnum",
+                      row.qty === 0 ? "text-[var(--color-signal)]" : row.qty <= row.par_level && "text-[var(--color-signal)]"
+                    )}
+                  >
+                    {row.qty}
+                  </span>
+                  {row.available_qty < row.qty && (
+                    <span className="block text-xs text-[var(--color-muted)]">
+                      {row.qty - row.available_qty} held · {row.available_qty} sellable
+                    </span>
                   )}
-                >
-                  {row.qty}
                 </span>
               </li>
             ))}

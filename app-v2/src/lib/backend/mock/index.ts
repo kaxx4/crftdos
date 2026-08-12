@@ -180,7 +180,16 @@ export class MockBackend implements Backend {
 
   async getStock(locationId: string): Promise<Result<StockRow[]>> {
     await latency(50);
-    return ok(Object.values(getState().stock).filter((r) => r.location_id === locationId));
+    const loc = stockLocations.find((l) => l.id === locationId);
+    const rows = Object.values(getState().stock).filter((r) => r.location_id === locationId);
+    return ok(
+      rows.map((r) => ({
+        ...r,
+        available_qty: loc?.environment_id
+          ? Math.max(0, r.qty - activeHoldQty(r.sku_type, r.sku_id, loc.environment_id))
+          : r.qty,
+      }))
+    );
   }
 
   async transferStock(input: {
@@ -213,7 +222,9 @@ export class MockBackend implements Backend {
       });
       from.qty -= input.qty;
       to.qty += input.qty;
-      return ok({ from: { ...from }, to: { ...to } });
+      // Not hold-netted here — this response confirms the physical move, the
+      // same shape getStock's callers already re-fetch for a netted display.
+      return ok({ from: { ...from, available_qty: from.qty }, to: { ...to, available_qty: to.qty } });
     });
   }
 
@@ -474,9 +485,24 @@ export class MockBackend implements Backend {
       const shift = s.shifts.find((x) => x.id === input.shift_id);
       if (!shift) return err<Shift>("Shift not found.", "not_found");
       const orders = s.orders.filter((o) => o.shift_id === shift.id && !o.voided_at);
+      // Cash refunds during this shift leave the till legitimately short —
+      // ignoring them made a volunteer's correct count read as an
+      // unexplained variance. stall_returns has no shift_id (the original
+      // sale being returned may belong to an earlier shift entirely), so
+      // this is attributed by when the refund happened, not which shift the
+      // original order was on — the till was open, that's what matters.
+      const cashRefunds = s.returns
+        .filter(
+          (r) =>
+            r.refund_method === "cash" &&
+            r.environment_id === shift.environment_id &&
+            r.created_at >= shift.opened_at
+        )
+        .reduce((n, r) => n + r.refund_amount, 0);
       const expected =
         shift.opening_float +
-        orders.reduce((n, o) => n + (o.payment_method === "cash" ? o.total : o.paid_cash), 0);
+        orders.reduce((n, o) => n + (o.payment_method === "cash" ? o.total : o.paid_cash), 0) -
+        cashRefunds;
       shift.counted_cash = input.counted_cash;
       shift.expected_cash = expected;
       shift.variance = input.counted_cash - expected;
@@ -857,6 +883,9 @@ export class MockBackend implements Backend {
   async createReturn(input: CreateReturnInput): Promise<Result<Return>> {
     await latency(120);
     if (!input.approver_pin) return err("Approver PIN required.", "unauthorised");
+    if (input.refund_amount && !input.refund_method) {
+      return err("refund_method is required when refund_amount is set.", "conflict");
+    }
 
     const original = getState().orders.find((o) => o.id === input.original_order_id);
     if (!original) return err("Original order not found.", "not_found");
@@ -949,6 +978,7 @@ export class MockBackend implements Backend {
         reason: input.reason,
         action: input.action,
         refund_amount: input.refund_amount ?? 0,
+        refund_method: input.refund_amount ? (input.refund_method ?? null) : null,
         restocked: !!input.resaleable,
         note: input.note ?? null,
         created_at: now(),

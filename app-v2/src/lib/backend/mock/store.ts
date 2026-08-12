@@ -28,10 +28,15 @@ import { designs, environments, skus, stockLocations, stockSplit, templates } fr
 const KEY = "stallos.mock.v1";
 const CHANNEL = "stallos.mock.changed";
 
+/** Stored form — `available_qty` (on-hand minus active holds) is derived at
+ *  read time, not stored, since it changes as holds come and go without any
+ *  write to the stock row itself. */
+export type StockCell = Omit<StockRow, "available_qty">;
+
 export type MockState = {
   environments: Environment[];
   templates: Template[];
-  stock: Record<string, StockRow>;
+  stock: Record<string, StockCell>;
   orders: Order[];
   shifts: Shift[];
   blocks: ReceiptBlock[];
@@ -55,7 +60,7 @@ function stockKey(locationId: string, skuType: "product" | "sticker", skuId: str
 export { stockKey };
 
 function initialState(): MockState {
-  const stock: Record<string, StockRow> = {};
+  const stock: Record<string, StockCell> = {};
   for (const loc of stockLocations) {
     const share = stockSplit[loc.id] ?? 0;
     for (const d of designs) {

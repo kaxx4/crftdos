@@ -126,7 +126,7 @@ export default function B2bPage() {
       : margin < 10
         ? "border-[var(--color-signal)] bg-[var(--color-signal-wash)]"
         : margin < 15
-          ? "border-[var(--color-warn,var(--color-signal))] bg-[var(--color-signal-wash)]"
+          ? "border-[var(--color-signal)] bg-[var(--color-signal-wash)]"
           : "border-[var(--color-teal)] bg-[color-mix(in_srgb,var(--color-teal)_10%,white)]";
 
   return (

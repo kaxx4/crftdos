@@ -98,6 +98,12 @@ export type StockRow = {
   sku_id: string;
   qty: number;
   par_level: number;
+  /** On-hand minus every active named hold against this SKU at this
+   *  location's environment. `qty` alone overstates what's actually
+   *  sellable — the kiosk path already nets this via getKioskCatalogue;
+   *  StockScreen/WalkUpSale must too, or a volunteer can be told something
+   *  is available when a customer already has it held. */
+  available_qty: number;
 };
 
 // ─── Catalogue ──────────────────────────────────────────────────────────────
@@ -385,6 +391,11 @@ export type Return = {
   reason: string;
   action: ReturnAction;
   refund_amount: number;
+  /** How refund_amount left the till — null when there's no refund (replace/
+   *  exchange/reject). A cash refund makes the till legitimately short by
+   *  this much; shift close subtracts it from expected cash so a correct
+   *  count doesn't read as an unexplained variance. */
+  refund_method: PaymentMethod | null;
   restocked: boolean;
   note: string | null;
   created_at: string;

@@ -30,10 +30,12 @@ import { clsx } from "@/components/clsx";
 /** `ProductSku.stock_qty`/`StickerDesign.stock_qty` are an org-wide total
  *  (a DB trigger sums every location, warehouse included) — showing that on
  *  a walk-up sale would tell a volunteer at Stall A that Stall B's stock is
- *  theirs to sell. Overlaid with this stall's own `stall_stock` allocation,
- *  the same source `StockScreen` reads, before anything renders. */
+ *  theirs to sell. Overlaid with `available_qty` (this stall's own
+ *  `stall_stock` allocation, minus every active named hold against it) —
+ *  `qty` alone would still overstate what's sellable: a volunteer could be
+ *  sold out from under a customer who already has some of it on hold. */
 function atThisStall<T extends { id: string }>(items: T[], stock: StockRow[], skuType: "product" | "sticker"): (T & { stock_qty: number })[] {
-  const byId = new Map(stock.filter((r) => r.sku_type === skuType).map((r) => [r.sku_id, r.qty]));
+  const byId = new Map(stock.filter((r) => r.sku_type === skuType).map((r) => [r.sku_id, r.available_qty]));
   return items.map((item) => ({ ...item, stock_qty: byId.get(item.id) ?? 0 }));
 }
 
