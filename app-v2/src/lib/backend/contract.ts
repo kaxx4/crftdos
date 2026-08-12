@@ -25,6 +25,8 @@
  *     models refusal explicitly rather than letting it be an absent value. */
 
 import type {
+  B2bOrder,
+  B2bStage,
   Color,
   DesignPayload,
   Environment,
@@ -36,11 +38,17 @@ import type {
   PaymentMethod,
   ProductSku,
   ReceiptBlock,
+  RestockItem,
+  Return,
+  ReturnAction,
   Shift,
   StickerDesign,
   StockLocation,
   StockRow,
   Template,
+  Volunteer,
+  WasteEntry,
+  WasteReason,
 } from "../domain/types";
 
 /** Explicit success/failure rather than throwing. A stock refusal is an
@@ -114,6 +122,70 @@ export type AnalyticsSummary = {
 };
 
 export type FunnelStep = { stage: string; sessions: number };
+
+export type CreateReturnInput = {
+  environment_id: string;
+  original_order_id: string;
+  reason: string;
+  action: ReturnAction;
+  /** Required — any return needs admin approval (PRD's "approved_by" intent). */
+  approver_pin: string;
+  refund_amount?: number;
+  /** Items coming back into stock, restocked only when `resaleable` is set. */
+  resaleable?: boolean;
+  restock_items?: RestockItem[];
+  note?: string | null;
+  shift_id?: string | null;
+  device_id?: string;
+  /** For action:'exchange' — the replacement item. Creates a linked
+   *  zero-value order so inventory moves without inflating revenue. */
+  exchange_item?: { product_sku_id: string; qty: number; unit_price: number; unit_cost: number } | null;
+};
+
+export type LogWasteInput = {
+  environment_id: string;
+  shift_id?: string | null;
+  sticker_id?: string | null;
+  sticker_qty?: number;
+  product_sku_id?: string | null;
+  product_qty?: number;
+  reason: WasteReason;
+  note?: string | null;
+};
+
+export type CreateB2bOrderInput = {
+  client_org: string;
+  /** A `stall_volunteers.id` — every B2B deal needs one accountable person,
+   *  picked from the volunteer roster, not typed free text. */
+  account_owner: string;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  quantity: number;
+  unit_price: number;
+  unit_cost: number;
+  /** Required only when the computed margin is below 10% (D17). */
+  admin_pin?: string;
+};
+
+export type UpdateB2bOrderInput = Partial<{
+  stage: B2bStage;
+  deposit_amount: number;
+  deposit_date: string | null;
+  deposit_method: PaymentMethod | null;
+  balance_amount: number;
+  balance_date: string | null;
+  balance_method: PaymentMethod | null;
+  promised_date: string | null;
+  dispatched_date: string | null;
+  lost_reason: string | null;
+  notes: string | null;
+}>;
+
+export type BulkOrderItem = { product_sku_id?: string | null; qty: number; unit_price: number; unit_cost: number };
+
+export type SetPricingInput = { type: "product" | "sticker"; id: string; unit_price?: number; unit_cost?: number };
+export type BulkSetPricingInput = { fit_name: string; unit_price?: number; unit_cost?: number };
 
 export type InteractionAnalytics = {
   sessions: number;
@@ -202,6 +274,41 @@ export interface Backend {
   // [008] Batched, never per-pointer-move. See the volume warning in the
   // requirements doc — this is a publicly-writable unauthenticated insert.
   logEvents(events: KioskEvent[]): Promise<Result<void>>;
+
+  // Returns [PRD §3.5]
+  listReturns(opts?: { environment_id?: string; limit?: number }): Promise<Result<Return[]>>;
+  createReturn(input: CreateReturnInput): Promise<Result<Return>>;
+
+  // Waste
+  listWaste(opts?: { environment_id?: string; limit?: number }): Promise<Result<WasteEntry[]>>;
+  logWaste(input: LogWasteInput): Promise<Result<WasteEntry>>;
+
+  // Holds management — list only. Reservation is `reserveSticker` above;
+  // release is `releaseHold` above.
+  listHolds(environmentId: string): Promise<Result<Hold[]>>;
+
+  // B2B [org-wide — NOT environment-scoped, migration 004.2]
+  listB2bOrders(): Promise<Result<{ orders: B2bOrder[]; volunteers: Volunteer[]; committed: number; collected: number }>>;
+  /** D17 margin gate: <10% requires `admin_pin`, <0% is hard-blocked. */
+  createB2bOrder(input: CreateB2bOrderInput): Promise<Result<{ order: B2bOrder; margin: number }>>;
+  updateB2bOrder(id: string, patch: UpdateB2bOrderInput): Promise<Result<B2bOrder>>;
+
+  // Bulk entry — retrospective admin-entered orders (DM sales, forgotten till entries)
+  createBulkOrder(input: {
+    items: BulkOrderItem[];
+    payment_method?: PaymentMethod;
+    note?: string | null;
+  }): Promise<Result<{ order: Order; warning?: string; failed?: string[] }>>;
+
+  // Admin pricing — prices SNAPSHOT onto order lines at sale time, so editing
+  // here never rewrites history, only what future sales charge.
+  setSkuPricing(input: SetPricingInput): Promise<Result<ProductSku | StickerDesign>>;
+  bulkSetPricingByFit(input: BulkSetPricingInput): Promise<Result<void>>;
+
+  // Press queue — PRD §4.4's multi-order batch view: everything prepped and
+  // not yet pressed, oldest first, with the item/sticker relations the press
+  // sheet render needs.
+  getPressQueue(environmentId?: string): Promise<Result<Order[]>>;
 
   // Settings
   getSettings(): Promise<Result<Record<string, unknown>>>;

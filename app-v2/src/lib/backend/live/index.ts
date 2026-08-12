@@ -9,25 +9,38 @@
 import {
   type AnalyticsSummary,
   type Backend,
+  type BulkOrderItem,
   type Catalogue,
+  type CreateB2bOrderInput,
   type CreateOrderInput,
+  type CreateReturnInput,
   type ErrorCode,
   type InteractionAnalytics,
+  type LogWasteInput,
   type Result,
+  type SetPricingInput,
+  type BulkSetPricingInput,
   type ShiftContext,
+  type UpdateB2bOrderInput,
   err,
   ok,
 } from "../contract";
 import type {
+  B2bOrder,
   Environment,
   Hold,
   KioskDesign,
   KioskEvent,
   Order,
+  ProductSku,
+  Return,
   Shift,
+  StickerDesign,
   StockLocation,
   StockRow,
   Template,
+  Volunteer,
+  WasteEntry,
 } from "../../domain/types";
 
 const KNOWN_CODES = new Set<ErrorCode>([
@@ -328,6 +341,93 @@ export class LiveBackend implements Backend {
     if (!events.length) return ok(undefined);
     const r = await call<{ ok: true }>("/api/events", { method: "POST", body: JSON.stringify({ events }) });
     return r.ok ? ok(undefined) : r;
+  }
+
+  // ── Returns ──────────────────────────────────────────────────────────────
+
+  async listReturns(opts?: { environment_id?: string; limit?: number }): Promise<Result<Return[]>> {
+    const qs = new URLSearchParams();
+    if (opts?.environment_id) qs.set("environment_id", opts.environment_id);
+    if (opts?.limit) qs.set("limit", String(opts.limit));
+    const r = await call<{ returns: Return[] }>(`/api/returns?${qs.toString()}`);
+    return r.ok ? ok(r.data.returns) : r;
+  }
+
+  async createReturn(input: CreateReturnInput): Promise<Result<Return>> {
+    const r = await call<{ return: Return }>("/api/returns", { method: "POST", body: JSON.stringify(input) });
+    return r.ok ? ok(r.data.return) : r;
+  }
+
+  // ── Waste ────────────────────────────────────────────────────────────────
+
+  async listWaste(opts?: { environment_id?: string; limit?: number }): Promise<Result<WasteEntry[]>> {
+    const qs = new URLSearchParams();
+    if (opts?.environment_id) qs.set("environment_id", opts.environment_id);
+    if (opts?.limit) qs.set("limit", String(opts.limit));
+    const r = await call<{ waste: WasteEntry[] }>(`/api/waste?${qs.toString()}`);
+    return r.ok ? ok(r.data.waste) : r;
+  }
+
+  async logWaste(input: LogWasteInput): Promise<Result<WasteEntry>> {
+    const r = await call<{ log: WasteEntry }>("/api/waste", { method: "POST", body: JSON.stringify(input) });
+    return r.ok ? ok(r.data.log) : r;
+  }
+
+  // ── Holds management ─────────────────────────────────────────────────────
+
+  async listHolds(environmentId: string): Promise<Result<Hold[]>> {
+    const r = await call<{ holds: Hold[] }>(`/api/holds?environment_id=${encodeURIComponent(environmentId)}`);
+    return r.ok ? ok(r.data.holds) : r;
+  }
+
+  // ── B2B [org-wide, not environment-scoped] ──────────────────────────────
+
+  async listB2bOrders(): Promise<
+    Result<{ orders: B2bOrder[]; volunteers: Volunteer[]; committed: number; collected: number }>
+  > {
+    return call("/api/admin/b2b");
+  }
+
+  async createB2bOrder(input: CreateB2bOrderInput): Promise<Result<{ order: B2bOrder; margin: number }>> {
+    return call("/api/admin/b2b", { method: "POST", body: JSON.stringify(input) });
+  }
+
+  async updateB2bOrder(id: string, patch: UpdateB2bOrderInput): Promise<Result<B2bOrder>> {
+    const r = await call<{ order: B2bOrder }>(`/api/admin/b2b/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+    return r.ok ? ok(r.data.order) : r;
+  }
+
+  // ── Bulk entry ───────────────────────────────────────────────────────────
+
+  async createBulkOrder(input: {
+    items: BulkOrderItem[];
+    payment_method?: import("../../domain/types").PaymentMethod;
+    note?: string | null;
+  }): Promise<Result<{ order: Order; warning?: string; failed?: string[] }>> {
+    return call("/api/admin/bulk", { method: "POST", body: JSON.stringify(input) });
+  }
+
+  // ── Admin pricing ────────────────────────────────────────────────────────
+
+  async setSkuPricing(input: SetPricingInput): Promise<Result<ProductSku | StickerDesign>> {
+    const r = await call<{ row: ProductSku | StickerDesign }>("/api/admin/pricing", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+    return r.ok ? ok(r.data.row) : r;
+  }
+
+  async bulkSetPricingByFit(input: BulkSetPricingInput): Promise<Result<void>> {
+    const r = await call<{ ok: true }>("/api/admin/pricing/bulk", { method: "PATCH", body: JSON.stringify(input) });
+    return r.ok ? ok(undefined) : r;
+  }
+
+  // ── Press queue ──────────────────────────────────────────────────────────
+
+  async getPressQueue(environmentId?: string): Promise<Result<Order[]>> {
+    const qs = environmentId ? `?environment_id=${encodeURIComponent(environmentId)}` : "";
+    const r = await call<{ orders: Order[] }>(`/api/orders/press-queue${qs}`);
+    return r.ok ? ok(r.data.orders) : r;
   }
 
   // ── Settings ─────────────────────────────────────────────────────────────

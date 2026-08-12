@@ -19,15 +19,23 @@
 import {
   type AnalyticsSummary,
   type Backend,
+  type BulkOrderItem,
+  type BulkSetPricingInput,
   type Catalogue,
+  type CreateB2bOrderInput,
   type CreateOrderInput,
+  type CreateReturnInput,
   type InteractionAnalytics,
+  type LogWasteInput,
   type Result,
+  type SetPricingInput,
   type ShiftContext,
+  type UpdateB2bOrderInput,
   err,
   ok,
 } from "../contract";
 import type {
+  B2bOrder,
   Environment,
   Hold,
   KioskDesign,
@@ -35,10 +43,15 @@ import type {
   Order,
   OrderItem,
   OrderSticker,
+  ProductSku,
+  Return,
   Shift,
+  StickerDesign,
   StockLocation,
   StockRow,
   Template,
+  Volunteer,
+  WasteEntry,
 } from "../../domain/types";
 import { currentFY, formatReceiptNo } from "../../money";
 import { colors, designs, fits, skus, stockLocations } from "./seed";
@@ -784,6 +797,398 @@ export class MockBackend implements Backend {
       if (s.events.length > 5000) s.events = s.events.slice(-5000);
       return ok(undefined);
     });
+  }
+
+  // ── Returns [PRD §3.5] ───────────────────────────────────────────────────
+
+  async listReturns(opts?: { environment_id?: string; limit?: number }): Promise<Result<Return[]>> {
+    await latency(50);
+    let list = [...getState().returns].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    if (opts?.environment_id) list = list.filter((r) => r.environment_id === opts.environment_id);
+    return ok(list.slice(0, opts?.limit ?? 50));
+  }
+
+  async createReturn(input: CreateReturnInput): Promise<Result<Return>> {
+    await latency(120);
+    if (!input.approver_pin) return err("Approver PIN required.", "unauthorised");
+
+    const original = getState().orders.find((o) => o.id === input.original_order_id);
+    if (!original) return err("Original order not found.", "not_found");
+
+    const loc = locationForEnvironment(original.environment_id);
+
+    return mutate((s) => {
+      let replacementOrderId: string | null = null;
+
+      // 'exchange' creates a linked ZERO-VALUE replacement order so inventory
+      // moves correctly without inflating revenue (PRD §3.5).
+      if (input.action === "exchange" && input.exchange_item) {
+        const ex = input.exchange_item;
+        const sku = skus.find((x) => x.id === ex.product_sku_id);
+        if (!sku) return err<Return>("Exchange item not found.", "not_found");
+        if (!loc) return err<Return>("No stock location for this order's environment.", "not_found");
+        const available = qtyAt(loc.id, "product", ex.product_sku_id);
+        if (available < ex.qty) {
+          return err<Return>("Exchange item is out of stock.", "out_of_stock");
+        }
+        s.stock[stockKey(loc.id, "product", ex.product_sku_id)].qty -= ex.qty;
+
+        s.seq[original.environment_id] = (s.seq[original.environment_id] ?? 0) + 1;
+        const item: OrderItem = {
+          id: uid("oi"),
+          product_sku_id: sku.id,
+          sku_code: sku.sku_code,
+          size: sku.size,
+          color_name: colors.find((c) => c.id === sku.color_id)?.name ?? null,
+          fit_name: fits.find((f) => f.id === sku.fit_id)?.name ?? null,
+          qty: ex.qty,
+          unit_price: 0,
+          unit_cost: ex.unit_cost,
+          line_total: 0,
+          stickers: [],
+        };
+        const replacement: Order = {
+          id: uid("order"),
+          order_no: s.seq[original.environment_id],
+          receipt_no: null,
+          shift_id: input.shift_id ?? original.shift_id,
+          environment_id: original.environment_id,
+          channel: "other",
+          design_ticket: null,
+          customer_name: original.customer_name,
+          customer_phone: original.customer_phone,
+          subtotal: 0,
+          discount_amount: 0,
+          discount_reason: null,
+          discount_note: null,
+          total: 0,
+          cost_total: item.unit_cost * item.qty,
+          manual_override: false,
+          payment_method: "pending",
+          paid_cash: 0,
+          paid_upi: 0,
+          payment_ref: null,
+          fulfillment_status: "pending_press",
+          promised_date: null,
+          prepped_at: null,
+          pressed_at: null,
+          collected_at: null,
+          affects_inventory: true,
+          notes: `Replacement for ${original.receipt_no ?? original.id} — ${input.reason}`,
+          client_created_at: now(),
+          created_at: now(),
+          device_id: input.device_id ?? "returns",
+          voided_at: null,
+          void_reason: null,
+          items: [item],
+        };
+        s.orders.unshift(replacement);
+        replacementOrderId = replacement.id;
+      }
+
+      // Restock what's coming back, if marked resaleable.
+      if (input.resaleable && loc && input.restock_items?.length) {
+        for (const r of input.restock_items) {
+          const key = stockKey(loc.id, r.sku_type, r.sku_id);
+          const row = (s.stock[key] ??= { location_id: loc.id, sku_type: r.sku_type, sku_id: r.sku_id, qty: 0, par_level: 0 });
+          row.qty += r.qty;
+        }
+      }
+
+      const ret: Return = {
+        id: uid("ret"),
+        environment_id: input.environment_id,
+        original_order: input.original_order_id,
+        replacement_order: replacementOrderId,
+        reason: input.reason,
+        action: input.action,
+        refund_amount: input.refund_amount ?? 0,
+        restocked: !!input.resaleable,
+        note: input.note ?? null,
+        created_at: now(),
+      };
+      s.returns.unshift(ret);
+      return ok(ret);
+    });
+  }
+
+  // ── Waste ────────────────────────────────────────────────────────────────
+
+  async listWaste(opts?: { environment_id?: string; limit?: number }): Promise<Result<WasteEntry[]>> {
+    await latency(50);
+    let list = [...getState().waste].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    if (opts?.environment_id) list = list.filter((w) => w.environment_id === opts.environment_id);
+    return ok(list.slice(0, opts?.limit ?? 50));
+  }
+
+  async logWaste(input: LogWasteInput): Promise<Result<WasteEntry>> {
+    await latency(90);
+    if (!input.sticker_id && !input.product_sku_id) {
+      return err("A sticker or product is required.", "conflict");
+    }
+    const loc = locationForEnvironment(input.environment_id);
+    return mutate((s) => {
+      // Waste is decremented from the acting device's own environment's
+      // stock allocation, same as everywhere else stock-adjusting reasons
+      // are environment-scoped (migration 009).
+      if (input.sticker_id && (input.sticker_qty ?? 0) > 0 && loc) {
+        const key = stockKey(loc.id, "sticker", input.sticker_id);
+        const row = s.stock[key];
+        if (row) row.qty = Math.max(0, row.qty - (input.sticker_qty ?? 0));
+      }
+      if (input.product_sku_id && (input.product_qty ?? 0) > 0 && loc) {
+        const key = stockKey(loc.id, "product", input.product_sku_id);
+        const row = s.stock[key];
+        if (row) row.qty = Math.max(0, row.qty - (input.product_qty ?? 0));
+      }
+      const entry: WasteEntry = {
+        id: uid("waste"),
+        environment_id: input.environment_id,
+        shift_id: input.shift_id ?? null,
+        sticker_id: input.sticker_id ?? null,
+        sticker_qty: input.sticker_qty ?? 0,
+        product_sku_id: input.product_sku_id ?? null,
+        product_qty: input.product_qty ?? 0,
+        reason: input.reason,
+        note: input.note ?? null,
+        created_at: now(),
+      };
+      s.waste.unshift(entry);
+      return ok(entry);
+    });
+  }
+
+  // ── Holds management ─────────────────────────────────────────────────────
+
+  async listHolds(environmentId: string): Promise<Result<Hold[]>> {
+    await latency(40);
+    // Kiosk soft-holds (session-scoped, no customer name) are internal —
+    // mirrors v1 filtering `customer_name ilike 'kiosk-session:%'` out of the
+    // volunteer-facing list, modelled here as holds carrying a session_id.
+    return ok(
+      getState().holds.filter(
+        (h) => !h.released_at && !h.converted_order && !h.session_id && h.environment_id === environmentId
+      )
+    );
+  }
+
+  // ── B2B [org-wide, not environment-scoped] ──────────────────────────────
+
+  async listB2bOrders(): Promise<
+    Result<{ orders: B2bOrder[]; volunteers: Volunteer[]; committed: number; collected: number }>
+  > {
+    await latency(60);
+    const orders = [...getState().b2bOrders].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    const committed = orders
+      .filter((o) => !["enquiry", "quoted", "lost"].includes(o.stage))
+      .reduce((n, o) => n + o.gross_value, 0);
+    const collected = orders.reduce((n, o) => n + o.deposit_amount + o.balance_amount, 0);
+    const volunteers = getState().volunteers.filter((v) => v.is_active);
+    return ok({ orders, volunteers, committed, collected });
+  }
+
+  async createB2bOrder(input: CreateB2bOrderInput): Promise<Result<{ order: B2bOrder; margin: number }>> {
+    await latency(90);
+    if (!input.client_org || !input.account_owner) {
+      return err("Client organisation and account owner are required.", "conflict");
+    }
+    const price = input.unit_price || 0;
+    const cost = input.unit_cost || 0;
+    const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+
+    // D17: below 0% is hard-blocked, no PIN can save it.
+    if (margin < 0) {
+      return err("Margin below 0% — hard blocked, cannot save at a loss.", "conflict");
+    }
+    // D17: below 10% requires admin PIN. The mock has no PIN store, so any
+    // non-empty PIN stands in for a correct one — the real guard is the live
+    // route's argon2 check against stall_settings.pin_admin.
+    if (margin < 10 && !input.admin_pin) {
+      return err(`Margin is ${margin.toFixed(1)}% — below 10% requires admin PIN to save.`, "unauthorised");
+    }
+
+    return mutate((s) => {
+      const order: B2bOrder = {
+        id: uid("b2b"),
+        client_org: input.client_org,
+        contact_name: input.contact_name ?? null,
+        contact_phone: input.contact_phone ?? null,
+        contact_email: input.contact_email ?? null,
+        account_owner: input.account_owner,
+        stage: "enquiry",
+        quantity: input.quantity || 0,
+        unit_price: price,
+        unit_cost: cost,
+        gross_value: (input.quantity || 0) * price,
+        deposit_amount: 0,
+        deposit_date: null,
+        deposit_method: null,
+        balance_amount: 0,
+        balance_date: null,
+        balance_method: null,
+        promised_date: null,
+        dispatched_date: null,
+        lost_reason: null,
+        notes: null,
+        created_at: now(),
+        updated_at: now(),
+      };
+      s.b2bOrders.push(order);
+      s.b2bActivity.push({ id: uid("b2bact"), b2b_id: order.id, event: "created", detail: { margin }, created_at: now() });
+      return ok({ order, margin });
+    });
+  }
+
+  async updateB2bOrder(id: string, patch: UpdateB2bOrderInput): Promise<Result<B2bOrder>> {
+    await latency(70);
+    return mutate((s) => {
+      const order = s.b2bOrders.find((o) => o.id === id);
+      if (!order) return err<B2bOrder>("B2B order not found.", "not_found");
+      Object.assign(order, patch);
+      order.updated_at = now();
+      s.b2bActivity.push({ id: uid("b2bact"), b2b_id: id, event: "updated", detail: patch, created_at: now() });
+      return ok(order);
+    });
+  }
+
+  // ── Bulk entry ───────────────────────────────────────────────────────────
+
+  async createBulkOrder(input: {
+    items: BulkOrderItem[];
+    payment_method?: import("../../domain/types").PaymentMethod;
+    note?: string | null;
+  }): Promise<Result<{ order: Order; warning?: string; failed?: string[] }>> {
+    await latency(120);
+    if (!input.items.length) return err("items required.", "conflict");
+    const warehouse = stockLocations.find((l) => l.is_warehouse);
+
+    return mutate((s) => {
+      const failed: string[] = [];
+      const items: OrderItem[] = input.items.map((i) => {
+        const sku = i.product_sku_id ? skus.find((x) => x.id === i.product_sku_id) : undefined;
+        if (i.product_sku_id && warehouse) {
+          const key = stockKey(warehouse.id, "product", i.product_sku_id);
+          const row = s.stock[key];
+          if (row && row.qty >= i.qty) row.qty -= i.qty;
+          // Bulk entries are retrospective admin records: an insufficient-stock
+          // line is reported rather than failing the whole entry, but the
+          // stock count is knowingly not decremented for it.
+          else failed.push(i.product_sku_id);
+        }
+        return {
+          id: uid("oi"),
+          product_sku_id: i.product_sku_id ?? null,
+          sku_code: sku?.sku_code ?? null,
+          size: sku?.size ?? null,
+          color_name: sku ? colors.find((c) => c.id === sku.color_id)?.name ?? null : null,
+          fit_name: sku ? fits.find((f) => f.id === sku.fit_id)?.name ?? null : null,
+          qty: i.qty,
+          unit_price: i.unit_price,
+          unit_cost: i.unit_cost || 0,
+          line_total: i.unit_price * i.qty,
+          stickers: [],
+        };
+      });
+      const subtotal = items.reduce((n, i) => n + i.line_total, 0);
+      const costTotal = items.reduce((n, i) => n + i.unit_cost * i.qty, 0);
+
+      const env = s.environments.find((e) => e.id === "env-cloud") ?? s.environments[0];
+      s.seq[env.id] = (s.seq[env.id] ?? 0) + 1;
+      const fy = currentFY();
+      const scope = s.blocks.filter((b) => b.fy === fy && b.device_id === "admin-bulk");
+      const nextNo = scope.length ? Math.max(...scope.map((b) => b.end_no)) + 1 : 1;
+      s.blocks.push({
+        id: uid("blk"),
+        shift_id: "admin-bulk",
+        environment_id: env.id,
+        device_id: "admin-bulk",
+        fy,
+        start_no: nextNo,
+        end_no: nextNo,
+        next_no: nextNo + 1,
+        closed_at: now(),
+      });
+
+      const order: Order = {
+        id: uid("order"),
+        order_no: s.seq[env.id],
+        receipt_no: formatReceiptNo(env.prefix, fy, nextNo),
+        shift_id: null,
+        environment_id: env.id,
+        channel: "bulk",
+        design_ticket: null,
+        customer_name: null,
+        customer_phone: null,
+        subtotal,
+        discount_amount: 0,
+        discount_reason: null,
+        discount_note: null,
+        total: subtotal,
+        cost_total: costTotal,
+        manual_override: false,
+        payment_method: input.payment_method ?? "pending",
+        paid_cash: 0,
+        paid_upi: 0,
+        payment_ref: null,
+        fulfillment_status: "pending_press",
+        promised_date: null,
+        prepped_at: null,
+        pressed_at: null,
+        collected_at: null,
+        affects_inventory: true,
+        notes: input.note ?? null,
+        client_created_at: now(),
+        created_at: now(),
+        device_id: "admin-bulk",
+        voided_at: null,
+        void_reason: null,
+        items,
+      };
+      s.orders.unshift(order);
+      return ok({
+        order,
+        ...(failed.length ? { warning: "Some lines exceeded available stock and were not decremented", failed } : {}),
+      });
+    });
+  }
+
+  // ── Admin pricing ────────────────────────────────────────────────────────
+  // Prices SNAPSHOT onto order lines at sale time (see createOrder) — editing
+  // here never rewrites history, only what future sales charge.
+
+  async setSkuPricing(input: SetPricingInput): Promise<Result<ProductSku | StickerDesign>> {
+    await latency(60);
+    const list = input.type === "product" ? skus : designs;
+    const row = list.find((x) => x.id === input.id);
+    if (!row) return err("SKU not found.", "not_found");
+    if (typeof input.unit_price === "number") row.unit_price = input.unit_price;
+    if (typeof input.unit_cost === "number") row.unit_cost = input.unit_cost;
+    return ok({ ...row });
+  }
+
+  async bulkSetPricingByFit(input: BulkSetPricingInput): Promise<Result<void>> {
+    await latency(80);
+    const fit = fits.find((f) => f.name === input.fit_name);
+    if (!fit) return err("Fit not found.", "not_found");
+    for (const sku of skus) {
+      if (sku.fit_id !== fit.id) continue;
+      if (typeof input.unit_price === "number") sku.unit_price = input.unit_price;
+      if (typeof input.unit_cost === "number") sku.unit_cost = input.unit_cost;
+    }
+    return ok(undefined);
+  }
+
+  // ── Press queue ──────────────────────────────────────────────────────────
+  // Everything prepped and not yet pressed (see `stageOf`'s "print" stage),
+  // oldest first — the multi-order batch the press table works through.
+
+  async getPressQueue(environmentId?: string): Promise<Result<Order[]>> {
+    await latency(80);
+    let list = getState().orders.filter(
+      (o) => !o.voided_at && o.prepped_at && !o.pressed_at
+    );
+    if (environmentId) list = list.filter((o) => o.environment_id === environmentId);
+    return ok(list.sort((a, b) => a.created_at.localeCompare(b.created_at)));
   }
 
   // ── Settings ─────────────────────────────────────────────────────────────

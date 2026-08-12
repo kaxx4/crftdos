@@ -369,6 +369,91 @@ export type KioskEvent = {
   created_at: string;
 };
 
+// ─── Returns ────────────────────────────────────────────────────────────────
+
+/** Mirrors `stall_returns`. `replace`/`exchange` create a linked ZERO-VALUE
+ *  replacement order so inventory moves correctly without inflating revenue
+ *  (PRD §3.5) — `exchange` additionally charges any price difference through
+ *  the linked order, `replace` is a straight like-for-like swap. */
+export type Return = {
+  id: string;
+  environment_id: string;
+  original_order: string;
+  replacement_order: string | null;
+  reason: string;
+  action: ReturnAction;
+  refund_amount: number;
+  restocked: boolean;
+  note: string | null;
+  created_at: string;
+};
+
+export type RestockItem = { sku_type: "product" | "sticker"; sku_id: string; qty: number };
+
+// ─── Waste ──────────────────────────────────────────────────────────────────
+
+/** Mirrors `stall_waste_log`. Exactly one of sticker/product is populated. */
+export type WasteEntry = {
+  id: string;
+  environment_id: string;
+  shift_id: string | null;
+  sticker_id: string | null;
+  sticker_qty: number;
+  product_sku_id: string | null;
+  product_qty: number;
+  reason: WasteReason;
+  note: string | null;
+  created_at: string;
+};
+
+// ─── B2B [org-wide, NOT environment-scoped — migration 004.2] ──────────────
+
+export type B2bStage = "enquiry" | "quoted" | "confirmed" | "in_production" | "dispatched" | "delivered" | "lost";
+
+export type B2bOrder = {
+  id: string;
+  client_org: string;
+  contact_name: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  account_owner: string;
+  stage: B2bStage;
+  quantity: number;
+  unit_price: number;
+  unit_cost: number;
+  /** Denormalised at write time (`quantity * unit_price`) — see live route. */
+  gross_value: number;
+  deposit_amount: number;
+  deposit_date: string | null;
+  deposit_method: PaymentMethod | null;
+  balance_amount: number;
+  balance_date: string | null;
+  balance_method: PaymentMethod | null;
+  promised_date: string | null;
+  dispatched_date: string | null;
+  lost_reason: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Mirrors `stall_volunteers`. `account_owner` on a `B2bOrder` is one of
+ *  these `id`s — every B2B deal needs one accountable person from the roster,
+ *  not a free-text name. */
+export type Volunteer = {
+  id: string;
+  name: string;
+  is_active: boolean;
+};
+
+export type B2bActivity = {
+  id: string;
+  b2b_id: string;
+  event: string;
+  detail: Record<string, unknown> | null;
+  created_at: string;
+};
+
 // ─── Money ──────────────────────────────────────────────────────────────────
 
 /** Every rupee amount in this app is a NUMBER OF RUPEES, not paise, matching

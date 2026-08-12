@@ -8,7 +8,21 @@
  *  kiosk in one tab and the POS in another and it behaves as it will in
  *  production. */
 
-import type { Environment, Hold, KioskEvent, Order, ReceiptBlock, Shift, StockRow, Template } from "../../domain/types";
+import type {
+  B2bActivity,
+  B2bOrder,
+  Environment,
+  Hold,
+  KioskEvent,
+  Order,
+  ReceiptBlock,
+  Return,
+  Shift,
+  StockRow,
+  Template,
+  Volunteer,
+  WasteEntry,
+} from "../../domain/types";
 import { designs, environments, skus, stockLocations, stockSplit, templates } from "./seed";
 
 const KEY = "stallos.mock.v1";
@@ -23,6 +37,11 @@ export type MockState = {
   blocks: ReceiptBlock[];
   holds: Hold[];
   events: KioskEvent[];
+  returns: Return[];
+  waste: WasteEntry[];
+  b2bOrders: B2bOrder[];
+  b2bActivity: B2bActivity[];
+  volunteers: Volunteer[];
   settings: Record<string, unknown>;
   /** Per-environment order sequence, so receipt numbers are environment-scoped
    *  off that environment's prefix — the mechanism that guarantees uniqueness
@@ -67,6 +86,15 @@ function initialState(): MockState {
     blocks: [],
     holds: [],
     events: [],
+    returns: [],
+    waste: [],
+    b2bOrders: [],
+    b2bActivity: [],
+    volunteers: [
+      { id: "vol-1", name: "Aanya", is_active: true },
+      { id: "vol-2", name: "Rohan", is_active: true },
+      { id: "vol-3", name: "Meera", is_active: true },
+    ],
     settings: {
       upi_vpa: "terraroots@okhdfcbank",
       upi_payee_name: "TerraRoots Foundation",
