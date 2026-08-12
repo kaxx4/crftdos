@@ -22,14 +22,38 @@ import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import { enqueueOrder } from "@/lib/outbox";
 import type { CreateOrderInput } from "@/lib/backend";
-import type { PaymentMethod, Placement, ProductSku, StickerDesign } from "@/lib/domain/types";
+import type { PaymentMethod, Placement, ProductSku, StickerDesign, StockRow } from "@/lib/domain/types";
 import { money } from "@/lib/money";
 import { Banner, Button, Chip, EmptyState, Field, Panel } from "@/components/ui";
 import { clsx } from "@/components/clsx";
 
+/** `ProductSku.stock_qty`/`StickerDesign.stock_qty` are an org-wide total
+ *  (a DB trigger sums every location, warehouse included) — showing that on
+ *  a walk-up sale would tell a volunteer at Stall A that Stall B's stock is
+ *  theirs to sell. Overlaid with this stall's own `stall_stock` allocation,
+ *  the same source `StockScreen` reads, before anything renders. */
+function atThisStall<T extends { id: string }>(items: T[], stock: StockRow[], skuType: "product" | "sticker"): (T & { stock_qty: number })[] {
+  const byId = new Map(stock.filter((r) => r.sku_type === skuType).map((r) => [r.sku_id, r.qty]));
+  return items.map((item) => ({ ...item, stock_qty: byId.get(item.id) ?? 0 }));
+}
+
 export function WalkUpSale() {
   const { environment, bound } = useEnvironment();
-  const catalogue = useAsync(() => getBackend().getCatalogue(), []);
+  const catalogueRaw = useAsync(() => getBackend().getCatalogue(), []);
+  const locations = useAsync(() => getBackend().listStockLocations(), []);
+  const location = locations.data?.find((l) => l.environment_id === environment?.id);
+  const stock = useAsync(
+    () => (location ? getBackend().getStock(location.id) : Promise.resolve({ ok: true as const, data: [] as StockRow[] })),
+    [location?.id]
+  );
+  const catalogue = useMemo(() => {
+    if (!catalogueRaw.data || !stock.data) return null;
+    return {
+      ...catalogueRaw.data,
+      skus: atThisStall(catalogueRaw.data.skus, stock.data, "product"),
+      designs: atThisStall(catalogueRaw.data.designs, stock.data, "sticker"),
+    };
+  }, [catalogueRaw.data, stock.data]);
   const shift = useAsync(
     () =>
       environment
@@ -52,7 +76,7 @@ export function WalkUpSale() {
    *  LOCATION, which is the single highest-value detail on this screen —
    *  it tells them where to physically walk. */
   const results = useMemo(() => {
-    const all = (catalogue.data?.designs ?? []).filter((d) => d.is_active && d.stock_qty > 0);
+    const all = (catalogue?.designs ?? []).filter((d) => d.is_active && d.stock_qty > 0);
     const q = search.trim().toLowerCase();
     if (!q) return all.slice(0, 12);
     const digits = q.replace(/\D/g, "");
@@ -65,7 +89,7 @@ export function WalkUpSale() {
         return true;
       })
       .slice(0, 12);
-  }, [catalogue.data, search]);
+  }, [catalogue, search]);
 
   if (!bound) {
     return (
@@ -173,10 +197,10 @@ export function WalkUpSale() {
       )}
 
       <Panel title="Garment">
-        {!catalogue.data ? (
+        {!catalogue ? (
           <p className="text-sm text-[var(--color-muted)]">Loading the catalogue…</p>
         ) : (
-          <SkuGrid catalogue={catalogue.data} value={sku} onChange={setSku} />
+          <SkuGrid catalogue={catalogue} value={sku} onChange={setSku} />
         )}
       </Panel>
 
