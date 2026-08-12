@@ -64,14 +64,15 @@ function locationForEnvironment(environmentId: string): StockLocation | undefine
   return stockLocations.find((l) => l.environment_id === environmentId);
 }
 
-/** Active holds against a sticker at one location. Mirrors the predicate the
+/** Active holds against a SKU at one environment. Mirrors the predicate the
  *  live partial indexes are built on: not released, not converted, not expired. */
-function activeHoldQty(stickerId: string, environmentId: string): number {
+function activeHoldQty(skuType: "product" | "sticker", skuId: string, environmentId: string): number {
   const t = Date.now();
+  const field = skuType === "product" ? "product_sku_id" : "sticker_id";
   return getState()
     .holds.filter(
       (h) =>
-        h.sticker_id === stickerId &&
+        h[field] === skuId &&
         h.environment_id === environmentId &&
         !h.released_at &&
         !h.converted_order &&
@@ -239,7 +240,7 @@ export class MockBackend implements Backend {
       if (d.print_w_cm == null || d.print_h_cm == null) continue;
       if (!d.cutout_path) continue;
 
-      const available = qtyAt(loc.id, "sticker", d.id) - activeHoldQty(d.id, environmentId);
+      const available = qtyAt(loc.id, "sticker", d.id) - activeHoldQty("sticker", d.id, environmentId);
       if (available <= 0) continue;
 
       out.push({ ...d, print_w_cm: d.print_w_cm, print_h_cm: d.print_h_cm, available_qty: available });
@@ -321,7 +322,7 @@ export class MockBackend implements Backend {
       // row. Single-threaded JS gives the mock the same serialisation for free,
       // which is why the check-then-insert below is safe here and would NOT be
       // safe if this were the real implementation.
-      const available = qtyAt(loc.id, "sticker", input.sticker_id) - activeHoldQty(input.sticker_id, input.environment_id);
+      const available = qtyAt(loc.id, "sticker", input.sticker_id) - activeHoldQty("sticker", input.sticker_id, input.environment_id);
       if (available < input.qty) {
         return err<Hold>("That transfer just went out of stock at this stall.", "out_of_stock");
       }
@@ -332,7 +333,52 @@ export class MockBackend implements Backend {
         environment_id: input.environment_id,
         qty: input.qty,
         session_id: input.session_id,
+        customer_name: null,
+        customer_phone: null,
         expires_at: new Date(Date.now() + 30 * 60_000).toISOString(),
+        released_at: null,
+        converted_order: null,
+      };
+      s.holds.push(hold);
+      return ok(hold);
+    });
+  }
+
+  async createHold(input: {
+    environment_id: string;
+    product_sku_id?: string | null;
+    sticker_id?: string | null;
+    qty: number;
+    customer_name: string;
+    customer_phone?: string | null;
+    shift_id?: string | null;
+    hours?: number;
+  }): Promise<Result<Hold>> {
+    await latency(90);
+    if (!input.product_sku_id && !input.sticker_id) {
+      return err("A product or sticker is required.", "conflict");
+    }
+    const loc = locationForEnvironment(input.environment_id);
+    if (!loc) return err("No stock location for this environment.", "not_found");
+
+    return mutate((s) => {
+      const skuType: "product" | "sticker" = input.product_sku_id ? "product" : "sticker";
+      const skuId = (input.product_sku_id ?? input.sticker_id)!;
+      const q = Math.max(1, input.qty || 1);
+      const available = qtyAt(loc.id, skuType, skuId) - activeHoldQty(skuType, skuId, input.environment_id);
+      if (available < q) {
+        return err<Hold>("Not enough available at this stall to hold that many.", "out_of_stock");
+      }
+      const hold: Hold = {
+        id: uid("hold"),
+        sticker_id: input.sticker_id ?? null,
+        product_sku_id: input.product_sku_id ?? null,
+        environment_id: input.environment_id,
+        qty: q,
+        session_id: null,
+        customer_name: input.customer_name,
+        customer_phone: input.customer_phone ?? null,
+        expires_at: new Date(Date.now() + (input.hours ?? 2) * 60 * 60_000).toISOString(),
         released_at: null,
         converted_order: null,
       };
@@ -492,7 +538,7 @@ export class MockBackend implements Backend {
                 )
                 .reduce((n, h) => n + h.qty, 0)
             : 0;
-        const otherHolds = item.type === "sticker" ? activeHoldQty(item.id, input.environment_id) - held : 0;
+        const otherHolds = item.type === "sticker" ? activeHoldQty("sticker", item.id, input.environment_id) - held : 0;
         const available = qtyAt(loc.id, item.type, item.id) - otherHolds;
         if (available < item.qty) {
           return err<Order>(

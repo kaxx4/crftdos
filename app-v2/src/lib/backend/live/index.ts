@@ -380,6 +380,20 @@ export class LiveBackend implements Backend {
     return r.ok ? ok(r.data.holds) : r;
   }
 
+  async createHold(input: {
+    environment_id: string;
+    product_sku_id?: string | null;
+    sticker_id?: string | null;
+    qty: number;
+    customer_name: string;
+    customer_phone?: string | null;
+    shift_id?: string | null;
+    hours?: number;
+  }): Promise<Result<Hold>> {
+    const r = await call<{ hold: Hold }>("/api/holds", { method: "POST", body: JSON.stringify(input) });
+    return r.ok ? ok(r.data.hold) : r;
+  }
+
   // ── B2B [org-wide, not environment-scoped] ──────────────────────────────
 
   async listB2bOrders(): Promise<

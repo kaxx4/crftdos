@@ -283,9 +283,20 @@ export interface Backend {
   listWaste(opts?: { environment_id?: string; limit?: number }): Promise<Result<WasteEntry[]>>;
   logWaste(input: LogWasteInput): Promise<Result<WasteEntry>>;
 
-  // Holds management — list only. Reservation is `reserveSticker` above;
-  // release is `releaseHold` above.
+  // Holds management. Anonymous kiosk soft-holds are `reserveSticker`/
+  // `releaseHold` above; these are the volunteer-facing named-hold flow —
+  // reserving stock for a specific customer by name.
   listHolds(environmentId: string): Promise<Result<Hold[]>>;
+  createHold(input: {
+    environment_id: string;
+    product_sku_id?: string | null;
+    sticker_id?: string | null;
+    qty: number;
+    customer_name: string;
+    customer_phone?: string | null;
+    shift_id?: string | null;
+    hours?: number;
+  }): Promise<Result<Hold>>;
 
   // B2B [org-wide — NOT environment-scoped, migration 004.2]
   listB2bOrders(): Promise<Result<{ orders: B2bOrder[]; volunteers: Volunteer[]; committed: number; collected: number }>>;

@@ -332,6 +332,8 @@ export type Hold = {
   environment_id: string; // [004]
   qty: number;
   session_id: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
   expires_at: string;
   released_at: string | null;
   converted_order: string | null;
