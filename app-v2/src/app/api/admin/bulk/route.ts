@@ -117,6 +117,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Retrospective admin entries move real value with no natural audit trail
+  // otherwise (unlike till sales, which get the discount/freebie log in
+  // /api/orders) — log every bulk entry the same way /api/admin/pricing logs
+  // price edits.
+  await admin.from("stall_admin_audit").insert({
+    actor: "admin-bulk",
+    action: "bulk_entry_created",
+    detail: { order_id: orderId, subtotal, item_count: items.length, note: note || null },
+  });
+
   // Bulk entries are retrospective admin records, so an insufficient-stock
   // line is reported rather than failing the whole entry — but it is
   // reported, not swallowed, because the stock count is now knowingly out

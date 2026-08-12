@@ -75,6 +75,12 @@ export async function POST(req: NextRequest) {
   const { data: original } = await admin.from("stall_orders").select("*").eq("id", originalOrderId).single();
   if (!original) return NextResponse.json({ error: "Original order not found" }, { status: 404 });
 
+  // A refund can never exceed what the customer actually paid — the PIN gate
+  // stops a stranger from triggering this, but not a mistyped amount.
+  if (refundAmount && Number(refundAmount) > Number(original.total)) {
+    return NextResponse.json({ error: "Refund amount cannot exceed the original order's total" }, { status: 400 });
+  }
+
   let replacementOrderId: string | null = null;
 
   if (action === "exchange" && exchangeItem) {
@@ -142,6 +148,12 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await admin.from("stall_admin_audit").insert({
+    actor: deviceId || "returns",
+    action: action === "exchange" ? "exchange_created" : "return_processed",
+    detail: { return_id: ret.id, original_order_id: originalOrderId, action, refund_amount: refundAmount || 0, replacement_order_id: replacementOrderId },
+  });
 
   return NextResponse.json({ return: ret });
 }
