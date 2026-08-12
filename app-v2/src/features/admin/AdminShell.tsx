@@ -25,6 +25,7 @@ const NAV = [
   { href: "/admin/pricing", label: "Pricing" },
   { href: "/admin/b2b", label: "B2B" },
   { href: "/admin/bulk", label: "Bulk entry" },
+  { href: "/admin/discounts", label: "Discounts" },
   { href: "/admin/pins", label: "PINs" },
 ];
 

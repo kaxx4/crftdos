@@ -180,6 +180,11 @@ export function MoreScreen() {
               Press queue
             </Link>
           </li>
+          <li>
+            <Link href="/pos/leads" className="tap-target flex items-center font-semibold underline">
+              Leads
+            </Link>
+          </li>
         </ul>
       </Panel>
 
