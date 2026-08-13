@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { PosFrame } from "@/components/PosFrame";
 import { FirstRunHint } from "@/components/FirstRunHint";
 import { TabBar } from "@/components/TabBar";
-import { BigButton, Field, Mono, PanelLabel } from "@/components/ui";
+import { BigButton, Card, Field, Mono, PanelLabel } from "@/components/ui";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { StickerDesign } from "@/lib/types";
 
@@ -80,50 +80,52 @@ export default function StickerStockPage() {
         <PanelLabel>Designs in stock</PanelLabel>
         <div className="flex flex-col gap-1.5">
           {designs.map((d) => (
-            <div key={d.id} className="border-2 border-ink bg-white p-2.5 flex justify-between items-center gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="font-extrabold text-sm">{d.code} {d.name ? `· ${d.name}` : ""}</div>
+            <Card key={d.id} className="p-2.5">
+              <div className="flex justify-between items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="font-extrabold text-sm">{d.code} {d.name ? `· ${d.name}` : ""}</div>
+                  {editing === d.id ? (
+                    <input
+                      aria-label="Bin location"
+                      value={draftBin}
+                      onChange={(e) => setDraftBin(e.target.value)}
+                      placeholder="Bin location"
+                      className="border border-ink px-1.5 py-1 min-h-[48px] text-[13px] mt-1 w-full"
+                    />
+                  ) : (
+                    <Mono>{d.bin_location || "Bin not set"}</Mono>
+                  )}
+                </div>
                 {editing === d.id ? (
-                  <input
-                    aria-label="Bin location"
-                    value={draftBin}
-                    onChange={(e) => setDraftBin(e.target.value)}
-                    placeholder="Bin location"
-                    className="border border-ink px-1.5 py-1 min-h-[48px] text-[13px] mt-1 w-full"
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      autoFocus
+                      aria-label="Stock quantity"
+                      value={draftQty}
+                      onChange={(e) => setDraftQty(e.target.value)}
+                      className="border-2 border-ink w-16 min-h-[48px] p-1.5 text-center"
+                    />
+                    <button
+                      onClick={() => save(d.id)}
+                      className="bg-blue text-cream px-3 min-h-[48px] min-w-[48px] font-bold text-[13px]"
+                    >
+                      OK
+                    </button>
+                  </div>
                 ) : (
-                  <Mono>{d.bin_location || "Bin not set"}</Mono>
+                  <button
+                    onClick={() => {
+                      setEditing(d.id);
+                      setDraftQty(String(d.stock_qty));
+                      setDraftBin(d.bin_location || "");
+                    }}
+                    className={`font-extrabold text-lg min-h-[48px] min-w-[48px] ${d.stock_qty <= 0 ? "text-signal" : ""}`}
+                  >
+                    {d.stock_qty}
+                  </button>
                 )}
               </div>
-              {editing === d.id ? (
-                <div className="flex gap-1.5">
-                  <input
-                    autoFocus
-                    aria-label="Stock quantity"
-                    value={draftQty}
-                    onChange={(e) => setDraftQty(e.target.value)}
-                    className="border-2 border-ink w-16 min-h-[48px] p-1.5 text-center"
-                  />
-                  <button
-                    onClick={() => save(d.id)}
-                    className="bg-blue text-cream px-3 min-h-[48px] min-w-[48px] font-bold text-[13px]"
-                  >
-                    OK
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    setEditing(d.id);
-                    setDraftQty(String(d.stock_qty));
-                    setDraftBin(d.bin_location || "");
-                  }}
-                  className={`font-extrabold text-lg min-h-[48px] min-w-[48px] ${d.stock_qty <= 0 ? "text-signal" : ""}`}
-                >
-                  {d.stock_qty}
-                </button>
-              )}
-            </div>
+            </Card>
           ))}
           {designs.length === 0 && (
             <div className="text-center text-sm text-muted py-6">
@@ -138,7 +140,7 @@ export default function StickerStockPage() {
             + ADD DESIGN
           </BigButton>
         ) : (
-          <div className="border-2 border-ink bg-white p-2.5 flex flex-col gap-2">
+          <Card className="p-2.5">
             <Field label="Sticker code" placeholder="Code e.g. M-014" value={newCode} onChange={(e) => setNewCode(e.target.value)} />
             <div className="flex gap-1.5">
               {(["S", "M", "L"] as const).map((sz) => (
@@ -161,7 +163,7 @@ export default function StickerStockPage() {
                 CANCEL
               </BigButton>
             </div>
-          </div>
+          </Card>
         )}
         <div className="font-mono text-[13px] text-muted border border-dashed border-hairline p-2.5">
           To import many designs at once or print QR labels, use Admin → Catalogue. This page is for
