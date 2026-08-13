@@ -1,11 +1,11 @@
 ---
 type: note
-updated: 2026-08-10
+updated: 2026-08-13
 ---
 
 # Architecture Overview
 
-Part of [[crftd Stall OS]].
+Part of [[crftd Stall OS]]. Describes **`app-v2`**, the current live app (`NEXT_PUBLIC_BACKEND=live`, wired to the real Supabase backend as of the 13 Aug session). `app/` is the earlier v1 build; it still exists in the repo but is superseded — treat anything below as describing `app-v2` unless stated otherwise.
 
 ## Stack
 
@@ -14,9 +14,8 @@ Part of [[crftd Stall OS]].
 | Framework | Next.js **16.3.0**, App Router, TypeScript |
 | UI | React 19.2, Tailwind v4 (`@tailwindcss/postcss`) |
 | Database | Supabase Postgres 17.6 — project `paradox-2026` (`drvucogrjphctwfealxd`), region `ap-south-1` |
-| Auth | Home-grown PIN + JWT cookie (`jose`), **not** Supabase Auth. See [[Auth and Sessions]] |
-| Password hashing | `@node-rs/argon2` |
-| Offline store | IndexedDB via `idb`. See [[Offline and Sync]] |
+| Auth | **None.** A credential-free role toggle, not a security boundary. See [[Auth and Sessions]] |
+| Offline store | IndexedDB via `idb` (outbox pattern carried forward from v1). See [[Offline and Sync]] |
 | Hosting | Vercel |
 
 ## Shape of the thing
@@ -28,16 +27,14 @@ Browser (all pages are "use client")
    │
    └── fetch /api/*  ──► Next route handler ──► service-role client ──► Postgres [everything else]
                             ▲
-                            └── middleware.ts gates every non-API page on a PIN cookie,
-                                except "/" (the public kiosk) and "/pin" itself
+                            └── middleware.ts passes every route through unconditionally —
+                                no cookie, no gate. See [[Auth and Sessions]] for why.
 ```
 
 Two distinct database access paths, and the split is deliberate:
 
-1. **Anon browser client** (`src/lib/supabase/client.ts`) reads the catalogue directly, so the Sell screen and kiosk can hydrate fast and subscribe to Realtime stock. RLS restricts anon to `SELECT` on five lookup tables — see [[Row Level Security]].
-2. **Service-role client** (`src/lib/supabase/server.ts`, `supabaseAdmin()`) bypasses RLS entirely and is only ever constructed inside route handlers. Every write goes through here.
-
-There is a third helper, `supabaseServer()`, that builds a cookie-scoped server client. **It is currently unused** — no route imports it. See [[Known Issues]].
+1. **Anon browser client** reads the catalogue directly, so the Sell screen and kiosk can hydrate fast and subscribe to Realtime stock. RLS restricts anon to `SELECT` on a handful of lookup tables — see [[Row Level Security]] (not yet re-audited against the current live table list, see [[Database Map]]).
+2. **Service-role client** bypasses RLS entirely and is only ever constructed inside route handlers (36 `route.ts` files under `app-v2/src/app/api`). Every write goes through here. **This is now the only access-control boundary in the app** — see [[Auth and Sessions]] for what that means in practice.
 
 ## Rendering model
 
@@ -47,7 +44,7 @@ Every single `page.tsx` in the app carries `"use client"`. There is no server-si
 - All data arrives via client-side `fetch` / Supabase calls after hydration.
 - The cost is a **request waterfall on boot** rather than a server-render cost. See [[Performance Backlog]].
 
-`middleware.ts` runs per-request on every non-static path and does the PIN gating; that is the only per-request server work on a page load.
+`middleware.ts` runs per-request on every non-static path but does nothing except `NextResponse.next()` — there is no per-request server work on a page load anymore. It's kept as a file mainly so a future gate has somewhere to go without inventing new plumbing; see [[Auth and Sessions]] for why it's empty on purpose.
 
 ## Shared database, two applications
 
@@ -61,20 +58,29 @@ They share a connection pool, a CPU budget, and a blast radius. Worth knowing be
 ## Directory layout
 
 ```
-app/src/
+app-v2/src/
   app/
-    page.tsx              Kiosk — public customer Design Studio, site root (758 lines)
-    sell/                 Sell — the main POS screen (880 lines), PIN-gated
-    orders/ holds/ waste/ returns/ restock/ stock/ more/
-    shift-open/ receipt/ pin/
-    admin/                dashboard, analytics, pricing, b2b, bulk, catalogue
-    api/                  all route handlers — see [[API Routes]]
-  components/             PosFrame, TabBar, ui.tsx
-  lib/                    session, outbox, deviceId, fy, rateLimit, types, supabase/
-  middleware.ts
+    page.tsx               Kiosk — public customer Design Studio, site root
+    pos/                    Volunteer POS — sell, orders, holds, waste, returns,
+                            stock, more, press, receipt (all open, role-toggle only)
+    admin/                  dashboard, analytics, pricing, b2b, bulk, catalogue,
+                            stock, environments, templates, discounts
+    settings/
+    api/                    36 route handlers — see [[API Routes]]
+  components/               RoleSwitcher, ui.tsx, shared primitives
+  features/
+    kiosk/  pos/  admin/    surface-specific components (KioskApp, AdminShell, ...)
+  lib/
+    backend/                the contract seam — mock/ and live/ implementations,
+                             switched by NEXT_PUBLIC_BACKEND
+    domain/  hooks/  supabase/
+  middleware.ts             no-op pass-through — see [[Auth and Sessions]]
 _import/
-  schema.sql              base schema
-  migrations/001_atomicity_and_indexes.sql
+  schema.sql                stale point-in-time dump — do NOT treat as source of truth
+  migrations/                001–041, reconciled with the live schema 13 Aug.
+                             This is the source of truth for current schema.
+                             See migrations/README.md.
+app/                        the old v1 build — untouched, not the current app
 ```
 
 ## Related
@@ -83,3 +89,4 @@ _import/
 - [[Frontend Map]]
 - [[API Routes]]
 - [[Known Issues]]
+- [[Auth and Sessions]]

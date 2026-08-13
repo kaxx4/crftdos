@@ -1,10 +1,13 @@
 ---
 type: handoff
-updated: 2026-08-11
+updated: 2026-08-13
 for: a session with live Supabase access to project drvucogrjphctwfealxd
 ---
 
 # HANDOFF — Backend Session
+
+> [!info] Superseded 2026-08-13
+> Everything below this note describes the state as of 11 Aug, when `app-v2` still ran against a mock backend with no route handlers and no auth model. All of that has since happened: **36 route handlers exist** (`find app-v2/src/app/api -iname route.ts | wc -l`), the app is wired to the live Supabase backend (`NEXT_PUBLIC_BACKEND=live`), and — as a later, explicit product decision — the PIN-gating plan described in §3/§5 below was **not** built; a credential-free role toggle replaced it instead. See [[Architecture Overview]] and [[Auth and Sessions]] for the current model, and [[Known Issues]] for what's still actually open. The original plan is kept below for history; do not treat §5's "PIN gating required" line as still true.
 
 You are picking up a frontend rebuild that is complete and verified against a mock backend. Your job is to make it talk to the real database.
 
@@ -92,25 +95,26 @@ Settled with the user on 11 Aug. All three are load-bearing:
 | 5 | Analytics retention, volume, rate limiting | Batch client-side (already done), 90-day purge, a real limit | **Migration 008** |
 | 6 | Does the kiosk catalogue filter by the device's environment stock? | Yes — accept that two kiosks show different catalogues | **Migration 009** |
 
-**Question 5 deserves your attention specifically.** `stall_kiosk_events` is a publicly-writable, unauthenticated insert on a database shared with another production application. Three things must be true before it ships:
+**Question 5 deserves your attention specifically — resolved as of 13 Aug.** `stall_kiosk_events` is a publicly-writable, unauthenticated insert on a database shared with another production application. Three things had to be true before it shipped, and all three are now done:
 
 - Client-side batching (done — `src/lib/analytics.ts`, semantic events only, never pointer-move).
-- A retention purge. **This repo has no cron/scheduled-job infrastructure at all** — that's also why the PRD §12 customer-retention purge is unbuilt. Either ship 008 with `pg_cron` or ship it with a documented manual purge and an admin button. Do not ship it with neither.
-- A rate limit that works. The existing one is an in-process `Map`, so on Vercel it's per-instance and largely unenforced in production. Don't rely on it here.
+- A retention purge — **done.** `stall_purge_kiosk_events(interval)` exists (migration 019) and was locked down in migration 040 to `service_role` only (previously reachable more broadly — see the security-hardening note below). Separately, migration 041 added `stall_purge_stale_customers()`, `SECURITY DEFINER`, scheduled via `pg_cron` (`stall-customer-retention-purge`, daily 03:30) — this is what closes the PRD §12 customer-retention purge that this doc used to describe as unbuilt.
+- A rate limit that works — **done.** `stall_rate_limits` (migration 004) is a real table, not an in-process `Map`, with an atomic `stall_rate_limit_hit()` RPC. Also used for the kiosk-events insert budget via `stall_kiosk_events_rate_limit()` (migration 019), enforced as a trigger rather than app code, which is correct given the per-instance-Map problem originally flagged here.
 
-## 5. What is NOT built in app-v2
+**Live DB security hardening, done 13 Aug (migration 040):** every `stall_*` function got `SET search_path = public, pg_temp` (closes a search-path-hijack class of bug on `SECURITY DEFINER`/invoker functions), and `stall_purge_kiosk_events` — found to be callable by `anon`/`authenticated`, which it should never have been — was revoked from both and re-granted to `service_role` only. `stall_product_availability` was set to `security_invoker = true`. See `_import/migrations/040_security_hardening_search_path_and_definer.sql`.
 
-This is the honest scope gap. `app-v2` is a complete implementation of the **new** flows, not yet a replacement for everything v1 does.
+## 5. What is NOT built in app-v2 — status as of 11 Aug, now stale, see the note at the top
 
-**Required before any real stall use:**
-- Route handlers (§2 step 3)
-- PIN gating + `middleware.ts` — v1's three-PIN model is not in v2 at all. **Every surface is currently open.**
-- PWA / service worker / catalogue cache. The offline **outbox is carried forward** and works; the offline *shell* is not.
+This is the honest scope gap **as it stood on 11 Aug**. It is kept for history. As of 13 Aug:
 
-**Exists in v1, not rebuilt in v2:**
+- Route handlers (§2 step 3) — **done, 36 files.**
+- PIN gating + `middleware.ts` — **deliberately not done.** The plan below assumed v1's three-PIN model would be ported. Instead, on 13 Aug, the product decision was made to drop PIN auth entirely (a shared-PIN model was judged a false sense of security for a small, trusted-volunteer event stall) in favour of a credential-free `RoleSwitcher` component (Volunteer / Kiosk / Admin) that just changes which view renders, persisted in `localStorage` as a UI convenience only. `middleware.ts` now unconditionally calls `NextResponse.next()`. Every surface is open by design, not by omission. See [[Auth and Sessions]] — **do not reintroduce a PIN as a "fix" for this.**
+- PWA / service worker / catalogue cache — still not rebuilt in `app-v2` as far as this doc can confirm; the offline outbox pattern is carried forward from v1's design but re-verify against current `app-v2/src/lib` before relying on this line.
+
+**Exists in v1, not rebuilt in v2 (as of 11 Aug):**
 returns · waste · holds UI · B2B · bulk · pricing editor · receipt screen · press sheet
 
-Decide with the user whether these get rebuilt in v2 or whether v2 is merged into v1 surface by surface. That's a product call, not a technical one, and nobody has made it.
+Several of these now have `app-v2` routes (`/pos/returns`, `/pos/waste`, `/pos/holds`, `/admin/b2b`, `/admin/bulk`, `/admin/pricing`, `/pos/receipt`, `/pos/press` all exist in the current tree) — this list was not re-verified screen-by-screen as part of the 13 Aug pass and should not be trusted without a fresh check against `app-v2/src/app`.
 
 ## 6. Things that will bite you
 

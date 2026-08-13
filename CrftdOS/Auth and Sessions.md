@@ -1,60 +1,43 @@
 ---
 type: note
-updated: 2026-08-10
+updated: 2026-08-13
 ---
 
 # Auth and Sessions
 
-Part of [[Architecture Overview]]. Implements PRD §12. **Supabase Auth is not used at all** — there are no user accounts. There are three shared PINs and three cookies.
+Part of [[Architecture Overview]]. Describes `app-v2`, the current live app. **There is no auth model.** This replaces PRD §12's PIN-based design, which was implemented once (in the old `app/` build, still described in v1-era docs and below for history) and then deliberately removed rather than ported forward.
 
-## Why PINs and not accounts
+## The current model: a role toggle, not a gate
 
-Eight devices, a rotating cast of teenage volunteers, no time to onboard anyone. A shared PIN per *role* is the right granularity. Attribution happens at the order level via `sold_by`, not at the session level.
+`app-v2/src/components/RoleSwitcher.tsx` renders a plain three-way switch — **Volunteer / Kiosk / Admin** — in the header of every shell (`PosShell`, `AdminShell`, `KioskApp`). It has no credential, no server round-trip, and no session. Picking a role just navigates (`/pos`, `/`, `/admin`) and remembers the choice in `localStorage` so a refresh doesn't reset it. The component's own header comment says it plainly: *"Small trusted-volunteer environment — anyone can switch, no gate... it is a UI convenience, not an access control."*
 
-## The three kinds
+`middleware.ts` is a no-op — it matches every non-static path and returns `NextResponse.next()` unconditionally. No cookie is read, no redirect happens, nothing is gated at the page level. Every route handler under `app-v2/src/app/api` had its session check (`requireSession`/`requireAnySession`) removed in the same pass. **Every surface and every API route is open to anyone who can reach the deployment.**
 
-| Kind | Cookie | TTL | Gates |
-|---|---|---|---|
-| `stall` | `stallos_stall_session` | 14 h — one long shift | `/sell`, `/orders`, `/stock/*`, `/restock`, `/holds`, `/waste`, `/returns`, `/more`, `/shift-open`, `/receipt` |
-| `admin` | `stallos_admin_session` | 4 h | `/admin/*` |
-| `kiosk` | `stallos_kiosk_session` | 14 h | none — see below |
+## This was a deliberate decision, not an oversight
 
-> **Fixed as of [[Changelog 2026-08-10]] fifth pass:** the kiosk moved to `/` (the site root) and became public/unauthenticated by product decision — it is a customer-facing showcase, not a staff-unlocked device. `/api/kiosk/reserve` and `/api/kiosk/ticket` no longer check a kiosk session. The `kiosk` PIN kind still exists in the auth system (demo PIN `2222` in dev) but nothing gates on it anymore; the attract screen instead carries a small "Staff passcode" link to `/pin`. `/` was previously Sell and carried the `stall` gate — Sell now lives at `/sell` and inherits that gate instead.
+Commit `361bc4c`, "Remove PIN authentication, add role/mode toggle," 13 Aug: *"PIN gating was a false sense of security for a small trusted-volunteer event stall."* The reasoning, spelled out so a future session doesn't silently "fix" this by reintroducing a PIN:
 
-Admin is a genuinely separate gate — holding a stall session does not get you into `/admin`.
+- The old three-shared-PIN model (below) never provided real access control in the first place — a PIN known to eight rotating teenage volunteers and printed on a laminated card at the till is not a security boundary against anyone with physical access, and this product's whole threat model is "someone at the stall," not "an internet attacker." The PIN's actual job was accidental clicks and the odd customer wandering into `/sell`, not defense against a determined person.
+- Maintaining it cost real surface area: an HS256 JWT scheme, argon2 hashing, a PIN-change feature that was never built, a step-up-auth endpoint (`/api/auth/verify`) that was flagged in [[Known Issues]] as unrate-limited against the same hash the rate-limited login endpoint protected, and a rate limiter that (before migration 004) didn't even work correctly on Vercel's per-instance model.
+- What actually matters — customer-facing PII, payment data, the live database — is protected by the service-role/anon-client split described in [[Architecture Overview]] and by [[Row Level Security]], neither of which depended on the PIN layer at all. Removing PINs did not remove that protection.
 
-## Mechanics
+**If a future session is tempted to add a PIN, cookie, or login screen back in "for security," that is relitigating a decision the product owner already made on 13 Aug, not fixing a bug.** Raise it as a product question first.
 
-`src/lib/session.ts`:
-- PIN hashes live in `stall_settings` under `pin_stall` / `pin_admin` / `pin_kiosk`, hashed with **argon2** (`@node-rs/argon2`).
-- On success, `signSession()` mints an **HS256 JWT** via `jose` carrying `{kind, deviceId}` and an expiry.
-- Signing key is `process.env.PIN_SESSION_SECRET`; the module **throws at import time** if it is missing or under 16 chars, which is the right failure mode.
-- Cookie is `httpOnly`, `sameSite: lax`, `secure` in production, `path: /`.
-- `verifySession(kind, token)` checks the signature *and* that `payload.kind` matches — so a kiosk cookie cannot be replayed against an admin route.
+## What actually distinguishes "who did this"
 
-No PIN or hash ever reaches client JavaScript.
+Order/action attribution still happens the same way it always did in this product — at the row level (`sold_by`, `actor`, `logged_by` columns), not at the session level. Nothing about the auth removal touched attribution; a volunteer or admin picks their name/role in-flow where the schema asks for it, same as before.
 
-## Two enforcement points
+## Deferred: rate limiting
 
-1. **`middleware.ts`** — gates pages. Matches everything except `_next/static`, `_next/image`, `favicon.ico`, `fonts`, then additionally short-circuits on a `PUBLIC_PATHS` list and on a `STATIC_FILE` regex.
-   > The static-file regex exists because of a real bug: unauthenticated `<img>` requests for sticker cutouts were being redirected to the PIN *page*, and the browser then tried to render HTML as an image.
-2. **Each route handler** — gates data. Middleware passes `/api/*` straight through, so the handler's own `verifySession` call is the **only** thing standing between the internet and a service-role client. A handler that forgets it is a full database breach.
+`stall_rate_limits` (migration 004) is a real database-backed rate limiter, replacing the old in-process `Map` that didn't work across serverless instances. It's still wired up for the kiosk-events insert budget (`stall_kiosk_events_rate_limit()`, a DB trigger) even though the PIN-login use case it was originally built for is gone. It's a reasonable primitive to reach for if any future public-facing write path needs abuse protection.
 
-## Step-up auth
+---
 
-`/api/auth/verify` does a one-off PIN check without issuing a session — used for the >10% discount gate and the B2B margin override. It returns `{ok}` and grants nothing persistent.
+## Historical: the PIN model (old `app/` build, removed, not in `app-v2`)
 
-> ⚠️ It is **not rate-limited**, unlike `/api/auth/pin`, while reaching the same admin hash. Task #11. See [[Known Issues]].
+Kept for context — this describes what the "PIN gating" that got removed on 13 Aug actually was.
 
-## Rate limiting
-
-`src/lib/rateLimit.ts` — an in-process `Map` of IP+kind → `{count, resetAt}`, 5 attempts per 15 minutes.
-
-The file's own header comment admits the flaw: on Vercel each serverless instance holds its own Map, so the limit is per-instance, not per-IP. In practice this means PRD §12's brute-force protection is **largely unenforced in production**. Task #10.
-
-## Device identity
-
-`src/lib/deviceId.ts` mints `dev-xxxxxxxx` from `Math.random()` into `localStorage`. It is not a security control — it is the key that ties a device to its [[Receipt Numbering|receipt block]] and stamps `orders.device_id`. Clearing browser storage orphans a device from its block, which surfaces as *"No receipt numbers left on this device's block. Reopen shift on this device."*
+Eight devices, a rotating cast of teenage volunteers, no time to onboard anyone. A shared PIN per *role* was the model: `stall` (gated `/sell` and most volunteer routes, 14h TTL), `admin` (gated `/admin/*`, 4h TTL), `kiosk` (existed in the auth system but nothing gated on it after the kiosk moved to the public site root). PIN hashes lived in `stall_settings`, hashed with argon2; sessions were HS256 JWTs signed with `PIN_SESSION_SECRET`, carried in an `httpOnly` cookie. `/api/auth/verify` did a one-off step-up PIN check (discount gate, B2B margin override) without issuing a session, and was never rate-limited against the same admin hash the rate-limited login endpoint protected — see the old [[Known Issues]] entries for that gap. None of this exists in `app-v2`.
 
 ## Related
-[[Row Level Security]] · [[API Routes]] · [[Known Issues]]
+[[Row Level Security]] · [[API Routes]] · [[Known Issues]] · [[Architecture Overview]]

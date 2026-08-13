@@ -1,20 +1,20 @@
 ---
 type: backlog
-updated: 2026-08-10
+updated: 2026-08-13
 ---
 
 # Known Issues
 
-Part of [[crftd Stall OS]]. **Open items only.** Everything cleared on 10 Aug, including the press-queue and collections work, is in [[Changelog 2026-08-10]].
+Part of [[crftd Stall OS]]. **Open items only.** Everything cleared on 10 Aug, including the press-queue and collections work, is in [[Changelog 2026-08-10]]. Items below dated 10 Aug or earlier describe the old `app/` build; `app-v2` is now the live app (see [[Architecture Overview]]) and several of these are resolved or no longer apply there — flagged inline.
 
 ## Open — code
 
 A PRD audit on 10 Aug (see [[Changelog 2026-08-10]] "Seventh pass") fixed the load-bearing gaps it found, and an eighth pass the same day caught a live-traffic bug the audit's static reading couldn't see — a second device joining an already-open shift got no receipt block and could never charge, silently. What's left, in order of how much it matters:
 
-1. **Kiosk secondary stages (product/canvas/ticket) are a phone-width card centered on a tablet-width canvas.** Eighth pass widened the max-width at `md:`/`lg:` so they use noticeably more of a 768–1024px screen, but they're still a centered panel, not a redesigned two-column tablet layout. A real fix is a layout pass (e.g. picker + live preview side by side), not a CSS width bump — this was the pragmatic version.
-2. **Customer retention purge (PRD §12: "purge customers with no order in 24 months") is unbuilt.** No cron/scheduled-job infrastructure exists in this repo to hang it off yet.
-3. **`middleware.ts`'s only gate on every `/api/*` route is that handler's own `verifySession` call** — a handler that forgot it would be a fully open door via the service-role client, which bypasses RLS entirely. Not a bug found, an architectural note: worth a pass that greps every `api/**/route.ts` for a missing session check, not done as part of this audit.
-4. **There's no PIN-change *feature*** — PINs are only ever set at seed time via `stall_settings`, so PRD §12's "PIN changes" audit category has nothing to build a log for yet. Not a gap in what exists, a note that the feature itself doesn't.
+1. **Kiosk secondary stages (product/canvas/ticket) are a phone-width card centered on a tablet-width canvas.** Eighth pass widened the max-width at `md:`/`lg:` so they use noticeably more of a 768–1024px screen, but they're still a centered panel, not a redesigned two-column tablet layout. A real fix is a layout pass (e.g. picker + live preview side by side), not a CSS width bump — this was the pragmatic version. Status against `app-v2` not re-verified in this pass.
+2. **Customer retention purge — resolved 13 Aug.** `stall_purge_stale_customers()` (migration 041) is scheduled via `pg_cron`, daily. See [[HANDOFF - Backend Session]].
+3. **`middleware.ts`'s only gate on every `/api/*` route is that handler's own `verifySession` call** — **no longer applicable.** As of 13 Aug there is no session gate anywhere in `app-v2`: PIN auth was removed outright (product decision, not an oversight) and replaced with a credential-free role toggle. `middleware.ts` now passes every route through unconditionally. See [[Auth and Sessions]]. The architectural note this item raised (audit every `api/**/route.ts` for a missing check) is moot — there's nothing to check for, by design.
+4. **There's no PIN-change *feature*** — **moot as of 13 Aug**, PINs don't exist in `app-v2` at all. See [[Auth and Sessions]].
 
 Closed in a ninth pass: stock adjustments ≥10 units now also write `stall_admin_audit` (`stock_adjustment`), alongside the existing per-delta `stall_inventory_movements` row — all four PRD §12 action categories with a real feature behind them now audit. Kiosk rotation now commits the same overlap/bounds check drag already had, on pointer-up, blur, or arrow-key release — a rotation that ends overlapping a neighbour or off the printable area reverts instead of silently sticking.
 

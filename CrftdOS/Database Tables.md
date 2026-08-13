@@ -1,11 +1,14 @@
 ---
 type: reference
-updated: 2026-08-10
+updated: 2026-08-13
 ---
 
 # Database Tables
 
 Full column reference. Part of [[Database Map]]. All names are prefixed `stall_` so the app can coexist with `paradox_*` in the same schema — see [[Deployment and Environments]].
+
+> [!info] 13 Aug update
+> Everything below this note through "Sequences" describes the schema as of 10 Aug (23 tables, no environment scoping). `_import/migrations/` was reconciled with the live database on 13 Aug (migrations 007–041) and the schema has grown substantially since — environments, per-location stock, templates, leads, kiosk analytics, named holds, exchanges. The original sections are left as-is since they're still accurate for the tables they describe (columns didn't change, just gained a few — see inline notes where they did); **new tables added since 10 Aug are listed in the "Added 13 Aug" section near the bottom.** Treat `_import/migrations/`, not this doc or `schema.sql`, as the source of truth going forward.
 
 Legend: **PK** primary key · *FK* foreign key · `!` not null
 
@@ -142,6 +145,46 @@ The append-only ledger. Note `sku_id` is a **polymorphic reference with no FK** 
 Written on price edits, bulk price sets, and hold-release failures.
 
 ---
+
+## Added 13 Aug — environment scoping, per-location stock, and more
+
+Everything below was introduced in migrations `007`–`041` (see [[Database Map]]) and confirmed live via `_import/migrations/` reconciliation on 13 Aug.
+
+### stall_environments
+`id` **PK** · `name` text `!` · `prefix` text `!` unique (matches `^[A-Z][A-Z0-9]{1,5}$`) · `kind` *stall_environment_kind* `!` default `stall` (`cloud`/`stall`/`online`) · `is_active` `!` · `opened_at` `!` · `closed_at` · `created_by` · `notes`
+Anon-readable. Seeded with one row, `HQ Cloud` (`HQ`), as the default/general environment that pre-existing rows backfill to. This is the core new concept: stock, shifts, receipt blocks, and holds are now scoped per physical stall/kiosk instance, not shared org-wide — a real product decision from the 11–12 Aug session, not incidental schema growth. Almost every trading table below gained an `environment_id` column pointing here (`stall_orders`, `stall_shifts`, `stall_holds`, `stall_design_tickets`, `stall_receipt_blocks`, and more — check a given table's migration if you need the exact list).
+
+### stall_stock_locations
+`id` **PK** · `environment_id` *FK environments* unique · `name` `!` · `is_warehouse` bool `!` default false
+Unique partial index ensures at most one `is_warehouse = true` row. One location per environment, plus one shared warehouse.
+
+### stall_stock
+`location_id` *FK stock_locations* · `sku_type` text `!` check in (`product`,`sticker`) · `sku_id` uuid `!` · `qty` int `!` default 0 check `>= 0` · `par_level` int `!` default 0 — **composite PK** `(location_id, sku_type, sku_id)`
+This is what `stall_product_skus.stock_qty` / `stall_sticker_designs.stock_qty` became: stock is now per-`(sku, location)`, not a scalar on the catalogue row. `stall_inventory_movements` gained a `location_id` column (nullable, FK here) to match. `stall_movement_reason` gained two new enum values: `transfer_in`, `transfer_out`.
+
+### stall_templates
+`id` **PK** · `name` `!` · `slug` text `!` unique · `payload` jsonb `!` · `preview_path` · `blurb` · `is_featured` bool `!` · `is_active` `!` · `sort` `!` · `times_used` int `!` default 0 · `created_at` · `updated_at`
+Anon-readable where `is_active`. Kiosk preset designs, editable from `/admin/templates`.
+
+### stall_leads
+`id` **PK** · `name` text `!` · `phone` · `notes` · `logged_by` · `created_at` `!` · `updated_at` `!`
+Org-wide, not environment-scoped (a lead isn't tied to a physical stall — same reasoning as B2B). Distinct from `stall_b2b_orders`: a lead is "someone worth following up with," not a committed deal with a margin gate. Captured from `/pos/leads`.
+
+### stall_kiosk_events
+`id` **PK** bigint identity · `environment_id` *FK environments* `!` · `session_id` uuid `!` · `event` text `!` · `detail` jsonb · `created_at` `!`
+Anon-insert allowed (public kiosk analytics stream), rate-limited per session via a trigger (`stall_kiosk_events_rate_limit`, migration 019) rather than app-level throttling — the honest enforcement point given serverless instances can't share an in-process limiter. Purged by `stall_purge_kiosk_events(interval)` (default 90 days), which as of migration 040 is **`service_role`-only** — it was previously reachable more broadly, which was a real gap, now closed. See [[HANDOFF - Backend Session]].
+
+### stall_rate_limits
+`key` text **PK** · `count` int `!` default 0 · `reset_at` timestamptz `!` · `updated_at` `!`
+Migration 004. A real database-backed rate limit (via `stall_rate_limit_hit()`), replacing an in-process `Map` that didn't work across Vercel serverless instances. Originally built for PIN-login attempts; that use case is gone (see [[Auth and Sessions]]) but the table/function remain in use for the kiosk-events insert budget above.
+
+### Existing tables, notable additions
+- **`stall_holds`** — gained `environment_id`; the named-hold flow (`stall_reserve_named_hold`, migration 035) locks the stock row (`select … for update`) before checking availability, closing the same TOCTOU class of bug `stall_reserve_sticker_hold` already closed for kiosk soft-holds.
+- **`stall_shifts`** — the "one open shift" constraint is now **per environment** (migration 037: `stall_one_open_shift_per_env` replaces the old global `stall_one_open_shift` index), matching the environment-scoping model.
+- **`stall_orders`** — `stall_create_order` (migration 038, "price trust") was rewritten to source prices server-side rather than trust client-submitted amounts; check that migration if you need the exact trust boundary.
+- **`stall_returns`** — gained a `refund_method` column (migration 034) and an atomic `stall_create_exchange()` RPC (migration 033).
+- **Discount guard + sticker ceiling** (migration 039) — added a server-side cap on discount percentage and a price ceiling for custom stickers; check that migration for the exact bounds if building against them.
+- **`stall_customers`** — now has a retention purge, `stall_purge_stale_customers()` (migration 041), `SECURITY DEFINER`, scheduled via `pg_cron` daily at 03:30, deleting customers older than 24 months (PRD §12) with no order in that window. This closes the "customer retention purge unbuilt" item that used to be in [[Known Issues]].
 
 ## Sequences
 

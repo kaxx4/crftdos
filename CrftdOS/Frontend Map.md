@@ -1,90 +1,62 @@
 ---
 type: reference
-updated: 2026-08-10
+updated: 2026-08-13
 ---
 
 # Frontend Map
 
-Part of [[Architecture Overview]]. 17 pages, 3 shared components, all client-rendered.
+Part of [[Architecture Overview]]. Describes `app-v2`, the current live app — not the old `app/` v1 build. No route is PIN-gated; see [[Auth and Sessions]].
 
 ## Route table
 
-### Volunteer — [[Surface - Volunteer POS]]
-| Route | File | Lines | What |
-|---|---|---|---|
-| `/sell` | `app/sell/page.tsx` | 880 | **Sell.** The main POS screen, moved off the root so `/` could become the public kiosk. See [[Flow - Sell]] |
-| `/orders` | `app/orders/page.tsx` | 264 | Shift log, pending press queue, voids, summary card export |
-| `/holds` | `app/holds/page.tsx` | | Active reservations with countdown |
-| `/stock/products` `/stock/stickers` | | | Inventory matrices |
-| `/restock` | | | Below-par, dead stock, print queue |
-| `/waste` | | | Log a failed press |
-| `/returns` | | | Returns and exchanges |
-| `/more` | | | Overflow nav |
-| `/shift-open` | | | Shift setup + receipt block allocation |
-| `/receipt` | | | Rendered receipt, WhatsApp deep link |
-| `/pin` | | | PIN entry for all three kinds |
+### Volunteer — `/pos/*`
+| Route | What |
+|---|---|
+| `/pos/sell` | **Sell.** The main POS screen. See [[Flow - Sell]] |
+| `/pos/orders` | Shift log, pending press queue, voids, summary card export |
+| `/pos/holds` | Active reservations with countdown |
+| `/pos/stock` | Inventory matrices |
+| `/pos/press` | Press queue / production board |
+| `/pos/waste` | Log a failed press |
+| `/pos/returns` | Returns and exchanges |
+| `/pos/leads` | Lead capture — bulk-order / custom-tee enquiries (`stall_leads`, migration 036). Distinct from B2B: a lead is "someone worth following up with," not a committed deal |
+| `/pos/receipt` | Rendered receipt, WhatsApp deep link |
+| `/pos/more` | Overflow nav |
 
-### Kiosk — [[Surface - Kiosk]]
-| `/` | `app/page.tsx` | 758 | Attract → presets or canvas → ticket. **Public — no PIN.** `/kiosk` 308-redirects here for old links/QR codes. A "Staff passcode" link on the attract screen goes to `/pin`. |
+`/pin` and `/admin/pins` **do not exist in `app-v2`** — PIN auth was removed 13 Aug (see [[Auth and Sessions]]). Do not add them back or link to them; if you find a reference to either in older docs or code comments, it's describing the removed v1 model.
 
-### Admin — [[Surface - Admin]]
-| `/admin` | 86 | Dashboard |
-| `/admin/analytics` `/admin/pricing` `/admin/b2b` `/admin/bulk` `/admin/catalogue` | | |
+### Kiosk
+| `/` | Attract → presets or canvas → ticket. Public, no gate, none needed — it was already unauthenticated even under the old PIN model. |
+
+### Admin — `/admin/*`
+| Route | What |
+|---|---|
+| `/admin` | Dashboard |
+| `/admin/analytics` | |
+| `/admin/pricing` | |
+| `/admin/b2b` | |
+| `/admin/bulk` | |
+| `/admin/catalogue` | |
+| `/admin/stock` | |
+| `/admin/environments` | Manage `stall_environments` — see [[Database Map]] |
+| `/admin/templates` | Manage `stall_templates` (kiosk preset designs) |
+| `/admin/discounts` | Discount log/audit — see [[Known Issues]] re: the discount step-up flow that used to gate this |
+
+> The old v1 discount flow required a PIN step-up (`/api/auth/verify`) for discounts over 10%. That step-up endpoint is gone along with the rest of PIN auth (see [[Auth and Sessions]]) — `/admin/discounts` is now a plain, ungated log, not a gate.
 
 ## Components
 
-- **`PosFrame.tsx`** — the volunteer chrome: blue header band, crop marks, connectivity state.
-- **`TabBar.tsx`** — sticky bottom nav, five tabs (Sell · Stock · Orders · Restock · More), `min-h-[44px]` targets, `aria-label="Primary"`.
-- **`ui.tsx`** — the primitive set: `BigButton`, `Chip`, `Field`, `Panel`, `PanelLabel`, `Banner`, `Mono`. See [[Design System]].
+- **`RoleSwitcher.tsx`** (`app-v2/src/components`) — the credential-free Volunteer/Kiosk/Admin toggle that replaced PIN auth, wired into every shell header (`PosShell`, `AdminShell`, `KioskApp`). Persists the last-picked role in `localStorage` as a convenience only — not an access control. See [[Auth and Sessions]].
+- **`PosShell`**, **`AdminShell`**, **`KioskApp`** (`app-v2/src/features/{pos,admin,kiosk}`) — the per-surface chrome, each carrying the `RoleSwitcher`.
+- **`ui.tsx`** (`app-v2/src/components`) — the primitive set: `BigButton`, `Chip`, `Field`, `Panel`, `Card`, `Banner`, `Mono`, etc. See [[Design System]] and [[Design Decision - Direction Resolved]] for the current radius/motion tokens.
 
-## State model
+## State model and data access
 
-There is **no state library**. No Redux, Zustand, TanStack Query, SWR, or React Context. Every page is a `useState` island that fetches its own data in a `useEffect` on mount.
-
-Consequences worth naming:
-- Navigating Sell → Orders → Sell **refetches the entire catalogue**. There is no cache to hit.
-- The Sell page alone holds ~25 `useState` calls. It is the natural first candidate for a reducer.
-- Cross-page invalidation does not exist — a stock change on `/stock/stickers` is invisible on `/sell` until remount or a Realtime event.
-
-That is a defensible choice for an app this size, but it is the reason [[Performance Backlog]] item 5 (the boot waterfall) hits on *every* navigation rather than once.
-
-## Data access from the client
-
-Two paths, chosen per call site:
-
-```js
-// direct anon read — catalogue only, RLS-enforced
-supabaseBrowser().from("stall_sticker_designs").select("*")
-
-// everything else
-fetch("/api/...")
-```
-
-The Sell page boot does both, and does them **serially**:
-
-```js
-const res = await fetch(`/api/shift/current?deviceId=${deviceId}`);  // hop 1
-...
-const [c,f,s,d] = await Promise.all([ ...4 supabase queries ]);      // hop 2
-```
-
-The catalogue does not depend on the shift, so hop 2 is needlessly gated behind hop 1. Task #5.
-
-## Rendering
-
-Every page carries `"use client"`. No page exports `dynamic`, `revalidate`, `runtime` or `fetchCache`; no page uses `cookies()` or `headers()`. So Next prerenders each one to a **static shell at build time** — nothing is re-rendered per visitor, and the "server rebuilding HTML for every visitor" failure mode does not apply here.
-
-The cost lands elsewhere: a blank shell, then hydration, then a fetch waterfall before anything is usable.
+Not re-verified against `app-v2`'s current source as part of this pass — the v1 notes on this (no state library, direct anon Supabase reads for catalogue + `fetch /api/*` for everything else, serial boot waterfall) may still broadly hold given `app-v2` shares the same client/server split (see [[Architecture Overview]]), but treat specifics (hook counts, `useState` counts, exact boot sequence) as unconfirmed for `app-v2` until someone checks.
 
 ## Fonts
 
-`next/font/google` — **Plus Jakarta Sans** (body) and **JetBrains Mono**, self-hosted and preloaded by the loader, exposed as `--font-body` / `--font-mono`.
-
-The design reference specifies **Eina**, a paid Fontspring-licensed face. `layout.tsx` carries an explicit note that the `.ttf` files are *not* shipped because there is no proof of a licence covering this deployment, and Plus Jakarta Sans is the OFL substitute. Good call, and the reasoning is recorded where the next person will find it.
-
-**Fraunces 900 italic** is loaded separately and *only inside* `app/page.tsx` (the kiosk, now the site root), scoped via `fraunces.variable` so the restrained volunteer skin cannot pick it up. It renders the "yours" in *Build yours*, per PRD §11.
-
-Anton, Archivo Expanded Black and Chivo from the PRD §11 stack are not loaded at all. See [[Design System]].
+Plus Jakarta Sans (body) + JetBrains Mono, self-hosted via `next/font/google`. Fraunces 900 italic loaded separately and scoped to the kiosk only. Eina (PRD-referenced, paid Fontspring face) is still not shipped — no licence evidence. See [[Design System]] for the reasoning, which still holds in `app-v2`.
 
 ## Related
-[[Design System]] · [[User Flows]] · [[Offline and Sync]] · [[Performance Backlog]]
+[[Design System]] · [[Design Decision - Direction Resolved]] · [[Auth and Sessions]] · [[User Flows]] · [[Offline and Sync]]
