@@ -7,7 +7,7 @@ import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import type { Order } from "@/lib/domain/types";
 import { money } from "@/lib/money";
-import { Banner, Button, EmptyState, Panel, Sheet, Skeleton } from "@/components/ui";
+import { Banner, Button, ConfirmAction, EmptyState, Panel, Sheet, Skeleton } from "@/components/ui";
 import { clsx } from "@/components/clsx";
 
 /** Everything sold in this environment, newest first, with voids.
@@ -92,9 +92,16 @@ export function OrdersLog() {
         onClose={() => setVoiding(null)}
         title={`Void ${voiding?.receipt_no ?? ""}`}
         footer={
-          <Button variant="danger" size="lg" block busy={busy} disabled={reason.trim().length < 3} onClick={doVoid}>
-            Void this sale
-          </Button>
+          <ConfirmAction
+            variant="danger"
+            size="lg"
+            block
+            busy={busy}
+            disabled={reason.trim().length < 3}
+            label="Void this sale"
+            confirmLabel={`Confirm void ${voiding?.receipt_no ?? ""}?`}
+            onConfirm={doVoid}
+          />
         }
       >
         <p className="mb-3 text-sm">

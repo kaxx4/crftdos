@@ -894,7 +894,7 @@ export class MockBackend implements Backend {
 
   async createReturn(input: CreateReturnInput): Promise<Result<Return>> {
     await latency(120);
-    if (!input.approver_pin) return err("Approver PIN required.", "unauthorised");
+    if (!input.approved_by?.trim()) return err("Approver name required.", "unauthorised");
     if (input.refund_amount && !input.refund_method) {
       return err("refund_method is required when refund_amount is set.", "conflict");
     }

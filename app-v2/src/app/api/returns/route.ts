@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { checkRateLimit, recordFailure, clearRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
 
@@ -26,7 +25,7 @@ export async function POST(req: NextRequest) {
     refund_amount: refundAmount,
     refund_method: refundMethod,
     resaleable,
-    approver_pin: approverPin,
+    approved_by: approvedBy,
     note,
     shift_id: shiftId,
     device_id: deviceId,
@@ -40,32 +39,13 @@ export async function POST(req: NextRequest) {
   if (refundAmount && !refundMethod) {
     return NextResponse.json({ error: "refund_method is required when refund_amount is set" }, { status: 400 });
   }
+  // Named approver, not a PIN — PIN step-up was removed app-wide (361bc4c).
+  // This is an accountability record for the audit row below, not a gate.
+  if (!approvedBy || !String(approvedBy).trim()) {
+    return NextResponse.json({ error: "Approver name required" }, { status: 400 });
+  }
 
   const admin = supabaseAdmin();
-
-  // Approval gate — any return needs an admin PIN per PRD's "approved_by"
-  // field intent. Rate-limited the same way as /api/auth/pin: a stall session
-  // is lower privilege than admin, so this check must not be brute-forceable.
-  const rlKey = rateLimitKey(req, "admin-pin");
-  const rl = await checkRateLimit(rlKey);
-  if (!rl.allowed) {
-    return NextResponse.json(
-      { error: `Too many failed attempts. Try again in ${Math.ceil(rl.retryAfterSeconds / 60)} minutes.` },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
-    );
-  }
-  if (approverPin) {
-    const { verify } = await import("@node-rs/argon2");
-    const { data: pinRow } = await admin.from("stall_settings").select("value").eq("key", "pin_admin").single();
-    const pinOk = pinRow ? await verify(pinRow.value as string, approverPin).catch(() => false) : false;
-    if (!pinOk) {
-      await recordFailure(rlKey);
-      return NextResponse.json({ error: "Incorrect admin PIN" }, { status: 401 });
-    }
-    await clearRateLimit(rlKey);
-  } else {
-    return NextResponse.json({ error: "Approver PIN required" }, { status: 401 });
-  }
 
   const { data: original } = await admin.from("stall_orders").select("*").eq("id", originalOrderId).single();
   if (!original) return NextResponse.json({ error: "Original order not found" }, { status: 404 });
@@ -139,6 +119,7 @@ export async function POST(req: NextRequest) {
       refund_method: refundAmount ? refundMethod || null : null,
       restocked: !!resaleable,
       note: note || null,
+      approved_by: String(approvedBy).trim(),
     })
     .select()
     .single();

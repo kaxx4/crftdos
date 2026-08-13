@@ -15,7 +15,7 @@ import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import type { CreateReturnInput } from "@/lib/backend";
 import type { Order, ReturnAction } from "@/lib/domain/types";
 import { money } from "@/lib/money";
-import { Banner, Button, Chip, EmptyState, Field, Panel, Skeleton } from "@/components/ui";
+import { Banner, Button, Chip, ConfirmAction, EmptyState, Field, Panel, Skeleton } from "@/components/ui";
 
 const ACTIONS: { value: ReturnAction; label: string }[] = [
   { value: "refund", label: "Refund" },
@@ -50,7 +50,7 @@ export function ReturnsScreen() {
   const [refundAmount, setRefundAmount] = useState("0");
   const [refundMethod, setRefundMethod] = useState<"cash" | "upi">("cash");
   const [resaleable, setResaleable] = useState(true);
-  const [pin, setPin] = useState("");
+  const [approvedBy, setApprovedBy] = useState("");
   const [exchangeSkuId, setExchangeSkuId] = useState("");
   const [exchangeQty, setExchangeQty] = useState("1");
   const [notFound, setNotFound] = useState(false);
@@ -91,7 +91,7 @@ export function ReturnsScreen() {
       original_order_id: found.id,
       reason: reason.trim(),
       action,
-      approver_pin: pin,
+      approved_by: approvedBy,
       refund_amount: Number(refundAmount) || 0,
       refund_method: Number(refundAmount) > 0 ? refundMethod : null,
       resaleable,
@@ -122,7 +122,7 @@ export function ReturnsScreen() {
       setFound(null);
       setSearch("");
       setReason("");
-      setPin("");
+      setApprovedBy("");
       setRefundAmount("0");
       setRefundMethod("cash");
       setExchangeSkuId("");
@@ -265,18 +265,29 @@ export function ReturnsScreen() {
             </label>
 
             <Field
-              label="Approver admin PIN"
-              type="password"
-              placeholder="Approver admin PIN"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
+              label="Approver name"
+              placeholder="Who's signing off on this?"
+              value={approvedBy}
+              onChange={(e) => setApprovedBy(e.target.value)}
             />
 
             {error && <Banner tone="danger">{error}</Banner>}
 
-            <Button variant="primary" size="lg" block busy={busy} disabled={!reason.trim() || pin.length < 4} onClick={submit}>
-              Log return
-            </Button>
+            {/* Two-tap on purpose: this moves stock and, on a refund, money.
+                Not authorization — anyone can tap it twice — just a guard
+                against logging a return by mis-tap. */}
+            <ConfirmAction
+              variant="primary"
+              size="lg"
+              block
+              busy={busy}
+              disabled={!reason.trim() || !approvedBy.trim()}
+              label="Log return"
+              confirmLabel={
+                Number(refundAmount) > 0 ? `Confirm ${action} — refund ${money(Number(refundAmount))}?` : `Confirm ${action}?`
+              }
+              onConfirm={submit}
+            />
           </div>
         </Panel>
       )}

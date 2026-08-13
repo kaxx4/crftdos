@@ -11,7 +11,7 @@ import { getBackend } from "@/lib/backend";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import { money } from "@/lib/money";
 import { AdminShell, ScrollX } from "@/features/admin/AdminShell";
-import { Banner, Button, Field, Panel, Skeleton } from "@/components/ui";
+import { Banner, Button, ConfirmAction, Field, Panel, Skeleton } from "@/components/ui";
 
 function PriceCostCell({
   value,
@@ -26,30 +26,43 @@ function PriceCostCell({
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? String(value);
+  const n = draft != null ? Number(draft) : null;
+  const dirty = draft != null && draft !== "" && Number.isFinite(n) && n !== value;
 
+  const cancel = () => setDraft(null);
   const commit = () => {
-    const n = Number(draft);
-    if (draft != null && draft !== "" && Number.isFinite(n)) onSave(n);
+    if (dirty && n != null) onSave(n);
     setDraft(null);
   };
 
   return (
-    <input
-      value={shown}
-      disabled={busy}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-        if (e.key === "Escape") {
-          setDraft(null);
-          (e.target as HTMLInputElement).blur();
-        }
-      }}
-      inputMode="decimal"
-      aria-label={label}
-      className="min-h-[40px] w-24 rounded-md border-2 border-[var(--color-line)] bg-white px-2 text-sm font-[family-name:var(--font-mono)] tnum focus:border-[var(--color-blue)]"
-    />
+    <div className="flex items-center gap-1.5">
+      <input
+        value={shown}
+        disabled={busy}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") cancel();
+        }}
+        inputMode="decimal"
+        aria-label={label}
+        className="min-h-[40px] w-24 rounded-md border-2 border-[var(--color-line)] bg-white px-2 text-sm font-[family-name:var(--font-mono)] tnum focus:border-[var(--color-blue)]"
+      />
+      {/* No auto-commit on blur: a stray tap while scrolling this table used to
+          silently rewrite what the next sale charges. Saving now needs a
+          deliberate second tap. */}
+      {dirty && (
+        <ConfirmAction
+          size="sm"
+          surface="admin"
+          variant="primary"
+          busy={busy}
+          label="Save"
+          confirmLabel={`Confirm ₹${n}?`}
+          onConfirm={commit}
+        />
+      )}
+    </div>
   );
 }
 

@@ -13,6 +13,7 @@
  *    - a disabled state that stays READABLE — 40% opacity, as the old build
  *      used, drops disabled text below any usable contrast in sunlight. */
 
+import { useEffect, useRef, useState } from "react";
 import { clsx } from "./clsx";
 
 export type Surface = "kiosk" | "pos" | "admin";
@@ -83,6 +84,76 @@ export function Button({
       )}
       {children}
     </button>
+  );
+}
+
+// ── ConfirmAction ───────────────────────────────────────────────────────────
+
+/** Friction, not authorization. Since PIN step-up came out, nothing stood
+ *  between a mis-tap and a real price change or refund — this is a two-tap
+ *  guard against exactly that, not a permission check. First tap arms it and
+ *  swaps in the real stakes (e.g. "Confirm price change to ₹450"); a second
+ *  tap within the window commits, and it quietly disarms if left alone. */
+export function ConfirmAction({
+  label,
+  confirmLabel,
+  onConfirm,
+  variant = "danger",
+  size = "md",
+  surface = "pos",
+  busy = false,
+  disabled = false,
+  block = false,
+  className,
+  armMs = 4000,
+}: {
+  label: React.ReactNode;
+  confirmLabel: React.ReactNode;
+  onConfirm: () => void;
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+  surface?: Surface;
+  busy?: boolean;
+  disabled?: boolean;
+  block?: boolean;
+  className?: string;
+  armMs?: number;
+}) {
+  const [armed, setArmed] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const disarm = () => {
+    if (timer.current) clearTimeout(timer.current);
+    setArmed(false);
+  };
+
+  return (
+    <Button
+      type="button"
+      variant={armed ? "danger" : variant}
+      size={size}
+      surface={surface}
+      busy={busy}
+      disabled={disabled}
+      block={block}
+      className={className}
+      onClick={() => {
+        if (!armed) {
+          setArmed(true);
+          timer.current = setTimeout(disarm, armMs);
+          return;
+        }
+        disarm();
+        onConfirm();
+      }}
+      onBlur={disarm}
+    >
+      {armed ? confirmLabel : label}
+    </Button>
   );
 }
 

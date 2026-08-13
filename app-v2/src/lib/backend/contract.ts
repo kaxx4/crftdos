@@ -129,8 +129,10 @@ export type CreateReturnInput = {
   original_order_id: string;
   reason: string;
   action: ReturnAction;
-  /** Required — any return needs admin approval (PRD's "approved_by" intent). */
-  approver_pin: string;
+  /** Required — any return needs a named approver (PRD's "approved_by" intent).
+   *  Free text, not a credential — PIN step-up was removed app-wide; this is
+   *  an accountability record, not an authorization check. */
+  approved_by: string;
   refund_amount?: number;
   /** How refund_amount left the till — required whenever refund_amount > 0,
    *  so shift close can subtract a cash refund from expected cash. */

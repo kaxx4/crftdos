@@ -32,7 +32,7 @@ import { enqueueOrder } from "@/lib/outbox";
 import type { CreateOrderInput } from "@/lib/backend";
 import type { PaymentMethod, Placement, ProductSku, StickerDesign, StockRow } from "@/lib/domain/types";
 import { money } from "@/lib/money";
-import { Banner, Button, Chip, EmptyState, Field, Nudge, Panel } from "@/components/ui";
+import { Banner, Button, Chip, ConfirmAction, EmptyState, Field, Nudge, Panel } from "@/components/ui";
 import { clsx } from "@/components/clsx";
 
 const BASE_PRICE = 450;
@@ -40,6 +40,9 @@ const PRICE_PER_EXTRA_STICKER = 50;
 const LOW_PRICE_WARNING = 250;
 const LOW_STOCK_WARNING = 2;
 const IDLE_CART_MS = 25_000;
+// This used to be the threshold that required an admin PIN step-up before
+// PIN auth was removed app-wide. Kept as the friction threshold, not a gate.
+const DISCOUNT_CONFIRM_RATIO = 0.1;
 
 type PickedSticker =
   | { kind: "catalogue"; key: string; design: StickerDesign }
@@ -128,6 +131,9 @@ export function WalkUpSale() {
   const finalPrice = freebie ? 0 : priceOverride !== null ? Number(priceOverride) || 0 : suggestedPrice;
   const priceIsLow = !freebie && finalPrice > 0 && finalPrice < LOW_PRICE_WARNING;
   const discountAmount = Math.max(0, naturalSubtotal - finalPrice);
+  // Freebies already carry their own three-field sign-off, so this only
+  // fires for a partial discount steep enough to be worth a second look.
+  const bigDiscount = !freebie && naturalSubtotal > 0 && discountAmount / naturalSubtotal > DISCOUNT_CONFIRM_RATIO;
 
   const splitTotal = (Number(splitCash) || 0) + (Number(splitUpi) || 0);
   const splitMismatch = method === "split" && splitTotal !== finalPrice;
@@ -502,9 +508,22 @@ export function WalkUpSale() {
           <span className="text-xs font-bold uppercase tracking-[0.14em] opacity-70">Total</span>
           <span className="font-[family-name:var(--font-mono)] text-3xl font-bold tnum">{money(finalPrice)}</span>
         </div>
-        <Button variant="primary" size="xl" block disabled={!canCharge} busy={busy} onClick={charge}>
-          {!sku ? "Pick a tee first" : splitMismatch ? "Fix the payment split" : freebie && !canCharge ? "Fill in freebie sign-off" : "Charge"}
-        </Button>
+        {bigDiscount ? (
+          <ConfirmAction
+            variant="primary"
+            size="xl"
+            block
+            busy={busy}
+            disabled={!canCharge}
+            label="Charge"
+            confirmLabel={`Confirm ${money(finalPrice)} — that's a steep discount?`}
+            onConfirm={charge}
+          />
+        ) : (
+          <Button variant="primary" size="xl" block disabled={!canCharge} busy={busy} onClick={charge}>
+            {!sku ? "Pick a tee first" : splitMismatch ? "Fix the payment split" : freebie && !canCharge ? "Fill in freebie sign-off" : "Charge"}
+          </Button>
+        )}
       </div>
     </div>
   );
