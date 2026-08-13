@@ -105,6 +105,9 @@ export type CreateOrderInput = {
   designs: DesignPayload[];
   client_created_at: string;
   notes?: string | null;
+  /** Accountability record, not a payment gateway reference — e.g. who/when
+   *  a volunteer confirmed a UPI payment before the sale finalized. */
+  payment_ref?: string | null;
 };
 
 export type ShiftContext = { shift: Shift | null; block: ReceiptBlock | null };

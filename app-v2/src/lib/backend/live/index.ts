@@ -274,7 +274,7 @@ export class LiveBackend implements Backend {
       paymentMethod: input.payment_method,
       paidCash: input.paid_cash,
       paidUpi: input.paid_upi,
-      paymentRef: null,
+      paymentRef: input.payment_ref ?? null,
       fulfillmentStatus: "pending_press",
       promisedDate: null,
       clientCreatedAt: input.client_created_at,

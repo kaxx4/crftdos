@@ -92,6 +92,8 @@ export function OrderStep({
         manual_override: false,
         designs: [payload],
         client_created_at: new Date().toISOString(),
+        payment_ref:
+          method === "upi" ? `volunteer-confirmed@${new Date().toISOString()}` : null,
       })
     );
 

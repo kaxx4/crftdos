@@ -667,7 +667,7 @@ export class MockBackend implements Backend {
         payment_method: input.payment_method,
         paid_cash: input.paid_cash,
         paid_upi: input.paid_upi,
-        payment_ref: null,
+        payment_ref: input.payment_ref ?? null,
         fulfillment_status: "pending_press",
         promised_date: null,
         prepped_at: null,
