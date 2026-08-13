@@ -18,7 +18,18 @@
 
 import { openDB, type IDBPDatabase } from "idb";
 import { getBackend } from "./backend";
-import type { CreateOrderInput } from "./backend/contract";
+import type { CreateOrderInput, ErrorCode } from "./backend/contract";
+
+// Codes that mean "the server looked at this and said no" rather than "try
+// again later" — retrying these forever just replays the same rejection, so
+// they go straight to `failed` without waiting out MAX_FAILED_RETRIES.
+const PERMANENT_ERROR_CODES: ErrorCode[] = [
+  "out_of_stock",
+  "no_receipt_numbers",
+  "already_redeemed",
+  "environment_closed",
+  "unauthorised",
+];
 
 export type OutboxOrder = {
   /** Client uuid. The idempotency key. */
@@ -35,7 +46,7 @@ export type OutboxOrder = {
  *  rejection. Past this many attempts it stops auto-retrying and needs a human,
  *  but it still counts toward `outboxCount()` so shift close correctly blocks
  *  on it rather than letting a volunteer walk away from an unsynced sale. */
-const MAX_FAILED_RETRIES = 5;
+export const MAX_FAILED_RETRIES = 5;
 
 const DB_NAME = "stallos-outbox";
 const STORE = "orders";
@@ -127,7 +138,14 @@ async function flushInner() {
     try {
       const res = await backend.createOrder(item.payload);
       if (res.ok) await removeFromOutbox(item.id);
-      else await markOutbox(item.id, { status: "failed", lastError: res.error, attempts });
+      else {
+        const permanent = res.code ? PERMANENT_ERROR_CODES.includes(res.code) : false;
+        await markOutbox(item.id, {
+          status: "failed",
+          lastError: permanent ? res.error : `${res.error} (will retry)`,
+          attempts: permanent ? MAX_FAILED_RETRIES : attempts,
+        });
+      }
     } catch (e) {
       await markOutbox(item.id, {
         status: "queued",

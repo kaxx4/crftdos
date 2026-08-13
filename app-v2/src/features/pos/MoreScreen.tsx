@@ -15,7 +15,7 @@ import { getDeviceId } from "@/lib/device";
 import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useDeviceId } from "@/lib/hooks/useDeviceId";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
-import { listOutbox, discardOutboxItem, onOutboxChange, type OutboxOrder } from "@/lib/outbox";
+import { listOutbox, discardOutboxItem, onOutboxChange, MAX_FAILED_RETRIES, type OutboxOrder } from "@/lib/outbox";
 import { money } from "@/lib/money";
 import { Banner, Button, Field, Panel } from "@/components/ui";
 import { useEffect } from "react";
@@ -106,21 +106,27 @@ export function MoreScreen() {
                 Keep the app open until they clear. If one is stuck, you can discard it below — but check with
                 whoever&apos;s running the stall first.
                 <ul className="mt-2 flex flex-col gap-1.5">
-                  {queue.map((q) => (
-                    <li key={q.id} className="flex items-center justify-between gap-2 text-sm">
-                      <span className="truncate">{q.lastError ?? q.status}</span>
-                      <Button
-                        size="md"
-                        variant="ghost"
-                        onClick={async () => {
-                          await discardOutboxItem(q.id);
-                          setQueue(await listOutbox());
-                        }}
-                      >
-                        Discard
-                      </Button>
-                    </li>
-                  ))}
+                  {queue.map((q) => {
+                    const stuck = q.status === "failed" && (q.attempts ?? 0) >= MAX_FAILED_RETRIES;
+                    return (
+                      <li key={q.id} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="truncate">
+                          {stuck && <span className="mr-1 font-bold text-[var(--color-signal)]">Needs review —</span>}
+                          {q.lastError ?? q.status}
+                        </span>
+                        <Button
+                          size="md"
+                          variant="ghost"
+                          onClick={async () => {
+                            await discardOutboxItem(q.id);
+                            setQueue(await listOutbox());
+                          }}
+                        >
+                          Discard
+                        </Button>
+                      </li>
+                    );
+                  })}
                 </ul>
               </Banner>
             ) : (
