@@ -42,16 +42,15 @@
        Kiosk Taste Engine v2     — 27 × 999px.
 
      The pill geometry belongs to a separate kiosk exploration that was never
-     reconciled with the PRD's brutalist direction (D19), so it is defined but
-     deliberately NOT adopted — see the open question in
-     [[Rework - Visual Direction]]. Nothing should reference --radius-pill
-     until that call is made. */
+     reconciled with the PRD's brutalist direction (D19). [[Rework - Visual
+     Direction]] §6 closes the open question: the rounded-pill/soft-radius
+     direction is killed outright, not merely unadopted — so --radius-pill is
+     removed rather than kept around unreferenced. Do not reintroduce it. */
   --radius-pos-sm: 6px; /* POS inputs, chips */
   --radius-pos-md: 8px; /* POS buttons, panels */
   --radius-kiosk-sm: 14px;
   --radius-kiosk-md: 18px;
   --radius-kiosk-lg: 28px; /* kiosk outer tiles and cards */
-  --radius-pill: 9999px; /* v3 direction — unadopted, pending decision */
 
   /* Duration. POS stays under 180ms because its motions fire hundreds of
      times a shift; the kiosk can afford to be expressive. */
@@ -84,7 +83,6 @@
   --radius-kiosk-sm: var(--radius-kiosk-sm);
   --radius-kiosk-md: var(--radius-kiosk-md);
   --radius-kiosk-lg: var(--radius-kiosk-lg);
-  --radius-pill: var(--radius-pill);
 
   --ease-out-strong: var(--ease-out-strong);
   --ease-kiosk: var(--ease-kiosk);
