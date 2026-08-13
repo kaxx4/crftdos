@@ -22,7 +22,7 @@
  *  which is the same id the server uses as a primary key — so a retry cannot
  *  double-charge. */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getBackend } from "@/lib/backend";
 import { getDeviceId } from "@/lib/device";
@@ -32,12 +32,14 @@ import { enqueueOrder } from "@/lib/outbox";
 import type { CreateOrderInput } from "@/lib/backend";
 import type { PaymentMethod, Placement, ProductSku, StickerDesign, StockRow } from "@/lib/domain/types";
 import { money } from "@/lib/money";
-import { Banner, Button, Chip, EmptyState, Field, Panel } from "@/components/ui";
+import { Banner, Button, Chip, EmptyState, Field, Nudge, Panel } from "@/components/ui";
 import { clsx } from "@/components/clsx";
 
 const BASE_PRICE = 450;
 const PRICE_PER_EXTRA_STICKER = 50;
 const LOW_PRICE_WARNING = 250;
+const LOW_STOCK_WARNING = 2;
+const IDLE_CART_MS = 25_000;
 
 type PickedSticker =
   | { kind: "catalogue"; key: string; design: StickerDesign }
@@ -109,6 +111,11 @@ export function WalkUpSale() {
 
   const [toast, setToast] = useState<string | null>(null);
   const { run, busy, error, clearError } = useAction();
+
+  // A cart a volunteer forgot about mid-conversation — gentle, not a
+  // blocker. Keyed by fingerprint below so it remounts (and re-arms) fresh
+  // on any cart change instead of resetting state inside an effect.
+  const cartFingerprint = `${sku?.id ?? ""}|${stickers.length}`;
 
   // Natural (catalogue) subtotal — informational, and the baseline the
   // logged discount is measured against. Custom stickers carry no catalogue
@@ -382,12 +389,18 @@ export function WalkUpSale() {
                   {s.kind === "catalogue" ? s.design.code : `C-series · ${s.sizeClass}`}
                 </span>
                 {s.kind === "custom" && <span className="flex-1 truncate text-sm text-[var(--color-muted)]">{s.description}</span>}
+                {s.kind === "catalogue" && s.design.stock_qty <= LOW_STOCK_WARNING && (
+                  <span className="text-xs font-bold text-[var(--color-signal)]">{s.design.stock_qty} left</span>
+                )}
                 <Button size="md" variant="ghost" onClick={() => setStickers((p) => p.filter((_, j) => j !== i))}>
                   Remove
                 </Button>
               </li>
             ))}
           </ul>
+          {stickers.some((s) => s.kind === "catalogue" && s.design.stock_qty <= LOW_STOCK_WARNING) && (
+            <Nudge className="mt-3">Running low on one of these transfers — worth restocking after this sale.</Nudge>
+          )}
         </Panel>
       )}
 
@@ -462,6 +475,9 @@ export function WalkUpSale() {
             </Chip>
           ))}
         </div>
+        {method === "pending" && (
+          <Nudge className="mt-3">Pending means unpaid — only pick this if you genuinely can&apos;t collect now, and follow up before shift close.</Nudge>
+        )}
         {method === "split" && (
           <div className="mt-3 flex flex-col gap-2">
             <div className="flex gap-2">
@@ -477,6 +493,8 @@ export function WalkUpSale() {
         )}
       </Panel>
 
+      {sku && canCharge && <IdleCartNudge key={cartFingerprint} />}
+
       {/* Charge, pinned. It must be reachable with a thumb without scrolling,
           because it is the last thing in every transaction. */}
       <div className="sticky bottom-24 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-ink)] p-3 text-[var(--color-cream)]">
@@ -490,6 +508,18 @@ export function WalkUpSale() {
       </div>
     </div>
   );
+}
+
+/** Remounted (via `key`) on every cart change, so it always starts
+ *  unarmed — no effect ever needs to reset state back to false. */
+function IdleCartNudge() {
+  const [idle, setIdle] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setIdle(true), IDLE_CART_MS);
+    return () => clearTimeout(t);
+  }, []);
+  if (!idle) return null;
+  return <Nudge>This one&apos;s been sitting a bit — ready to charge?</Nudge>;
 }
 
 /** Out-of-stock sizes are shown and selectable behind a warning, NOT hidden —

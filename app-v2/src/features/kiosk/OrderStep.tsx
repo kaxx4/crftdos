@@ -27,7 +27,7 @@ import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import type { Environment, Order, PaymentMethod } from "@/lib/domain/types";
 import type { useCanvas } from "@/lib/hooks/useCanvas";
 import { money, upiLink } from "@/lib/money";
-import { Banner, Button, Field, Panel } from "@/components/ui";
+import { Banner, Button, Field, Nudge, Panel } from "@/components/ui";
 import { clsx } from "@/components/clsx";
 
 type Canvas = ReturnType<typeof useCanvas>;
@@ -191,6 +191,10 @@ export function OrderStep({
             <span className="font-[family-name:var(--font-mono)] text-2xl font-bold tnum">{money(canvas.total)}</span>
           </div>
         </Panel>
+
+        {ready && (
+          <Nudge className="mt-4">You&apos;re all set — this locks in your design. Check the name and number are right first.</Nudge>
+        )}
 
         <Button
           surface="kiosk"

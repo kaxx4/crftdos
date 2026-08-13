@@ -18,7 +18,7 @@ import type { KioskDesign, Placement, ProductSku } from "@/lib/domain/types";
 import type { useCanvas } from "@/lib/hooks/useCanvas";
 import { IMG_H, IMG_W, layoutRect } from "@/lib/geometry";
 import { money } from "@/lib/money";
-import { Button, Chip, EmptyState, Skeleton } from "@/components/ui";
+import { Button, Chip, EmptyState, Nudge, Skeleton } from "@/components/ui";
 import { clsx } from "@/components/clsx";
 import { GarmentPicker } from "./GarmentPicker";
 import { DesignRail } from "./DesignRail";
@@ -122,6 +122,10 @@ export function CanvasStage({
             {catalogue?.fits.find((f) => f.id === canvas.sku!.fit_id)?.name} · {canvas.sku.size}
           </p>
         </div>
+
+        {canvas.placements.length === 0 && (
+          <Nudge>Transfers show at their real printed size, and two can&apos;t overlap — drag one to reposition it.</Nudge>
+        )}
 
         {designsLoading ? (
           <div className="grid grid-cols-3 gap-2">
