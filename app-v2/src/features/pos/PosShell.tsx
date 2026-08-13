@@ -2,11 +2,17 @@
 
 /** The volunteer chrome.
  *
- *  Restrained by design (PRD D19). Somebody is squinting at a 6" phone in
- *  direct sunlight with a queue in front of them; the collision layout that
- *  makes the kiosk photogenic would be actively hostile here. Blue header
- *  band, cream ground, huge targets, maximum contrast, and nothing decorative
- *  competing for attention with the numbers.
+ *  Somebody is squinting at a 6" phone in direct sunlight with a queue in
+ *  front of them. Per DESIGN-SPEC §0 the POS register is "instrument": loud
+ *  chrome, calm workspace. So the colour lives HERE — one cobalt band at the
+ *  top, one ink bar at the bottom — and the screens between them stay mostly
+ *  white and paper with a single accent each.
+ *
+ *  Structurally this is the fixed frame the spec's three-region POS layout
+ *  needs: the shell owns the viewport height and never scrolls, `main` is a
+ *  flex column that a `PosScreen` fills, and the tab bar is a real element at
+ *  the end of the column rather than a fixed overlay — an overlay is what
+ *  forced the old `pb-24` guesswork and let a charge button hide behind it.
  *
  *  The connectivity state is deliberately unmissable rather than tasteful.
  *  iOS Safari has no Background Sync, so queued sales only flush while the app
@@ -55,19 +61,16 @@ export function PosShell({ children, title }: { children: React.ReactNode; title
   }, []);
 
   // Capped to phone width even on a wide viewport (a volunteer's phone in
-  // landscape, or the same route opened on a laptop while testing). PosShell
-  // is documented as "restrained by design... nothing decorative competing
-  // for attention" — a full-bleed layout on a wide screen is exactly that
-  // competing decoration, just accidental instead of deliberate.
+  // landscape, or the same route opened on a laptop while testing).
   return (
-    <div className="flex min-h-dvh flex-col items-center bg-[var(--color-cream)]">
-      <div className="flex w-full max-w-md flex-1 flex-col">
-        <header className="crop-marks sticky top-0 z-30 bg-[var(--color-blue)] px-3 py-2.5 text-white">
-          <div className="flex items-center justify-between gap-3">
-            <EnvironmentChip tone="dark" />
-            <h1 className="truncate text-sm font-bold uppercase tracking-[0.14em]">{title}</h1>
+    <div className="flex h-dvh flex-col items-center overflow-hidden bg-[var(--color-paper)]">
+      <div className="flex min-h-0 w-full max-w-md flex-1 flex-col border-x-[3px] border-[var(--color-ink)]">
+        <header className="crop-marks on-deep shrink-0 border-b-[3px] border-[var(--color-ink)] bg-[var(--color-cobalt)] px-[var(--space-3)] py-[var(--space-3)] text-white">
+          <div className="flex items-center justify-between gap-[var(--space-3)]">
+            <h1 className="t-lg min-w-0 flex-1 truncate">{title}</h1>
             <RoleSwitcher tone="dark" />
           </div>
+          <EnvironmentChip tone="dark" className="mt-[var(--space-2)] w-full" />
         </header>
 
         {(!online || queued > 0) && (
@@ -75,8 +78,10 @@ export function PosShell({ children, title }: { children: React.ReactNode; title
             role="status"
             aria-live="polite"
             className={clsx(
-              "px-3 py-2 text-center text-sm font-bold",
-              online ? "bg-[var(--color-blue-wash)] text-[var(--color-ink)]" : "bg-[var(--color-signal)] text-white"
+              "shrink-0 border-b-[3px] border-[var(--color-ink)] px-[var(--space-3)] py-[var(--space-2)] t-base font-bold",
+              online
+                ? "bg-[var(--color-yellow)] text-[var(--color-ink)]"
+                : "on-deep bg-[var(--color-signal)] text-white"
             )}
           >
             {online
@@ -86,36 +91,39 @@ export function PosShell({ children, title }: { children: React.ReactNode; title
         )}
 
         {getBackend().isMock && (
-          <div className="mock-hatch border-b-2 border-[var(--color-signal)] px-3 py-1.5 text-center text-xs font-bold">
-            DEMO DATA — nothing here is a real sale
+          <div className="mock-hatch shrink-0 border-b-[3px] border-[var(--color-signal)] px-[var(--space-3)] py-[var(--space-2)] text-center t-label">
+            Demo data — nothing here is a real sale
           </div>
         )}
 
-        <main className="flex-1 pb-24">{children}</main>
-      </div>
+        <main className="flex min-h-0 flex-1 flex-col">{children}</main>
 
-      <nav
-        aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-30 mx-auto grid w-full max-w-md grid-cols-5 border-t-2 border-x-2 border-[var(--color-ink)] bg-[var(--color-cream)]"
-      >
-        {TABS.map((t) => {
-          const active = pathname === t.href;
-          return (
-            <Link
-              key={t.href}
-              href={t.href}
-              aria-current={active ? "page" : undefined}
-              className={clsx(
-                "tap-target flex flex-col items-center justify-center px-1 py-2 text-xs font-bold",
-                "transition-colors duration-[var(--dur-fast)]",
-                active ? "bg-[var(--color-ink)] text-[var(--color-cream)]" : "text-[var(--color-ink)]"
-              )}
-            >
-              {t.label}
-            </Link>
-          );
-        })}
-      </nav>
+        <nav
+          aria-label="Primary"
+          className="on-deep grid shrink-0 grid-cols-5 border-t-[3px] border-[var(--color-ink)] bg-[var(--color-ink)] pb-[env(safe-area-inset-bottom)]"
+        >
+          {TABS.map((t) => {
+            const active = pathname === t.href;
+            return (
+              <Link
+                key={t.href}
+                href={t.href}
+                aria-current={active ? "page" : undefined}
+                className={clsx(
+                  "flex min-h-[var(--tap-pos)] items-center justify-center px-1 t-base font-extrabold",
+                  "transition-colors duration-[var(--dur-fast)]",
+                  // Neutral, not a block colour: the chrome already spends the
+                  // screen's cobalt, so the tab bar stays ink/white and every
+                  // screen keeps a block colour of its own to spend.
+                  active ? "bg-white text-[var(--color-ink)]" : "text-white/80 hover:text-white"
+                )}
+              >
+                {t.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
     </div>
   );
 }

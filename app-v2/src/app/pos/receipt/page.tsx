@@ -7,14 +7,19 @@
  *  app-v2's `Order` already carries everything a receipt needs, so this reads
  *  the order straight from the backend by id — shareable as a link, works
  *  after a refresh, and works for any past order, not just the one just
- *  rung up. */
+ *  rung up.
+ *
+ *  This is the one POS screen a CUSTOMER looks at, so it is allowed to carry
+ *  the brand: a cobalt masthead and one acid block for the amount raised.
+ *  Everything else stays a plain ink-ruled document, because it is also the
+ *  thing that gets printed on a thermal printer in black and white. */
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { getBackend } from "@/lib/backend";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { PosShell } from "@/features/pos/PosShell";
-import { Banner, Button, Skeleton } from "@/components/ui";
+import { Banner, Button, Mono, PosScreen, Skeleton, Text } from "@/components/ui";
 import { money } from "@/lib/money";
 
 function ReceiptInner() {
@@ -26,102 +31,114 @@ function ReceiptInner() {
     [orderId]
   );
 
+  const o = order.data;
+
   return (
     <PosShell title="Receipt">
-      <div className="print:hidden flex flex-col gap-3 p-3">
-        {order.loading && (
-          <>
-            <Skeleton className="h-40" />
-            <Skeleton className="h-20" />
-          </>
-        )}
-        {order.error && <Banner tone="danger" title="Couldn't load this receipt">{order.error}</Banner>}
-      </div>
+      <PosScreen>
+        <PosScreen.Body>
+          {order.loading && (
+            <>
+              <Skeleton className="h-56" />
+              <Skeleton className="h-24" />
+            </>
+          )}
+          {order.error && <Banner tone="danger" title="Couldn't load this receipt">{order.error}</Banner>}
 
-      {order.data && (
-        <div className="flex flex-col gap-4 p-3">
-          <div id="receipt-print" className="relative border-2 border-[var(--color-ink)] bg-white">
-            <div className="pt-5 px-4 pb-2 text-center">
-              <div className="font-extrabold text-4xl tracking-wide text-[var(--color-blue)]">CRFTD</div>
-              <div className="font-extrabold text-[12px] tracking-[0.2em] mt-1">TERRAROOTS FOUNDATION</div>
-            </div>
-            <div className="h-2 bg-[var(--color-blue)] mx-4" />
-            <div className="px-4 pb-4 pt-1 flex flex-col gap-2.5">
-              <div className="flex justify-between font-[family-name:var(--font-mono)] text-[13px]">
-                <span>{order.data.receipt_no ?? `#${order.data.order_no}`}</span>
-                <span>{new Date(order.data.client_created_at).toLocaleString("en-IN")}</span>
-              </div>
-              {order.data.customer_name && (
-                <div className="font-[family-name:var(--font-mono)] text-[13px] text-[var(--color-muted)]">
-                  {order.data.customer_name}
-                  {order.data.customer_phone ? ` · ${order.data.customer_phone}` : ""}
-                </div>
-              )}
-              {order.data.voided_at && (
-                <div className="bg-[var(--color-signal)] text-white p-2 font-extrabold text-[12px] tracking-wide uppercase">
-                  Void — {order.data.void_reason}
-                </div>
-              )}
-
-              <div className="border-t-2 border-b-2 border-[var(--color-ink)] py-2 flex flex-col gap-2">
-                {order.data.items.map((it) => (
-                  <div key={it.id} className="flex flex-col gap-0.5">
-                    <div className="flex justify-between text-sm font-bold">
-                      <span>
-                        {it.sku_code
-                          ? `${it.sku_code}${it.size ? ` · ${it.size}` : ""}${it.color_name ? ` · ${it.color_name}` : ""}`
-                          : "Sticker"}
-                        {it.qty > 1 ? ` ×${it.qty}` : ""}
-                      </span>
-                      <span className="font-extrabold text-base">
-                        {money(it.line_total + it.stickers.reduce((s, st) => s + st.unit_price, 0))}
-                      </span>
-                    </div>
-                    {it.stickers.length > 0 && (
-                      <div className="font-[family-name:var(--font-mono)] text-[12px] text-[var(--color-muted)]">
-                        {it.stickers.map((s) => s.code).join(", ")}
-                      </div>
-                    )}
-                  </div>
-                ))}
+          {o && (
+            <div
+              id="receipt-print"
+              className="overflow-hidden rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-white"
+            >
+              <div className="on-deep bg-[var(--color-cobalt)] px-[var(--space-4)] py-[var(--space-4)] text-center text-white">
+                <p className="t-xxl">CRFTD</p>
+                <p className="t-label mt-[var(--space-1)] text-white/80">Terraroots Foundation</p>
               </div>
 
-              <div className="flex flex-col gap-1 text-[13px]">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>{money(order.data.subtotal)}</span>
+              <div className="flex flex-col gap-[var(--space-3)] border-t-[3px] border-[var(--color-ink)] p-[var(--space-4)]">
+                <div className="flex flex-wrap justify-between gap-[var(--space-2)]">
+                  <Mono className="t-base font-bold">{o.receipt_no ?? `#${o.order_no}`}</Mono>
+                  <Mono className="t-base text-[var(--color-muted)]">
+                    {new Date(o.client_created_at).toLocaleString("en-IN")}
+                  </Mono>
                 </div>
-                {order.data.discount_amount > 0 && (
-                  <div className="flex justify-between text-[var(--color-signal)] font-bold">
-                    <span>Discount{order.data.discount_reason ? ` (${order.data.discount_reason})` : ""}</span>
-                    <span>-{money(order.data.discount_amount)}</span>
+
+                {o.customer_name && (
+                  <Mono className="t-base text-[var(--color-muted)]">
+                    {o.customer_name}
+                    {o.customer_phone ? ` · ${o.customer_phone}` : ""}
+                  </Mono>
+                )}
+
+                {o.voided_at && (
+                  <div className="on-deep rounded-[var(--radius-md)] border-[3px] border-[var(--color-ink)] bg-[var(--color-signal)] p-[var(--space-3)] t-md text-white">
+                    Void — {o.void_reason}
                   </div>
                 )}
-                <div className="flex justify-between font-extrabold text-base">
-                  <span>Total ({order.data.payment_method.toUpperCase()})</span>
-                  <span>{money(order.data.total)}</span>
+
+                <ul className="flex flex-col gap-[var(--space-3)] border-y-[3px] border-[var(--color-ink)] py-[var(--space-3)]">
+                  {o.items.map((it) => (
+                    <li key={it.id}>
+                      <div className="flex justify-between gap-[var(--space-3)] t-base font-bold">
+                        <span>
+                          {it.sku_code
+                            ? `${it.sku_code}${it.size ? ` · ${it.size}` : ""}${it.color_name ? ` · ${it.color_name}` : ""}`
+                            : "Sticker"}
+                          {it.qty > 1 ? ` ×${it.qty}` : ""}
+                        </span>
+                        <Mono className="t-md">
+                          {money(it.line_total + it.stickers.reduce((s, st) => s + st.unit_price, 0))}
+                        </Mono>
+                      </div>
+                      {it.stickers.length > 0 && (
+                        <Mono className="t-base text-[var(--color-muted)]">
+                          {it.stickers.map((s) => s.code).join(", ")}
+                        </Mono>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="flex flex-col gap-[var(--space-1)] t-base">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <Mono>{money(o.subtotal)}</Mono>
+                  </div>
+                  {o.discount_amount > 0 && (
+                    <div className="flex justify-between font-bold">
+                      <span>Discount{o.discount_reason ? ` (${o.discount_reason})` : ""}</span>
+                      <Mono>−{money(o.discount_amount)}</Mono>
+                    </div>
+                  )}
+                  <div className="flex justify-between t-md">
+                    <span>Total ({o.payment_method.toUpperCase()})</span>
+                    <Mono className="t-lg">{money(o.total)}</Mono>
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-[var(--color-blue)] text-white p-2.5 flex justify-between items-center">
-                <span className="font-extrabold text-[12px] tracking-[0.14em] max-w-[14ch]">RAISED FOR AQUATERRA</span>
-                <span className="font-extrabold text-2xl">{money(order.data.total - order.data.cost_total)}</span>
-              </div>
+                {/* The reason anybody keeps this bit of paper. */}
+                <div className="flex items-center justify-between gap-[var(--space-3)] rounded-[var(--radius-md)] border-[3px] border-[var(--color-ink)] bg-[var(--color-acid)] p-[var(--space-3)] text-[var(--color-ink)]">
+                  <span className="t-label max-w-[14ch]">Raised for AquaTerra</span>
+                  <Mono className="t-xl">{money(o.total - o.cost_total)}</Mono>
+                </div>
 
-              <div className="text-[13px] text-[var(--color-muted)] leading-relaxed">
-                Proceeds support AquaTerra welfare work. Hand wash recommended. DTF transfers rated 10–15 washes
-                minimum. No change-of-mind returns.
+                <Text muted>
+                  Proceeds support AquaTerra welfare work. Hand wash recommended. DTF transfers rated 10–15 washes
+                  minimum. No change-of-mind returns.
+                </Text>
               </div>
             </div>
-          </div>
+          )}
+        </PosScreen.Body>
 
-          <div className="print:hidden">
-            <Button size="lg" block variant="primary" onClick={() => window.print()}>
+        {o && (
+          <PosScreen.Foot className="print:hidden">
+            <Button variant="primary" size="xl" block onClick={() => window.print()}>
               Print receipt
             </Button>
-          </div>
-        </div>
-      )}
+          </PosScreen.Foot>
+        )}
+      </PosScreen>
     </PosShell>
   );
 }

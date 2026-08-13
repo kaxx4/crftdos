@@ -1,13 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getBackend } from "@/lib/backend";
 import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useAsync, useAction } from "@/lib/hooks/useAsync";
 import { useNow } from "@/lib/hooks/useNow";
 import type { Hold, ProductSku, StickerDesign } from "@/lib/domain/types";
-import { Banner, Button, EmptyState, Field, Mono, Panel, Sheet, Skeleton } from "@/components/ui";
-import { clsx } from "@/components/clsx";
+import {
+  Badge,
+  Banner,
+  Button,
+  ConfirmAction,
+  EmptyState,
+  Field,
+  Mono,
+  PosScreen,
+  Sheet,
+  Skeleton,
+  Text,
+} from "@/components/ui";
+import { PosSelect } from "./controls";
 
 /** Active holds at this stall.
  *
@@ -16,7 +29,11 @@ import { clsx } from "@/components/clsx";
  *  Holds expire on their own (30 min in the mock, see `reserveSticker`), so
  *  this screen polls rather than loading once: a hold that ages out must
  *  visibly drop off without a manual refresh, or a volunteer will believe an
- *  item is still spoken for after it isn't. */
+ *  item is still spoken for after it isn't.
+ *
+ *  Sky is the held state across the product, so the countdown badge carries
+ *  it — and turns to signal only when the hold is about to lapse, which is the
+ *  one moment somebody has to act. */
 export function HoldsScreen() {
   const { environment, bound } = useEnvironment();
   const catalogue = useAsync(() => getBackend().getCatalogue(), []);
@@ -81,78 +98,97 @@ export function HoldsScreen() {
 
   if (!bound) {
     return (
-      <div className="p-4">
-        <Banner tone="warn" title="Assign this phone to a stall first">
-          Holds are per stall, so we need to know which one you&apos;re at.
-        </Banner>
-      </div>
+      <PosScreen>
+        <PosScreen.Body>
+          <Banner tone="warn" title="Assign this phone to a stall first">
+            Holds are per stall, so we need to know which one you&apos;re at.
+          </Banner>
+        </PosScreen.Body>
+        <PosScreen.Foot>
+          <Link href="/settings" className="inline-flex w-full">
+            <Button variant="primary" size="xl" block>
+              Choose this phone&apos;s stall
+            </Button>
+          </Link>
+        </PosScreen.Foot>
+      </PosScreen>
     );
   }
 
-  return (
-    <div className="flex flex-col gap-4 p-3">
-      {holds.error && <Banner tone="danger" title="Couldn't load holds">{holds.error}</Banner>}
-      {release.error && <Banner tone="danger" title="Couldn't release that hold">{release.error}</Banner>}
+  const list = holds.data ?? [];
 
-      <Panel
-        title={`Active holds${holds.data ? ` (${holds.data.length})` : ""}`}
-        action={
-          <Button size="md" variant="primary" onClick={() => setReserving(true)}>
-            Reserve for a customer
-          </Button>
-        }
-      >
+  return (
+    <PosScreen>
+      <PosScreen.Body>
+        {holds.error && <Banner tone="danger" title="Couldn't load holds">{holds.error}</Banner>}
+        {release.error && <Banner tone="danger" title="Couldn't release that hold">{release.error}</Banner>}
+
         {holds.loading || catalogue.loading ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-16" />
-            <Skeleton className="h-16" />
-          </div>
-        ) : !holds.data || holds.data.length === 0 ? (
+          <>
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+          </>
+        ) : list.length === 0 ? (
           <EmptyState
             headline="No active holds"
-            teach="A hold reserves an item for a customer who says they'll come back. It still counts as stock, but stops anyone else buying it. Holds here expire on their own — release one early only if the customer isn't coming back."
+            teach="A hold reserves an item for a customer who says they'll come back. It still counts as stock, but stops anyone else buying it. Holds expire on their own — release one early only if the customer isn't coming back."
           />
         ) : (
-          <ul className="flex flex-col divide-y divide-[var(--color-line)]">
-            {holds.data.map((h) => {
+          <ul className="flex flex-col gap-[var(--space-3)]">
+            {list.map((h) => {
               const mins = minutesLeft(h);
               const urgent = mins <= 5;
               return (
-                <li key={h.id} className="flex items-center justify-between gap-3 py-3">
-                  <div className="flex flex-col gap-0.5">
-                    <span>
-                      <span className="font-[family-name:var(--font-mono)] font-bold">{label(h)}</span>
-                      <span className="ml-2 text-sm text-[var(--color-muted)]">× {h.qty}</span>
-                    </span>
-                    {h.customer_name && (
-                      <span className="text-sm">
-                        {h.customer_name}
-                        {h.customer_phone && <span className="text-[var(--color-muted)]"> · {h.customer_phone}</span>}
-                      </span>
-                    )}
-                    <Mono
-                      className={clsx(
-                        "text-sm font-bold",
-                        urgent ? "text-[var(--color-signal)]" : "text-[var(--color-muted)]"
+                <li
+                  key={h.id}
+                  className="rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-white p-[var(--space-3)]"
+                >
+                  <div className="flex items-start justify-between gap-[var(--space-3)]">
+                    <div className="min-w-0">
+                      <p>
+                        <Mono className="t-md font-bold">{label(h)}</Mono>
+                        <span className="ml-2 t-base text-[var(--color-muted)]">× {h.qty}</span>
+                      </p>
+                      {h.customer_name && (
+                        <Text className="truncate">
+                          {h.customer_name}
+                          {h.customer_phone && (
+                            <span className="text-[var(--color-muted)]"> · {h.customer_phone}</span>
+                          )}
+                        </Text>
                       )}
-                    >
-                      {mins <= 0 ? "expiring now" : `${mins} min left`}
-                    </Mono>
+                    </div>
+                    {/* Never colour alone: the badge says the minutes too. */}
+                    <Badge tone={urgent ? "signal" : "sky"}>
+                      <Mono>{mins <= 0 ? "expiring now" : `${mins} min left`}</Mono>
+                    </Badge>
                   </div>
-                  <Button
-                    variant="danger"
-                    size="md"
+
+                  <ConfirmAction
+                    className="mt-[var(--space-3)]"
+                    variant="secondary"
+                    block
                     busy={release.busy}
-                    onClick={() => void doRelease(h.id)}
-                  >
-                    Release
-                  </Button>
+                    label="Release this hold"
+                    confirmLabel={`Release ${label(h)} back to stock?`}
+                    onConfirm={() => void doRelease(h.id)}
+                  />
                 </li>
               );
             })}
           </ul>
         )}
-      </Panel>
+      </PosScreen.Body>
+
+      <PosScreen.Foot className="flex flex-col gap-[var(--space-2)]">
+        <div className="flex items-end justify-between gap-[var(--space-3)]">
+          <span className="t-label text-white/80">Held right now</span>
+          <Mono className="t-xl">{list.length}</Mono>
+        </div>
+        <Button variant="primary" size="xl" block onClick={() => setReserving(true)}>
+          Reserve for a customer
+        </Button>
+      </PosScreen.Foot>
 
       <Sheet
         open={reserving}
@@ -161,7 +197,7 @@ export function HoldsScreen() {
         footer={
           <Button
             variant="primary"
-            size="lg"
+            size="xl"
             block
             busy={create.busy}
             disabled={!itemKey || !customerName.trim()}
@@ -171,30 +207,20 @@ export function HoldsScreen() {
           </Button>
         }
       >
-        <div className="flex flex-col gap-3">
-          <div>
-            <label htmlFor="hold-item" className="text-sm font-semibold">
-              Item
-            </label>
-            <select
-              id="hold-item"
-              value={itemKey}
-              onChange={(e) => setItemKey(e.target.value)}
-              className="mt-1.5 min-h-[48px] w-full rounded-lg border-2 border-[var(--color-line)] bg-white px-3.5 text-base"
-            >
-              <option value="">Select an item…</option>
-              {catalogue.data?.skus.map((s: ProductSku) => (
-                <option key={s.id} value={`product:${s.id}`}>
-                  {s.sku_code}
-                </option>
-              ))}
-              {catalogue.data?.designs.map((d: StickerDesign) => (
-                <option key={d.id} value={`sticker:${d.id}`}>
-                  {d.code}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex flex-col gap-[var(--space-3)]">
+          <PosSelect label="Item" value={itemKey} onChange={(e) => setItemKey(e.target.value)}>
+            <option value="">Select an item…</option>
+            {catalogue.data?.skus.map((s: ProductSku) => (
+              <option key={s.id} value={`product:${s.id}`}>
+                {s.sku_code}
+              </option>
+            ))}
+            {catalogue.data?.designs.map((d: StickerDesign) => (
+              <option key={d.id} value={`sticker:${d.id}`}>
+                {d.code}
+              </option>
+            ))}
+          </PosSelect>
           <Field label="Qty" value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, ""))} inputMode="numeric" />
           <Field label="Customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
           <Field
@@ -204,8 +230,9 @@ export function HoldsScreen() {
             inputMode="tel"
           />
           <Banner tone="info">Holds for a named customer expire in 2 hours by default.</Banner>
+          {create.error && <Banner tone="danger">{create.error}</Banner>}
         </div>
       </Sheet>
-    </div>
+    </PosScreen>
   );
 }

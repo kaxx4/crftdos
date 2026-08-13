@@ -5,9 +5,15 @@
  *  Find the original sale, log what happened to it, and — on genuine
  *  defects — get the customer sorted with a replace, refund or exchange.
  *  `createReturn` needs the environment this device is bound to, because a
- *  return is scoped to a stall exactly like an order is [PRD §3.5]. */
+ *  return is scoped to a stall exactly like an order is [PRD §3.5].
+ *
+ *  The screen is a single funnel: find → decide → confirm. The confirm sits in
+ *  the pinned foot and names the money it moves, because a return is the one
+ *  thing on this surface that hands cash back. Until an order is found the
+ *  foot says so rather than offering a dead button. */
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { getBackend } from "@/lib/backend";
 import { getDeviceId } from "@/lib/device";
 import { useEnvironment } from "@/lib/hooks/useEnvironment";
@@ -15,7 +21,21 @@ import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import type { CreateReturnInput } from "@/lib/backend";
 import type { Order, ReturnAction } from "@/lib/domain/types";
 import { money } from "@/lib/money";
-import { Banner, Button, Chip, ConfirmAction, EmptyState, Field, Panel, Skeleton } from "@/components/ui";
+import {
+  Badge,
+  Banner,
+  Button,
+  Chip,
+  ConfirmAction,
+  EmptyState,
+  Field,
+  Mono,
+  Panel,
+  PosScreen,
+  Skeleton,
+  Text,
+} from "@/components/ui";
+import { PosCheckbox, PosSelect } from "./controls";
 
 const ACTIONS: { value: ReturnAction; label: string }[] = [
   { value: "refund", label: "Refund" },
@@ -135,193 +155,220 @@ export function ReturnsScreen() {
 
   if (!bound) {
     return (
-      <div className="p-4">
-        <Banner tone="warn" title="Assign this phone to a stall first">
-          Returns are logged against the stall this device is bound to.
-        </Banner>
-      </div>
+      <PosScreen>
+        <PosScreen.Body>
+          <Banner tone="warn" title="Assign this phone to a stall first">
+            Returns are logged against the stall this device is bound to.
+          </Banner>
+        </PosScreen.Body>
+        <PosScreen.Foot>
+          <Link href="/settings" className="inline-flex w-full">
+            <Button variant="primary" size="xl" block>
+              Choose this phone&apos;s stall
+            </Button>
+          </Link>
+        </PosScreen.Foot>
+      </PosScreen>
     );
   }
 
+  const ready = Boolean(found) && reason.trim().length > 0 && approvedBy.trim().length > 0;
+  const refunding = Number(refundAmount) > 0;
+
   return (
-    <div className="flex flex-col gap-4 p-3">
-      <Banner tone="info">
-        Replace or refund on genuine defects only — no change-of-mind returns. DTF is rated 10–15 washes, hand wash
-        recommended. Log rejected returns too; the pattern of what we turn down is worth knowing.
-      </Banner>
+    <PosScreen>
+      <PosScreen.Body>
+        <Banner tone="info">
+          Replace or refund on genuine defects only — no change-of-mind returns. DTF is rated 10–15 washes, hand
+          wash recommended. Log rejected returns too; the pattern of what we turn down is worth knowing.
+        </Banner>
 
-      {toast && <Banner tone="success">{toast}</Banner>}
+        {toast && <Banner tone="success">{toast}</Banner>}
 
-      <Panel title="Find the order">
-        <div className="flex flex-col gap-2">
-          <Field
-            label="Receipt number, order number or phone"
-            placeholder="e.g. CR/SA/26-27/000101"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <Button variant="secondary" size="lg" onClick={findOrder} disabled={orders.loading}>
-            Find order
-          </Button>
-          {notFound && (
-            <Banner tone="warn">No order here matches that. Try the exact receipt number or the phone on file.</Banner>
-          )}
-          {found && (
-            <div className="rounded-lg border-2 border-[var(--color-line)] p-3 text-sm">
-              <p className="font-[family-name:var(--font-mono)] font-bold">
-                {found.receipt_no ?? `#${found.order_no}`}
-              </p>
-              <p className="text-[var(--color-muted)]">
-                {found.customer_name ?? "Walk-up"} · {found.items.length} item{found.items.length === 1 ? "" : "s"} ·{" "}
-                {money(found.total)}
-              </p>
-            </div>
-          )}
-        </div>
-      </Panel>
-
-      {found && (
-        <Panel title="Log the return">
-          <div className="flex flex-col gap-3">
+        <Panel title="1 · Find the order">
+          <div className="flex flex-col gap-[var(--space-3)]">
             <Field
-              label="Reason for return"
-              placeholder="What went wrong?"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              label="Receipt number, order number or phone"
+              placeholder="e.g. CR/SA/26-27/000101"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              hint="Part of the receipt number is enough."
             />
-
-            <div>
-              <p className="mb-1.5 text-sm font-semibold">Action</p>
-              <div className="flex flex-wrap gap-1.5">
-                {ACTIONS.map((a) => (
-                  <Chip key={a.value} selected={action === a.value} onClick={() => setAction(a.value)}>
-                    {a.label}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-
-            {action === "exchange" && (
-              <div className="flex flex-col gap-2 rounded-lg border-2 border-[var(--color-line)] p-3">
-                <p className="text-sm font-semibold">Exchange for</p>
-                <select
-                  aria-label="Exchange item"
-                  value={exchangeSkuId}
-                  onChange={(e) => setExchangeSkuId(e.target.value)}
-                  className="min-h-[52px] rounded-lg border-2 border-[var(--color-line)] bg-white px-3.5 text-base focus:border-[var(--color-blue)]"
-                >
-                  <option value="">Choose a product…</option>
-                  {skus.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.sku_code} — {money(s.unit_price)}
-                    </option>
-                  ))}
-                </select>
-                <Field
-                  label="Quantity"
-                  type="number"
-                  min={1}
-                  value={exchangeQty}
-                  onChange={(e) => setExchangeQty(e.target.value)}
-                />
+            <Button variant="secondary" size="lg" block onClick={findOrder} disabled={orders.loading}>
+              Find order
+            </Button>
+            {notFound && (
+              <Banner tone="warn">No order here matches that. Try the exact receipt number or the phone on file.</Banner>
+            )}
+            {found && (
+              <div className="rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-white p-[var(--space-3)]">
+                <Mono className="t-md font-bold">{found.receipt_no ?? `#${found.order_no}`}</Mono>
+                <Text muted>
+                  {found.customer_name ?? "Walk-up"} · {found.items.length} item
+                  {found.items.length === 1 ? "" : "s"} · {money(found.total)}
+                </Text>
               </div>
             )}
+          </div>
+        </Panel>
 
-            <Field
-              label="Refund amount (₹)"
-              type="number"
-              min={0}
-              value={refundAmount}
-              onChange={(e) => setRefundAmount(e.target.value)}
-            />
+        {found && (
+          <Panel title="2 · Log the return">
+            <div className="flex flex-col gap-[var(--space-3)]">
+              <Field
+                label="Reason for return"
+                placeholder="What went wrong?"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
 
-            {Number(refundAmount) > 0 && (
-              <fieldset>
-                <legend className="mb-2 text-sm font-semibold">
-                  How was it refunded?
-                </legend>
-                <div className="flex gap-2">
-                  {(["cash", "upi"] as const).map((m) => (
-                    <Chip key={m} selected={refundMethod === m} onClick={() => setRefundMethod(m)}>
-                      {m.toUpperCase()}
+              <div className="flex flex-col gap-[var(--space-1)]">
+                <span className="t-label">Action</span>
+                <div className="flex flex-wrap gap-[var(--space-2)]">
+                  {ACTIONS.map((a) => (
+                    <Chip key={a.value} selected={action === a.value} onClick={() => setAction(a.value)}>
+                      {a.label}
                     </Chip>
                   ))}
                 </div>
-                <p className="mt-1.5 text-xs text-[var(--color-muted)]">
-                  A cash refund is subtracted from what&apos;s expected when this shift closes, so the till still
-                  balances.
-                </p>
-              </fieldset>
-            )}
+              </div>
 
-            <label className="flex items-center gap-2 text-sm font-semibold">
-              <input
-                type="checkbox"
-                checked={resaleable}
-                onChange={(e) => setResaleable(e.target.checked)}
-                className="size-5"
+              {action === "exchange" && (
+                <div className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] p-[var(--space-3)]">
+                  <PosSelect
+                    label="Exchange for"
+                    value={exchangeSkuId}
+                    onChange={(e) => setExchangeSkuId(e.target.value)}
+                  >
+                    <option value="">Choose a product…</option>
+                    {skus.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.sku_code} — {money(s.unit_price)}
+                      </option>
+                    ))}
+                  </PosSelect>
+                  <Field
+                    label="Quantity"
+                    type="number"
+                    min={1}
+                    value={exchangeQty}
+                    onChange={(e) => setExchangeQty(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <Field
+                label="Refund amount (₹)"
+                type="number"
+                min={0}
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                hint="Leave at 0 for a replace, exchange or reject."
               />
-              Resaleable — restock the returned item(s)
-            </label>
 
-            <Field
-              label="Approver name"
-              placeholder="Who's signing off on this?"
-              value={approvedBy}
-              onChange={(e) => setApprovedBy(e.target.value)}
-            />
-
-            {error && <Banner tone="danger">{error}</Banner>}
-
-            {/* Two-tap on purpose: this moves stock and, on a refund, money.
-                Not authorization — anyone can tap it twice — just a guard
-                against logging a return by mis-tap. */}
-            <ConfirmAction
-              variant="primary"
-              size="lg"
-              block
-              busy={busy}
-              disabled={!reason.trim() || !approvedBy.trim()}
-              label="Log return"
-              confirmLabel={
-                Number(refundAmount) > 0 ? `Confirm ${action} — refund ${money(Number(refundAmount))}?` : `Confirm ${action}?`
-              }
-              onConfirm={submit}
-            />
-          </div>
-        </Panel>
-      )}
-
-      <Panel title="Recent returns">
-        {returns.loading ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-14" />
-            <Skeleton className="h-14" />
-          </div>
-        ) : !returns.data?.length ? (
-          <EmptyState
-            headline="No returns logged here yet"
-            teach="Every return filed for this stall — replace, refund, exchange or reject — shows up here."
-          />
-        ) : (
-          <ul className="flex flex-col divide-y divide-[var(--color-line)]">
-            {returns.data.map((r) => (
-              <li key={r.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                <div>
-                  <p className="font-bold uppercase">{r.action}</p>
-                  <p className="text-[var(--color-muted)]">{r.reason || "No reason given"}</p>
+              {refunding && (
+                <div className="flex flex-col gap-[var(--space-1)]">
+                  <span className="t-label">How was it refunded?</span>
+                  <div className="flex gap-[var(--space-2)]">
+                    {(["cash", "upi"] as const).map((m) => (
+                      <Chip
+                        key={m}
+                        selected={refundMethod === m}
+                        onClick={() => setRefundMethod(m)}
+                        className="flex-1 justify-center"
+                      >
+                        {m.toUpperCase()}
+                      </Chip>
+                    ))}
+                  </div>
+                  <Text muted>
+                    A cash refund is subtracted from what&apos;s expected when this shift closes, so the till still
+                    balances.
+                  </Text>
                 </div>
-                <div className="text-right">
-                  <p className="font-[family-name:var(--font-mono)] tnum font-bold">{money(r.refund_amount)}</p>
-                  <p className="text-xs text-[var(--color-muted)]">
-                    {new Date(r.created_at).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+              )}
+
+              <PosCheckbox
+                checked={resaleable}
+                onChange={setResaleable}
+                label="Resaleable — put the returned item(s) back into stock"
+              />
+
+              <Field
+                label="Approver name"
+                placeholder="Who's signing off on this?"
+                value={approvedBy}
+                onChange={(e) => setApprovedBy(e.target.value)}
+              />
+
+              {error && <Banner tone="danger">{error}</Banner>}
+            </div>
+          </Panel>
         )}
-      </Panel>
-    </div>
+
+        <Panel title="Recent returns">
+          {returns.loading ? (
+            <div className="flex flex-col gap-[var(--space-2)]">
+              <Skeleton className="h-16" />
+              <Skeleton className="h-16" />
+            </div>
+          ) : !returns.data?.length ? (
+            <EmptyState
+              headline="No returns logged here yet"
+              teach="Every return filed for this stall — replace, refund, exchange or reject — shows up here, so the next volunteer can see what's already been decided."
+            />
+          ) : (
+            <ul className="flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
+              {returns.data.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex items-start justify-between gap-[var(--space-3)] py-[var(--space-3)]"
+                >
+                  <div className="min-w-0">
+                    {/* One tone for the whole list — the action is read from
+                        the word, not from a colour code. */}
+                    <Badge tone="white">{r.action}</Badge>
+                    <Text muted className="mt-[var(--space-1)]">
+                      {r.reason || "No reason given"}
+                    </Text>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <Mono className="t-md font-bold">{money(r.refund_amount)}</Mono>
+                    <Text muted className="tnum">
+                      {new Date(r.created_at).toLocaleString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        day: "2-digit",
+                        month: "short",
+                      })}
+                    </Text>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </PosScreen.Body>
+
+      {/* Two-tap on purpose: this moves stock and, on a refund, money. Not
+          authorization — anyone can tap it twice — just a guard against
+          logging a return by mis-tap. */}
+      <PosScreen.Foot className="flex flex-col gap-[var(--space-2)]">
+        <div className="flex items-end justify-between gap-[var(--space-3)]">
+          <span className="t-label text-white/80">{found ? `${action} · ${found.receipt_no ?? `#${found.order_no}`}` : "No order found yet"}</span>
+          {refunding && <Mono className="t-xl">−{money(Number(refundAmount))}</Mono>}
+        </div>
+        <ConfirmAction
+          variant="primary"
+          size="xl"
+          block
+          busy={busy}
+          disabled={!ready}
+          label={found ? "Log return" : "Find an order first"}
+          confirmLabel={refunding ? `Confirm ${action} — refund ${money(Number(refundAmount))}?` : `Confirm ${action}?`}
+          onConfirm={submit}
+        />
+      </PosScreen.Foot>
+    </PosScreen>
   );
 }
