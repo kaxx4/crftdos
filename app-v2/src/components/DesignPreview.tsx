@@ -18,7 +18,7 @@
 import Image from "next/image";
 import type { Placement, PrintSide, ProductSku } from "@/lib/domain/types";
 import { IMG_H, IMG_W, layoutRect } from "@/lib/geometry";
-import { clsx } from "@/components/clsx";
+import { clsx } from "./clsx";
 
 export function DesignPreview({
   sku,

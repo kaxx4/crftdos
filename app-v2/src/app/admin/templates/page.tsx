@@ -24,7 +24,7 @@ import { getBackend } from "@/lib/backend";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import { money } from "@/lib/money";
 import { AdminShell } from "@/features/admin/AdminShell";
-import { DesignPreview } from "@/features/kiosk/DesignPreview";
+import { DesignPreview } from "@/components/DesignPreview";
 import { Badge, Banner, Button, EmptyState, Heading, Mono, Panel, Skeleton, Text } from "@/components/ui";
 
 export default function TemplatesPage() {

@@ -11,7 +11,7 @@ import { clsx } from "./clsx";
 
 const ROLES = [
   { href: "/pos", label: "Volunteer", key: "volunteer" },
-  { href: "/", label: "Kiosk", key: "kiosk" },
+  { href: "/kiosk", label: "Kiosk", key: "kiosk" },
   { href: "/admin", label: "Admin", key: "admin" },
 ] as const;
 
