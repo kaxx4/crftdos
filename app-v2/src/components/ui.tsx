@@ -460,7 +460,7 @@ export function Chip({
         "border-[var(--color-ink)] transition-[transform,box-shadow,background-color] duration-[var(--dur-fast)] ease-[var(--ease-out)]",
         "active:translate-x-[2px] active:translate-y-[2px] active:shadow-none",
         "disabled:opacity-60 disabled:active:translate-x-0 disabled:active:translate-y-0",
-        surface === "admin" ? "min-h-[var(--tap-admin)]" : TAP[surface],
+        TAP[surface],
         selected
           ? clsx("border-[3px] shadow-[var(--shadow-sticker)]", TONE_FILL[tone])
           : "border-2 bg-white text-[var(--color-ink)] shadow-none",
@@ -510,7 +510,7 @@ export function Field({
           "w-full rounded-[var(--radius-md)] border-[3px] bg-white px-3.5 t-base",
           "transition-[border-color,background-color] duration-[var(--dur-fast)] ease-[var(--ease-out)]",
           "placeholder:text-[var(--color-muted)]",
-          surface === "admin" ? "min-h-[var(--tap-admin)]" : "min-h-[var(--tap-pos)]",
+          TAP[surface],
           error
             ? "border-[var(--color-signal)] bg-[var(--color-signal-wash)]"
             : "border-[var(--color-ink)] focus:bg-[var(--color-yellow-wash)]"

@@ -31,8 +31,8 @@ export function RoleSwitcher({ className, tone = "light" }: { className?: string
     <nav
       aria-label="Mode"
       className={clsx(
-        "inline-flex shrink-0 items-center gap-0.5 rounded-lg border-2 p-0.5 text-xs font-bold",
-        tone === "dark" ? "border-white/40 bg-white/10" : "border-[var(--color-ink)] bg-white",
+        "inline-flex shrink-0 items-center gap-0.5 rounded-[var(--radius-md)] border-[3px] p-0.5",
+        tone === "dark" ? "border-white bg-white/10" : "border-[var(--color-ink)] bg-white",
         className
       )}
     >
@@ -47,7 +47,10 @@ export function RoleSwitcher({ className, tone = "light" }: { className?: string
           }}
           aria-current={active === r.key ? "page" : undefined}
           className={clsx(
-            "tap-target rounded-md px-2 py-1 uppercase tracking-[0.08em] transition-colors duration-[var(--dur-fast)]",
+            // t-label is the system's only uppercase step; it already carries
+            // the caps, weight and tracking, so none of that is set here.
+            "tap-target inline-flex items-center rounded-[var(--radius-sm)] px-2 py-1 t-label",
+            "transition-colors duration-[var(--dur-fast)] ease-[var(--ease-out)]",
             active === r.key
               ? tone === "dark"
                 ? "bg-white text-[var(--color-ink)]"
