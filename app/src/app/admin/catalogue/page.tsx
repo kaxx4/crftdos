@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { BigButton, Card } from "@/components/ui";
 
 type Design = { id: string; code: string; name: string | null; bin_location: string | null };
 type ImportResult = { code: string; status: "created" | "updated" | "error"; error?: string };
@@ -72,9 +73,9 @@ export default function CataloguePage() {
     <div className="min-h-dvh bg-cream text-ink p-6 flex flex-col gap-8">
       <h1 className="sr-only">Catalogue</h1>
       <div className="print:hidden flex flex-col gap-8 w-full max-w-[1400px]">
-        <div>
-          <div className="font-extrabold text-lg mb-1">Bulk import sticker designs</div>
-          <div className="font-mono text-xs text-muted mb-2">
+        <Card className="gap-2">
+          <div className="font-extrabold text-lg">Bulk import sticker designs</div>
+          <div className="font-mono text-xs text-muted">
             Columns needed: code, name, size class, stock, cost, price, bin location. Matched by code — re-import
             the same file after fixing a typo and it updates existing rows instead of creating duplicates.
           </div>
@@ -83,26 +84,19 @@ export default function CataloguePage() {
             onChange={(e) => setCsvText(e.target.value)}
             placeholder={CSV_TEMPLATE}
             rows={6}
-            className="w-full border-2 border-ink p-2 font-mono text-xs"
+            className="w-full border-2 border-ink p-2 font-mono text-xs rounded-[var(--radius-pos-sm)]"
           />
-          <div className="flex gap-2 mt-2 items-center">
-            <button
-              onClick={runImport}
-              disabled={importing || !csvText.trim()}
-              className="bg-blue text-cream px-4 py-2 font-extrabold text-sm disabled:opacity-50"
-            >
+          <div className="flex gap-2 items-center">
+            <BigButton variant="blue" onClick={runImport} disabled={importing || !csvText.trim()} className="px-4 min-h-[44px]">
               {importing ? "IMPORTING…" : "IMPORT CSV"}
-            </button>
-            <button
-              onClick={() => setCsvText(CSV_TEMPLATE)}
-              className="border-2 border-ink px-4 py-2 font-extrabold text-sm bg-white"
-            >
+            </BigButton>
+            <BigButton variant="cream" onClick={() => setCsvText(CSV_TEMPLATE)} className="px-4 min-h-[44px]">
               LOAD TEMPLATE
-            </button>
+            </BigButton>
           </div>
-          {importErr && <div className="text-signal font-bold text-sm mt-2">{importErr}</div>}
+          {importErr && <div className="text-signal font-bold text-sm">{importErr}</div>}
           {importResults && (
-            <div className="font-mono text-xs mt-2 max-h-40 overflow-y-auto border-2 border-ink bg-white p-2">
+            <div className="font-mono text-xs max-h-40 overflow-y-auto border-2 border-ink bg-white p-2 rounded-[var(--radius-pos-sm)]">
               {importResults.map((r, i) => (
                 <div key={i} className={r.status === "error" ? "text-signal" : "text-ok"}>
                   {r.code}: {r.status}
@@ -111,18 +105,18 @@ export default function CataloguePage() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
-        <div>
-          <div className="font-extrabold text-lg mb-1">Bulk upload cutout PNGs</div>
-          <div className="font-mono text-xs text-muted mb-2">
+        <Card className="gap-2">
+          <div className="font-extrabold text-lg">Bulk upload cutout PNGs</div>
+          <div className="font-mono text-xs text-muted">
             Transparent PNGs, named after the design code (e.g. <strong>M-014.png</strong>). Select every file at
             once — each one matches to a design by its filename.
           </div>
           <input type="file" accept="image/png" multiple onChange={(e) => uploadCutouts(e.target.files)} disabled={uploading} />
-          {uploading && <div className="font-mono text-xs mt-2">Uploading…</div>}
+          {uploading && <div className="font-mono text-xs">Uploading…</div>}
           {cutoutResults && (
-            <div className="font-mono text-xs mt-2 max-h-40 overflow-y-auto border-2 border-ink bg-white p-2">
+            <div className="font-mono text-xs max-h-40 overflow-y-auto border-2 border-ink bg-white p-2 rounded-[var(--radius-pos-sm)]">
               {cutoutResults.map((r, i) => (
                 <div key={i} className={r.status === "error" ? "text-signal" : "text-ok"}>
                   {r.file}: {r.status}
@@ -131,15 +125,15 @@ export default function CataloguePage() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       <div>
         <div className="flex justify-between items-center mb-4 print:hidden">
           <div className="font-extrabold text-lg">Sticker QR label sheet</div>
-          <button onClick={() => window.print()} className="bg-blue text-cream px-4 py-2 font-extrabold text-sm">
+          <BigButton variant="blue" onClick={() => window.print()} className="px-4 min-h-[44px]">
             PRINT A4 SHEET
-          </button>
+          </BigButton>
         </div>
         <div className="font-mono text-xs text-muted mb-4 print:hidden">
           Each QR code links straight to that sticker. Camera scanning at the till stays off until labels are
@@ -147,11 +141,11 @@ export default function CataloguePage() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 print:grid-cols-3">
           {designs.map((d) => (
-            <div key={d.id} className="border-2 border-ink p-2 flex flex-col items-center gap-1 bg-white">
+            <Card key={d.id} className="items-center gap-1">
               {qrs[d.id] && <img src={qrs[d.id]} alt="" className="w-20 h-20 max-w-full" />}
               <div className="font-extrabold text-sm font-mono">{d.code}</div>
               <div className="text-[12px] text-muted text-center">{d.bin_location || "Bin not set"}</div>
-            </div>
+            </Card>
           ))}
         </div>
       </div>

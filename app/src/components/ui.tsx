@@ -141,6 +141,34 @@ export function Mono({ children, className = "" }: { children: ReactNode; classN
   return <span className={`font-mono text-[13px] text-muted ${className}`}>{children}</span>;
 }
 
+/** Shared bordered-container primitive. [[Rework - Visual Direction]] §5 flags
+ *  that every screen needing a card was hand-rolling `bg-white border-2
+ *  border-ink ...` locally — this consolidates that pattern before more
+ *  screens copy it.
+ *
+ *  `rotate` is kiosk-only (box-label / press-sheet cards tilted -2° to -5°
+ *  per §2/§5) — applied as an inline transform since Tailwind has no
+ *  arbitrary-per-instance rotation token, and left out of the className API
+ *  so POS/admin call sites can't accidentally pass one in. */
+export function Card({
+  children,
+  rotate,
+  className = "",
+}: {
+  children: ReactNode;
+  rotate?: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`bg-white border-2 border-ink p-3 flex flex-col gap-2 ${className}`}
+      style={rotate ? { transform: `rotate(${rotate}deg)` } : undefined}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function CropCorner() {
   return (
     <>
@@ -178,5 +206,77 @@ export function Banner({
     >
       {children}
     </div>
+  );
+}
+
+/* ── Table ─────────────────────────────────────────────────────────────
+ * [[Rework - Visual Direction]] §5: admin/stock screens were each
+ * hand-rolling their own bordered grid. This is a small composable set
+ * (Table/TableHead/TableRow/TableCell) rather than a columns/rows-data API,
+ * matching how the rest of this file composes markup (Panel/PanelLabel,
+ * Banner+children) instead of taking a data prop and rendering internally.
+ *
+ * Admin is desktop/mouse, not a touch surface, so rows deliberately sit at
+ * `min-h-[44px]` — below the 48px touch floor everywhere else in this file
+ * on purpose (see §5's note on this exact point). `border-collapse` plus a
+ * single 2px outer border keeps the grid from doubling up at shared edges;
+ * row separation instead comes from a 1px --color-hairline bottom border on
+ * body rows only, so the header/body seam stays the full 2px ink rule. */
+export function Table({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <table className={`w-full border-2 border-ink border-collapse text-left ${className}`}>
+      {children}
+    </table>
+  );
+}
+
+export function TableHead({ children }: { children: ReactNode }) {
+  return (
+    <thead className="bg-ink text-cream">
+      <tr>{children}</tr>
+    </thead>
+  );
+}
+
+export function TableHeaderCell({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <th
+      scope="col"
+      className={`font-extrabold text-[11px] tracking-[0.1em] uppercase px-3 py-2 ${className}`}
+    >
+      {children}
+    </th>
+  );
+}
+
+export function TableBody({ children }: { children: ReactNode }) {
+  return <tbody>{children}</tbody>;
+}
+
+/** Body row. Hairline divider is a bottom border so the last row in a body
+ *  doesn't pick up a stray line against the table's own outer border. */
+export function TableRow({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <tr className={`min-h-[44px] border-b border-hairline last:border-b-0 ${className}`}>
+      {children}
+    </tr>
+  );
+}
+
+/** `mono` targets numeric columns (SKUs, counts, currency) per §5 so digits
+ *  stay tabular and scannable without reading every column as mono by default. */
+export function TableCell({
+  children,
+  mono = false,
+  className = "",
+}: {
+  children: ReactNode;
+  mono?: boolean;
+  className?: string;
+}) {
+  return (
+    <td className={`px-3 py-2 align-middle ${mono ? "font-mono text-[13px]" : "text-sm"} ${className}`}>
+      {children}
+    </td>
   );
 }

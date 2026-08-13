@@ -1,4 +1,12 @@
 "use client";
+// Design rule (intentional, not an oversight): Sell is the restrained
+// "Operate" surface per Design System.md's asymmetric-skin doctrine — flat
+// cream ground, flat white panels, 2px ink borders only. No kiosk ornament
+// (Halftone, StarBurst, BoxLabel, KioskCropMarks, rotation transforms, or
+// the Fraunces serif accent) may cross into features/sell/**. See
+// `CrftdOS/Rework - Visual Direction.md` §3 "Where restraint applies" —
+// brand color here is limited to the header/kicker band and exactly one
+// primary BigButton per screen. Keep this surface exactly this quiet.
 import { PosFrame } from "@/components/PosFrame";
 import { FirstRunHint } from "@/components/FirstRunHint";
 import { TabBar } from "@/components/TabBar";

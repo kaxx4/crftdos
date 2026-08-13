@@ -1,3 +1,4 @@
+import { BoxLabel } from "./chrome/BoxLabel";
 import type { Color, Fit, Sku } from "../types";
 
 export function ProductScreen({
@@ -27,9 +28,12 @@ export function ProductScreen({
 }) {
   return (
     <div
-      className="flex flex-col gap-4 w-full max-w-md md:max-w-xl bg-cream text-ink p-4"
-      style={{ borderRadius: "var(--radius-kiosk-md)" }}
+      className="relative flex flex-col gap-4 w-full max-w-md md:max-w-xl bg-cream text-ink p-4"
+      style={{ borderRadius: "var(--radius-kiosk-md)", transform: "rotate(-0.6deg)" }}
     >
+      <div className="absolute -top-6 -right-3 rotate-[4deg] z-10">
+        <BoxLabel rotate={4}>PICK YOUR TEE</BoxLabel>
+      </div>
       <div className="font-extrabold text-lg">Choose your tee</div>
       <div className="text-xs text-muted">Next: pick your stickers.</div>
       <div className="flex gap-2 flex-wrap" role="group" aria-label="Colour">

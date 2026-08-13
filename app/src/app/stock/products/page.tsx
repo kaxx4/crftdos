@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { PosFrame } from "@/components/PosFrame";
 import { FirstRunHint } from "@/components/FirstRunHint";
 import { TabBar } from "@/components/TabBar";
-import { Mono, PanelLabel } from "@/components/ui";
+import { Card, Mono, PanelLabel } from "@/components/ui";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { Color, Fit, ProductSku } from "@/lib/types";
 
@@ -54,20 +54,19 @@ export default function ProductStockPage() {
             const color = colors.find((c) => c.id === s.color_id)?.name;
             const fit = fits.find((f) => f.id === s.fit_id)?.name;
             return (
-              <div
-                key={s.id}
-                className="border-2 border-ink bg-white p-2.5 flex justify-between items-center gap-2"
-              >
-                <div>
-                  <div className="font-extrabold text-sm">{s.sku_code}</div>
-                  <Mono>
-                    {color} · {fit} · {s.size}
-                  </Mono>
+              <Card key={s.id} className="p-2.5">
+                <div className="flex justify-between items-center gap-2">
+                  <div>
+                    <div className="font-extrabold text-sm">{s.sku_code}</div>
+                    <Mono>
+                      {color} · {fit} · {s.size}
+                    </Mono>
+                  </div>
+                  <div className={`font-extrabold text-lg ${s.stock_qty <= 0 ? "text-signal" : ""}`}>
+                    {s.stock_qty}
+                  </div>
                 </div>
-                <div className={`font-extrabold text-lg ${s.stock_qty <= 0 ? "text-signal" : ""}`}>
-                  {s.stock_qty}
-                </div>
-              </div>
+              </Card>
             );
           })}
           {skus.length === 0 && (

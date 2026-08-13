@@ -21,6 +21,16 @@ import type { Stage } from "./types";
 // skin and must not pick this up. Fraunces is OFL/free, no licensing concern.
 const fraunces = Fraunces({ subsets: ["latin"], weight: ["900"], style: ["italic"], variable: "--font-fraunces" });
 
+// One full-bleed blue field per non-attract screen (attract owns its own,
+// see AttractScreen.tsx) — position/rotation varied per stage so it reads
+// as a distinct printed field per screen rather than one repeated texture.
+const BLUE_FIELD_BY_STAGE: Record<Exclude<Stage, "attract">, React.CSSProperties> = {
+  path: { top: "-18%", right: "-22%", width: "62%", height: "50%", transform: "rotate(-7deg)" },
+  product: { bottom: "-22%", left: "-16%", width: "58%", height: "48%", transform: "rotate(5deg)" },
+  canvas: { top: "-14%", left: "-20%", width: "42%", height: "130%", transform: "rotate(-4deg)" },
+  ticket: { bottom: "-20%", right: "-18%", width: "55%", height: "52%", transform: "rotate(6deg)" },
+};
+
 export function KioskPage() {
   const [stage, setStage] = useState<Stage>("attract");
   const [path, setPath] = useState<"scratch" | "preset" | null>(null);
@@ -121,6 +131,14 @@ export function KioskPage() {
     <div className={`relative h-[100svh] bg-ink text-cream flex flex-col items-center justify-center p-4 overflow-hidden ${fraunces.variable}`}>
       {stage !== "attract" && (
         <>
+          {/* Full-bleed blue field, one per screen, position/angle varied by
+              stage so it reads as hand-placed rather than a repeated
+              template — per the visual-direction rework's colour rule.
+              Sits behind the halftone/cards; only visible in the margin
+              around each screen's centred panel. */}
+          <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute bg-blue" style={BLUE_FIELD_BY_STAGE[stage]} />
+          </div>
           <Halftone dot={7} className="opacity-[0.07]" />
           <div className="absolute left-[6%] top-[9%] hidden md:block">
             <StarBurst size={16} color="var(--color-blue)" />

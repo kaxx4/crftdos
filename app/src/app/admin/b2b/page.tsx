@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { BigButton, Card, Field } from "@/components/ui";
 
 type Volunteer = { id: string; name: string };
 type B2BOrder = {
@@ -16,6 +17,13 @@ type B2BOrder = {
 };
 
 const STAGES = ["enquiry", "quoted", "confirmed", "production", "ready", "dispatched", "closed", "lost"];
+
+function KpiLabel({ children }: { children: React.ReactNode }) {
+  return <div className="font-mono text-xs text-muted uppercase tracking-[0.06em]">{children}</div>;
+}
+function KpiValue({ children }: { children: React.ReactNode }) {
+  return <div className="font-extrabold text-2xl">{children}</div>;
+}
 
 export default function B2BPage() {
   const [orders, setOrders] = useState<B2BOrder[]>([]);
@@ -89,21 +97,33 @@ export default function B2BPage() {
   return (
     <div className="min-h-dvh bg-cream text-ink p-4 md:p-8 w-full max-w-[1400px] mx-auto flex flex-col gap-6">
       <h1 className="font-extrabold text-2xl tracking-wide">B2B</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="border-2 border-ink bg-white p-3">
-          <div className="font-mono text-xs text-muted">Committed value (confirmed deals and later)</div>
-          <div className="font-extrabold text-2xl">₹{committed}</div>
-        </div>
-        <div className="border-2 border-ink bg-white p-3">
-          <div className="font-mono text-xs text-muted">Collected so far (deposits and balances)</div>
-          <div className="font-extrabold text-2xl">₹{collected}</div>
-        </div>
+
+      {/* Hero KPI — the committed pipeline value is the one number that matters most on this page. */}
+      <div className="bg-blue text-cream p-6 border-2 border-ink rounded-[var(--radius-pos-md)]">
+        <div className="font-extrabold text-xs tracking-[0.14em] opacity-80">COMMITTED PIPELINE VALUE</div>
+        <div className="font-extrabold text-5xl mt-1">₹{committed}</div>
+        <div className="font-mono text-xs opacity-70 mt-1">Confirmed deals and later stages, all time</div>
       </div>
 
-      <div className="border-2 border-ink bg-white p-4 flex flex-col gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card>
+          <KpiLabel>Committed value (confirmed deals and later)</KpiLabel>
+          <KpiValue>₹{committed}</KpiValue>
+        </Card>
+        <Card>
+          <KpiLabel>Collected so far (deposits and balances)</KpiLabel>
+          <KpiValue>₹{collected}</KpiValue>
+        </Card>
+      </div>
+
+      <Card className="p-4 gap-2">
         <div className="font-extrabold">New enquiry</div>
-        <input placeholder="Client organisation" value={clientOrg} onChange={(e) => setClientOrg(e.target.value)} className="border-2 border-ink p-2" />
-        <select value={accountOwner} onChange={(e) => setAccountOwner(e.target.value)} className="border-2 border-ink p-2">
+        <Field label="Client organisation" placeholder="Client organisation" value={clientOrg} onChange={(e) => setClientOrg(e.target.value)} />
+        <select
+          value={accountOwner}
+          onChange={(e) => setAccountOwner(e.target.value)}
+          className="border-2 border-ink p-3 min-h-[48px] rounded-[var(--radius-pos-sm)] bg-white"
+        >
           <option value="">Account owner (required)</option>
           {volunteers.map((v) => (
             <option key={v.id} value={v.id}>
@@ -112,11 +132,11 @@ export default function B2BPage() {
           ))}
         </select>
         <div className="flex flex-wrap gap-2">
-          <input placeholder="Qty" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="border-2 border-ink p-2 w-24" />
-          <input placeholder="Unit price" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="border-2 border-ink p-2 w-28" />
-          <input placeholder="Unit cost" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} className="border-2 border-ink p-2 w-28" />
+          <Field label="Quantity" placeholder="Qty" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="w-24" />
+          <Field label="Unit price" placeholder="Unit price" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="w-28" />
+          <Field label="Unit cost" placeholder="Unit cost" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} className="w-28" />
           <div
-            className={`px-3 py-2 font-extrabold text-sm ${
+            className={`px-3 py-2 min-h-[48px] flex items-center font-extrabold text-sm rounded-[var(--radius-pos-sm)] ${
               margin < 0 ? "bg-signal text-cream" : margin < 10 ? "bg-signal/70 text-cream" : margin < 15 ? "bg-warn text-cream" : "bg-ok text-cream"
             }`}
           >
@@ -124,42 +144,46 @@ export default function B2BPage() {
           </div>
         </div>
         {margin < 10 && margin >= 0 && (
-          <input
+          <Field
+            label="Admin PIN"
             type="password"
             placeholder="Admin PIN (required below 10% margin)"
             value={adminPin}
             onChange={(e) => setAdminPin(e.target.value)}
-            className="border-2 border-ink p-2"
           />
         )}
         {margin < 0 && (
-          <div className="bg-signal text-cream p-2 font-extrabold text-xs">
+          <div className="bg-signal text-cream p-2 font-extrabold text-xs rounded-[var(--radius-pos-sm)]">
             Can&apos;t save — this deal would sell at a loss. Raise the price or lower the cost.
           </div>
         )}
-        {err && <div className="bg-signal text-cream p-2 font-extrabold text-xs">{err}</div>}
-        <button onClick={create} disabled={margin < 0} className="bg-blue text-cream py-2 font-extrabold disabled:opacity-40">
+        {err && <div className="bg-signal text-cream p-2 font-extrabold text-xs rounded-[var(--radius-pos-sm)]">{err}</div>}
+        <BigButton variant="blue" onClick={create} disabled={margin < 0} className="w-full">
           SAVE ENQUIRY
-        </button>
-      </div>
+        </BigButton>
+      </Card>
 
       <div className="flex flex-col gap-2">
         {orders.map((o) => (
-          <div key={o.id} className="border-2 border-ink bg-white p-3 flex flex-wrap justify-between items-center gap-2">
+          <Card key={o.id} className="!flex-row flex-wrap justify-between items-center gap-2">
             <div>
               <div className="font-extrabold">{o.client_org}</div>
               <div className="font-mono text-xs text-muted">
                 {o.quantity} × ₹{o.unit_price} = ₹{o.gross_value}
               </div>
             </div>
-            <select value={o.stage} onChange={(e) => setStage(o.id, e.target.value)} className="border-2 border-ink p-1.5 text-sm">
+            <select
+              value={o.stage}
+              onChange={(e) => setStage(o.id, e.target.value)}
+              className="border-2 border-ink p-2 min-h-[44px] text-sm rounded-[var(--radius-pos-sm)] bg-white"
+            >
               {STAGES.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
               ))}
             </select>
-          </div>
+          </Card>
         ))}
         {orders.length === 0 && (
           <div className="text-center text-sm text-muted py-6">No enquiries yet. New ones you save will show up here.</div>

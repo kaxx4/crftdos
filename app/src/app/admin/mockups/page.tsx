@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { BigButton, Card, Field } from "@/components/ui";
 
 type Combo = {
   color_id: string;
@@ -137,14 +138,13 @@ export default function MockupsPage() {
         <div className="flex flex-col gap-1.5 max-h-[70vh] overflow-y-auto">
           {combos.map((c) => {
             const done = !!(c.mockup_front && c.mockup_back && c.print_area?.front && c.print_area?.back);
+            const isSelected = selected?.color_id === c.color_id && selected?.fit_id === c.fit_id;
             return (
               <button
                 key={`${c.color_id}:${c.fit_id}`}
                 onClick={() => select(c)}
-                className={`text-left border-2 p-2.5 ${
-                  selected?.color_id === c.color_id && selected?.fit_id === c.fit_id
-                    ? "border-blue bg-blue/10"
-                    : "border-ink bg-white"
+                className={`text-left border-2 p-2.5 rounded-[var(--radius-pos-sm)] ${
+                  isSelected ? "border-blue bg-blue/10" : "border-ink bg-white"
                 }`}
               >
                 <div className="font-extrabold text-sm">
@@ -163,16 +163,15 @@ export default function MockupsPage() {
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
               {(["front", "back"] as const).map((s) => (
-                <button
+                <BigButton
                   key={s}
+                  variant={side === s ? "ink" : "cream"}
                   onClick={() => switchSide(s)}
-                  className={`border-2 border-ink px-3 py-2 font-extrabold text-sm ${
-                    side === s ? "bg-ink text-cream" : "bg-white"
-                  }`}
+                  className="px-3 min-h-[44px]"
                 >
                   {s.toUpperCase()}
                   {selected.print_area?.[s] ? " ✓" : ""}
-                </button>
+                </BigButton>
               ))}
             </div>
 
@@ -181,7 +180,7 @@ export default function MockupsPage() {
             {currentImage ? (
               <div
                 ref={imgRef}
-                className="relative border-2 border-ink bg-white select-none touch-none max-w-[500px]"
+                className="relative border-2 border-ink bg-white select-none touch-none max-w-[500px] rounded-[var(--radius-pos-sm)] overflow-hidden"
                 style={{ aspectRatio: "4/5" }}
                 onPointerDown={onDown}
                 onPointerMove={onMove}
@@ -199,30 +198,26 @@ export default function MockupsPage() {
                 </div>
               </div>
             ) : (
-              <div className="border-2 border-dashed border-hairline p-8 text-center text-sm text-muted max-w-[500px]">
+              <div className="border-2 border-dashed border-hairline p-8 text-center text-sm text-muted max-w-[500px] rounded-[var(--radius-pos-sm)]">
                 No {side} mockup yet — choose a file above.
               </div>
             )}
 
             <div className="flex gap-2 max-w-[300px]">
               <label className="flex-1 flex flex-col gap-1">
-                <span className="text-xs font-bold">Print width (cm)</span>
-                <input value={cmW} onChange={(e) => setCmW(e.target.value)} className="border-2 border-ink p-2" />
+                <span className="font-mono text-xs text-muted uppercase tracking-[0.06em]">Print width (cm)</span>
+                <Field label="Print width (cm)" value={cmW} onChange={(e) => setCmW(e.target.value)} />
               </label>
               <label className="flex-1 flex flex-col gap-1">
-                <span className="text-xs font-bold">Print height (cm)</span>
-                <input value={cmH} onChange={(e) => setCmH(e.target.value)} className="border-2 border-ink p-2" />
+                <span className="font-mono text-xs text-muted uppercase tracking-[0.06em]">Print height (cm)</span>
+                <Field label="Print height (cm)" value={cmH} onChange={(e) => setCmH(e.target.value)} />
               </label>
             </div>
 
             {msg && <div className="font-mono text-xs">{msg}</div>}
-            <button
-              onClick={save}
-              disabled={saving}
-              className="bg-blue text-cream px-4 py-3 font-extrabold text-sm disabled:opacity-50 max-w-[300px]"
-            >
+            <BigButton variant="blue" onClick={save} disabled={saving} className="px-4 max-w-[300px]">
               {saving ? "SAVING…" : "SAVE"}
-            </button>
+            </BigButton>
           </div>
         ) : (
           <div className="text-sm text-muted">Pick a colour/fit combination to start.</div>

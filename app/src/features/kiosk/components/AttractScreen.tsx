@@ -12,6 +12,15 @@ import { BoxLabel } from "./chrome/BoxLabel";
 export function AttractScreen({ onStart }: { onStart: () => void }) {
   return (
     <div className="relative w-full h-full flex flex-col justify-center overflow-hidden">
+      {/* Full-bleed blue field — per the visual-direction rework's colour
+          rule, blue should dominate at least one field per screen, not
+          just accent the wordmark/CTA/star-burst. Anchored right so it
+          never sits behind the left-pinned wordmark/headline text. */}
+      <div
+        aria-hidden="true"
+        className="absolute -right-20 -top-16 -bottom-16 w-[52%] bg-blue"
+        style={{ transform: "rotate(-3deg)" }}
+      />
       <Halftone dot={9} className="opacity-[0.12]" />
       <KioskCropMarks arm={16} />
 

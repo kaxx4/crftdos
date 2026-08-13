@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { BigButton, Chip, Field } from "@/components/ui";
 
 type Sku = { id: string; sku_code: string; unit_price: number; unit_cost: number };
 type Line = { sku_id: string; qty: number };
@@ -42,7 +43,11 @@ export default function BulkEntryPage() {
       <h1 className="font-extrabold text-lg">Bulk one-off entry</h1>
       {lines.map((l, i) => (
         <div key={i} className="flex gap-2">
-          <select value={l.sku_id} onChange={(e) => updateLine(i, { sku_id: e.target.value })} className="border-2 border-ink p-2 flex-1">
+          <select
+            value={l.sku_id}
+            onChange={(e) => updateLine(i, { sku_id: e.target.value })}
+            className="border-2 border-ink p-3 min-h-[48px] flex-1 rounded-[var(--radius-pos-sm)] bg-white"
+          >
             <option value="">Select SKU…</option>
             {skus.map((s) => (
               <option key={s.id} value={s.id}>
@@ -50,20 +55,21 @@ export default function BulkEntryPage() {
               </option>
             ))}
           </select>
-          <input
+          <Field
+            label={`Quantity for line ${i + 1}`}
             type="number"
             value={l.qty}
             onChange={(e) => updateLine(i, { qty: Number(e.target.value) })}
-            className="border-2 border-ink p-2 w-20"
+            className="w-20"
           />
         </div>
       ))}
-      <button onClick={() => setLines((prev) => [...prev, { sku_id: "", qty: 1 }])} className="border-2 border-dashed border-ink py-2 font-bold text-sm">
+      <Chip onClick={() => setLines((prev) => [...prev, { sku_id: "", qty: 1 }])} className="border-dashed w-full justify-center">
         + ADD LINE
-      </button>
-      <button onClick={submit} className="bg-blue text-cream py-3 font-extrabold">
+      </Chip>
+      <BigButton variant="blue" onClick={submit} className="w-full">
         CREATE BULK ORDER
-      </button>
+      </BigButton>
       {result && <div className="font-mono text-xs">{result}</div>}
     </div>
   );
