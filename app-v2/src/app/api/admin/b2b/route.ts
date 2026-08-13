@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 import { verify } from "@node-rs/argon2";
 import { checkRateLimit, recordFailure, clearRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
 // stall_b2b_orders / stall_b2b_activity are explicitly NOT environment-scoped
 // (migration 004.2, org-wide) — no environment_id filtering here.
 export async function GET(req: NextRequest) {
-  const auth = await requireAnySession(req, ["admin"]);
-  if (!auth.ok) return auth.response;
 
   const admin = supabaseAdmin();
   const { data: orders, error } = await admin.from("stall_b2b_orders").select("*").order("created_at", { ascending: false });
@@ -35,8 +32,6 @@ export async function GET(req: NextRequest) {
 // D17 — below 15% margin: amber warning (client-side). Below 10%: requires
 // admin PIN to save (checked here). Below 0%: hard-blocked, no PIN can save it.
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["admin"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const {

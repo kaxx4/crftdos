@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession, pgErrorCode } from "@/lib/apiAuth";
+import { pgErrorCode } from "@/lib/apiAuth";
 
 // PRD §3.3 — held qty subtracts from available, not on-hand. Kiosk soft-holds
 // (session-scoped, no customer name) are internal and never shown here —
 // mirrors v1's `not customer_name ilike 'kiosk-session:%'` filter.
 export async function GET(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const environmentId = req.nextUrl.searchParams.get("environment_id");
   if (!environmentId) return NextResponse.json({ error: "environment_id required" }, { status: 400 });
@@ -40,8 +38,6 @@ const RPC_ERROR_STATUS: Record<string, number> = {
 // two volunteers could both succeed holding the last unit for two different
 // customers.
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const {

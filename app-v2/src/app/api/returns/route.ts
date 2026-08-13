@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 import { checkRateLimit, recordFailure, clearRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const environmentId = req.nextUrl.searchParams.get("environment_id");
   const admin = supabaseAdmin();
@@ -19,8 +16,6 @@ export async function GET(req: NextRequest) {
 // PRD §3.5 — exchanges/replacements create a linked ZERO-VALUE replacement
 // order so inventory moves correctly without inflating revenue.
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const {

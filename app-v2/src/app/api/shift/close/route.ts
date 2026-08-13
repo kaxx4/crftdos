@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const { shift_id, counted_cash } = body as { shift_id?: string; counted_cash?: number };

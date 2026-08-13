@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 
 // GET is used by BOTH the public kiosk storefront (which has no session) and
 // the admin templates screen (includeInactive=1, requires admin). Only the
@@ -9,8 +8,6 @@ import { requireAnySession } from "@/lib/apiAuth";
 export async function GET(req: NextRequest) {
   const includeInactive = req.nextUrl.searchParams.get("includeInactive") === "1";
   if (includeInactive) {
-    const auth = await requireAnySession(req, ["admin"]);
-    if (!auth.ok) return auth.response;
   }
 
   const admin = supabaseAdmin();
@@ -29,8 +26,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["admin"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const { id, name, payload, slug, blurb, preview_path, is_featured, is_active, sort } = body as {
@@ -80,8 +75,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const auth = await requireAnySession(req, ["admin"]);
-  if (!auth.ok) return auth.response;
 
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });

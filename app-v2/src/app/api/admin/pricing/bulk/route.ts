@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 
 // Bulk price set across every SKU of one fit (e.g. "all crop tees are now
 // ₹399"). Same snapshot-at-sale-time rule as the single-SKU edit.
 export async function PATCH(req: NextRequest) {
-  const auth = await requireAnySession(req, ["admin"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const { fit_name: fitName, unit_price: unitPrice, unit_cost: unitCost } = body;

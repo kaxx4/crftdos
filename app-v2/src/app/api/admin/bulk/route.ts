@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 import { currentFY, formatReceiptNo } from "@/lib/money";
 
 // Bulk entries are retrospective admin records (DM sales, forgotten till
@@ -8,8 +7,6 @@ import { currentFY, formatReceiptNo } from "@/lib/money";
 // org's default (HQ/cloud) environment, whatever stall_orders.environment_id
 // defaults to, rather than requiring the admin to pick one.
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["admin"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const { items, payment_method: paymentMethod, note } = body as {

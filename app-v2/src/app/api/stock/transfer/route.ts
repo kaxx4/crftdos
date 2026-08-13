@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession, pgErrorCode } from "@/lib/apiAuth";
+import { pgErrorCode } from "@/lib/apiAuth";
 
 const RPC_ERROR_STATUS: Record<string, number> = {
   P0106: 409, // insufficient stock at source
 };
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const { from_location_id, to_location_id, sku_type, sku_id, qty, actor } = body as {

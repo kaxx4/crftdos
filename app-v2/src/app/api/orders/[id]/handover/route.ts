@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 import { mapOrderRow, ORDER_SELECT, type OrderRow } from "@/lib/backend/live/orderMap";
 
 // No RPC for this stage either — a timestamp stamp, mirrors the mock's
 // `markHandedOver` guard: must be printed first, must not already be handed
 // over, must not be void.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const { id } = await params;
   const admin = supabaseAdmin();

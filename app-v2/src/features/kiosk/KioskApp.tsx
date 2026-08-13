@@ -26,6 +26,7 @@ import { useCanvas } from "@/lib/hooks/useCanvas";
 import type { DesignPayload, Order, StockRow, Template } from "@/lib/domain/types";
 import { Banner, Button } from "@/components/ui";
 import { EnvironmentChip } from "@/components/EnvironmentChip";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { Storefront } from "./Storefront";
 import { CanvasStage } from "./CanvasStage";
 import { OrderStep } from "./OrderStep";
@@ -154,6 +155,7 @@ export function KioskApp() {
               Start over
             </Button>
           )}
+          <RoleSwitcher />
           <span className="font-[family-name:var(--font-mono)] text-sm font-bold tracking-[0.2em]">CRFTD★</span>
         </div>
       </header>

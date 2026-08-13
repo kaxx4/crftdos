@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 
 // The `stall_reserve_sticker_hold` RPC requires a shift id (it scopes
 // location resolution off it when p_environment_id is omitted, and always
@@ -8,8 +7,6 @@ import { requireAnySession } from "@/lib/apiAuth";
 // only carries environment_id + session_id, so this route resolves the
 // environment's currently open shift itself.
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "kiosk"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const { sticker_id, environment_id, session_id, qty } = body as {

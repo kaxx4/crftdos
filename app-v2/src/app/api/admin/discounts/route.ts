@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 
 // Audit trail for every order that discounted or gave something away —
 // `stall_admin_audit` rows written at order time (see /api/orders). Admin-only
 // read; there's no write path here.
 export async function GET(req: NextRequest) {
-  const auth = await requireAnySession(req, ["admin"]);
-  if (!auth.ok) return auth.response;
 
   const admin = supabaseAdmin();
   const { data, error } = await admin

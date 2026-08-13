@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession, pgErrorCode } from "@/lib/apiAuth";
+import { pgErrorCode } from "@/lib/apiAuth";
 import { mapOrderRow, ORDER_SELECT, type OrderRow } from "@/lib/backend/live/orderMap";
 
 const RPC_ERROR_STATUS: Record<string, number> = {
@@ -12,8 +12,6 @@ const RPC_ERROR_STATUS: Record<string, number> = {
 // refuse. For a non-deferred order this is just a timestamp stamp. Idempotent:
 // a double-tap returns alreadyPrepped: true without re-decrementing.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));

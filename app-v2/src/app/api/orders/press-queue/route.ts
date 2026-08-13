@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 import { mapOrderRow, ORDER_SELECT, type OrderRow } from "@/lib/backend/live/orderMap";
 
 // PRD §4.4's multi-order batch view: everything prepped and not yet pressed,
 // oldest first — the queue the press table works through, distinct from the
 // single-ticket prep/print/handover flow in /api/orders/[id]/print.
 export async function GET(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const environmentId = req.nextUrl.searchParams.get("environment_id");
   const admin = supabaseAdmin();

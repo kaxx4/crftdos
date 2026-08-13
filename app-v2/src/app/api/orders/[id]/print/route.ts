@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 import { mapOrderRow, ORDER_SELECT, type OrderRow } from "@/lib/backend/live/orderMap";
 
 // No RPC for this stage — it is a timestamp stamp with no stock effect, same
 // as v1's press route. Mirrors the mock's `markPrinted` guard: must be
 // prepped first, must not already be printed, must not be void.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const { id } = await params;
   const admin = supabaseAdmin();

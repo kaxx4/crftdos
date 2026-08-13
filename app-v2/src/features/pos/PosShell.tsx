@@ -18,6 +18,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { EnvironmentChip } from "@/components/EnvironmentChip";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { onOutboxChange, outboxCount, wireOutboxFlush } from "@/lib/outbox";
 import { clsx } from "@/components/clsx";
 import { getBackend } from "@/lib/backend";
@@ -65,6 +66,7 @@ export function PosShell({ children, title }: { children: React.ReactNode; title
           <div className="flex items-center justify-between gap-3">
             <EnvironmentChip tone="dark" />
             <h1 className="truncate text-sm font-bold uppercase tracking-[0.14em]">{title}</h1>
+            <RoleSwitcher tone="dark" />
           </div>
         </header>
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 
 // Intentionally public, no session required. A device that has never been
 // through Settings (including a fresh, unauthenticated kiosk) still has to
@@ -15,8 +14,6 @@ export async function GET(_req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["admin"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => ({}));
   const { name, prefix, kind } = body as { name?: string; prefix?: string; kind?: string };

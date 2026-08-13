@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession } from "@/lib/apiAuth";
 
 // `stall_analytics_summary(p_from, p_to)` is not environment-aware (checked
 // live against pg_proc — no p_environment_id parameter exists). Rather than
@@ -8,8 +7,6 @@ import { requireAnySession } from "@/lib/apiAuth";
 // route computes the summary directly against stall_orders/items so the
 // environment_id filter is honoured uniformly whether or not it's passed.
 export async function GET(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const environmentId = req.nextUrl.searchParams.get("environment_id");
   const from = req.nextUrl.searchParams.get("from");

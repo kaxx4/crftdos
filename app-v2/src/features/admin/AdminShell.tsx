@@ -12,6 +12,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { EnvironmentChip } from "@/components/EnvironmentChip";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { getBackend } from "@/lib/backend";
 import { clsx } from "@/components/clsx";
 
@@ -26,7 +27,6 @@ const NAV = [
   { href: "/admin/b2b", label: "B2B" },
   { href: "/admin/bulk", label: "Bulk entry" },
   { href: "/admin/discounts", label: "Discounts" },
-  { href: "/admin/pins", label: "PINs" },
 ];
 
 export function AdminShell({ children, title }: { children: React.ReactNode; title: string }) {
@@ -63,6 +63,7 @@ export function AdminShell({ children, title }: { children: React.ReactNode; tit
         <header className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[var(--color-line)] bg-white px-5 py-3">
           <EnvironmentChip />
           <h1 className="text-lg font-extrabold tracking-tight">{title}</h1>
+          <RoleSwitcher />
         </header>
 
         {getBackend().isMock && (

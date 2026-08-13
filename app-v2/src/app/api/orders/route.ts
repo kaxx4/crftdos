@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireAnySession, pgErrorCode } from "@/lib/apiAuth";
+import { pgErrorCode } from "@/lib/apiAuth";
 import { mapOrderRow, ORDER_SELECT, type OrderRow } from "@/lib/backend/live/orderMap";
 
 const RPC_ERROR_STATUS: Record<string, number> = {
@@ -23,8 +23,6 @@ const RPC_ERROR_CODE: Record<string, string> = {
 // this route just authenticates, calls the RPC, and re-selects the order in
 // the shape the Backend contract's `Order` type needs.
 export async function POST(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "kiosk"]);
-  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => null);
   if (!body?.id) return NextResponse.json({ error: "Missing client order id" }, { status: 400 });
@@ -51,7 +49,7 @@ export async function POST(req: NextRequest) {
   const discountAmount = Number((row as Record<string, unknown>).discount_amount ?? 0);
   if (!result.alreadyExisted && discountAmount > 0) {
     await admin.from("stall_admin_audit").insert({
-      actor: (body as Record<string, unknown>).deviceId ?? auth.kind,
+      actor: (body as Record<string, unknown>).deviceId ?? "device",
       action: (row as Record<string, unknown>).discount_reason === "freebie" ? "freebie_given" : "discount_applied",
       detail: {
         order_id: result.order.id,
@@ -66,8 +64,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAnySession(req, ["stall", "admin"]);
-  if (!auth.ok) return auth.response;
 
   const environmentId = req.nextUrl.searchParams.get("environment_id");
   const shiftId = req.nextUrl.searchParams.get("shift_id");
