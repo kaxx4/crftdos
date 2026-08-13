@@ -792,7 +792,19 @@ export function Table({
   caption?: string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-[var(--radius-md)] border-[3px] border-[var(--color-ink)] bg-white">
+    /* Three things here are load-bearing, and the page scrolls sideways on a
+       phone without any one of them:
+         min-w-0   — this is usually a flex item, and a flex item's default
+                     min-width:auto sizes it to max-content, so a table with a
+                     min-width grew the box instead of scrolling inside it.
+         relative  — makes this the containing block for absolutely-positioned
+                     descendants. An abspos box whose containing block sits
+                     OUTSIDE a scrollport is not clipped by it, so the sr-only
+                     caption and cell labels — 1px, invisible, laid out at the
+                     far edge of a 981px table — dragged the document 544px
+                     wide while everything visible looked perfectly contained.
+         overflow-x-auto — the actual scroller. */
+    <div className="relative min-w-0 overflow-x-auto rounded-[var(--radius-md)] border-[3px] border-[var(--color-ink)] bg-white">
       <table className={clsx("w-full border-collapse text-left", className)}>
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>

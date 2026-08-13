@@ -80,10 +80,14 @@ export function AdminShell({
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--color-paper)] lg:flex-row">
+    <div className="flex min-h-dvh min-w-0 flex-col bg-[var(--color-paper)] lg:flex-row">
       <aside
         className={clsx(
-          "shrink-0 border-b-[3px] border-[var(--color-ink)] bg-white",
+          // min-w-0 is load-bearing: a flex item defaults to min-width:auto,
+          // so without it the aside sizes to the nav's max-content and the
+          // nav's own overflow-x-auto never gets to clip anything. Below lg
+          // that pushed the whole page 544px sideways on a phone.
+          "w-full min-w-0 shrink-0 border-b-[3px] border-[var(--color-ink)] bg-white",
           "lg:h-dvh lg:w-64 lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r-[3px]",
           "lg:sticky lg:top-0"
         )}
@@ -151,7 +155,9 @@ export function AdminShell({
           </div>
         )}
 
-        <main className="flex min-w-0 flex-1 flex-col gap-[var(--space-5)] p-[var(--space-5)]">{children}</main>
+        <main className="flex min-w-0 flex-1 flex-col gap-[var(--space-5)] p-[var(--space-5)]">
+          {children}
+        </main>
       </div>
     </div>
   );
