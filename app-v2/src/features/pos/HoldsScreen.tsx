@@ -19,8 +19,8 @@ import {
   Sheet,
   Skeleton,
   Text,
+  Select,
 } from "@/components/ui";
-import { PosSelect } from "./controls";
 
 /** Active holds at this stall.
  *
@@ -208,7 +208,7 @@ export function HoldsScreen() {
         }
       >
         <div className="flex flex-col gap-[var(--space-3)]">
-          <PosSelect label="Item" value={itemKey} onChange={(e) => setItemKey(e.target.value)}>
+          <Select label="Item" value={itemKey} onChange={(e) => setItemKey(e.target.value)}>
             <option value="">Select an item…</option>
             {catalogue.data?.skus.map((s: ProductSku) => (
               <option key={s.id} value={`product:${s.id}`}>
@@ -220,7 +220,7 @@ export function HoldsScreen() {
                 {d.code}
               </option>
             ))}
-          </PosSelect>
+          </Select>
           <Field label="Qty" value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, ""))} inputMode="numeric" />
           <Field label="Customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
           <Field

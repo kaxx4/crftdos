@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 import { getBackend } from "@/lib/backend";
 import { useAsync, useAction } from "@/lib/hooks/useAsync";
 import type { B2bOrder, B2bStage, PaymentMethod } from "@/lib/domain/types";
-import { AdminShell, AdminSelect, NumHead } from "@/features/admin/AdminShell";
+import { AdminShell, NumHead } from "@/features/admin/AdminShell";
 import {
   Badge,
   Banner,
@@ -26,6 +26,7 @@ import {
   Heading,
   Panel,
   Sheet,
+  Select,
   Skeleton,
   Stat,
   Table,
@@ -278,7 +279,7 @@ export default function B2bPage() {
                     )}
                   </Td>
                   <Td>
-                    <AdminSelect
+                    <Select surface="admin"
                       id={`stage-${o.id}`}
                       label={`Stage for ${o.client_org}`}
                       labelHidden
@@ -292,7 +293,7 @@ export default function B2bPage() {
                           {stageLabel(s)}
                         </option>
                       ))}
-                    </AdminSelect>
+                    </Select>
                   </Td>
                   <Td className="text-right">
                     <Button size="sm" surface="admin" variant="secondary" onClick={() => openEdit(o)}>
@@ -332,7 +333,7 @@ export default function B2bPage() {
             onChange={(e) => setClientOrg(e.target.value)}
           />
 
-          <AdminSelect
+          <Select surface="admin"
             id="account-owner"
             label="Account owner"
             value={accountOwner}
@@ -347,7 +348,7 @@ export default function B2bPage() {
                   {v.name}
                 </option>
               ))}
-          </AdminSelect>
+          </Select>
 
           <div className="grid grid-cols-2 gap-[var(--space-3)]">
             <Field
@@ -462,7 +463,7 @@ export default function B2bPage() {
                   onChange={(e) => setEditDepositDate(e.target.value)}
                 />
               </div>
-              <AdminSelect
+              <Select surface="admin"
                 id="deposit-method"
                 label="Paid by"
                 className="capitalize"
@@ -474,7 +475,7 @@ export default function B2bPage() {
                     {m}
                   </option>
                 ))}
-              </AdminSelect>
+              </Select>
             </section>
 
             <section className="flex flex-col gap-[var(--space-3)]">
@@ -497,7 +498,7 @@ export default function B2bPage() {
                   onChange={(e) => setEditBalanceDate(e.target.value)}
                 />
               </div>
-              <AdminSelect
+              <Select surface="admin"
                 id="balance-method"
                 label="Paid by"
                 className="capitalize"
@@ -509,7 +510,7 @@ export default function B2bPage() {
                     {m}
                   </option>
                 ))}
-              </AdminSelect>
+              </Select>
             </section>
 
             <Field

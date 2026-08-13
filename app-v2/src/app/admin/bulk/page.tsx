@@ -19,7 +19,7 @@ import { useState } from "react";
 import { getBackend } from "@/lib/backend";
 import { useAsync, useAction } from "@/lib/hooks/useAsync";
 import type { PaymentMethod } from "@/lib/domain/types";
-import { AdminShell, AdminSelect, NumHead } from "@/features/admin/AdminShell";
+import { AdminShell, NumHead } from "@/features/admin/AdminShell";
 import {
   Banner,
   Button,
@@ -28,6 +28,7 @@ import {
   Field,
   Mono,
   Panel,
+  Select,
   Skeleton,
   Table,
   Td,
@@ -140,7 +141,7 @@ export default function BulkEntryPage() {
                 return (
                   <tr key={i}>
                     <Td>
-                      <AdminSelect
+                      <Select surface="admin"
                         id={`sku-${i}`}
                         label={`Product SKU for line ${i + 1}`}
                         labelHidden
@@ -153,7 +154,7 @@ export default function BulkEntryPage() {
                             {s.sku_code} ({money(s.unit_price)})
                           </option>
                         ))}
-                      </AdminSelect>
+                      </Select>
                     </Td>
                     <Td>
                       <input
@@ -198,7 +199,7 @@ export default function BulkEntryPage() {
 
           <Panel title="How it was paid">
             <div className="grid gap-[var(--space-3)] sm:grid-cols-2">
-              <AdminSelect
+              <Select surface="admin"
                 id="payment-method"
                 label="Payment method"
                 className="capitalize"
@@ -210,7 +211,7 @@ export default function BulkEntryPage() {
                     {m}
                   </option>
                 ))}
-              </AdminSelect>
+              </Select>
               <Field
                 surface="admin"
                 label="Note"

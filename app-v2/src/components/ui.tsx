@@ -561,6 +561,220 @@ export function FieldShell({
   );
 }
 
+/* ── Select / Textarea / Checkbox ───────────────────────────────────────────
+   The rest of the `Field` family. These were hand-rolled twice — once in
+   `features/pos/controls.tsx`, once in `features/admin/AdminShell.tsx` —
+   which is how six admin pages ended up carrying a select at four different
+   heights and one POS select ended up 8px under the POS target floor. They
+   live here now, surface-aware like every other interactive primitive, and
+   they share `Field`'s geometry, label rule and error/hint wiring exactly so
+   the four read as one family in a form column. */
+
+/** The shared box geometry: `Field`'s input, minus the height. */
+const CONTROL_BOX =
+  "w-full rounded-[var(--radius-md)] border-[3px] bg-white px-3.5 t-base " +
+  "transition-[border-color,background-color] duration-[var(--dur-fast)] ease-[var(--ease-out)] " +
+  "placeholder:text-[var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-60";
+
+/** Error state paints the box; otherwise the focus wash. Identical to `Field`
+ *  so a form column does not have two different ideas of what "wrong" looks
+ *  like. */
+function controlState(error?: string): string {
+  return error
+    ? "border-[var(--color-signal)] bg-[var(--color-signal-wash)]"
+    : "border-[var(--color-ink)] focus:bg-[var(--color-yellow-wash)]";
+}
+
+/** The message row under a control. Error wins over hint, both are wired to
+ *  the control through `aria-describedby`. */
+function ControlMessage({ id, hint, error }: { id: string; hint?: string; error?: string }) {
+  if (error) {
+    return (
+      <p id={`${id}-err`} className="t-sm font-bold text-[var(--color-signal)]">
+        {error}
+      </p>
+    );
+  }
+  if (hint) {
+    return (
+      <p id={`${id}-hint`} className="t-sm text-[var(--color-muted)]">
+        {hint}
+      </p>
+    );
+  }
+  return null;
+}
+
+function describedBy(id: string, hint?: string, error?: string): string | undefined {
+  return error ? `${id}-err` : hint ? `${id}-hint` : undefined;
+}
+
+/** A native `<select>`, styled — deliberately not a custom listbox.
+ *
+ *  A hand-built listbox on a tablet gives up the platform's own picker (a
+ *  full-screen wheel on iOS, a touch-sized sheet on Android), and has to
+ *  re-implement typeahead, keyboard roving and screen-reader semantics that
+ *  the native element already gets right. On the surface where a volunteer is
+ *  picking a SKU one-handed with a queue waiting, that trade is not close.
+ *
+ *  So: native element, `appearance-none`, and OUR chevron drawn on top. The
+ *  platform arrow is the one part of a select that cannot be styled to match
+ *  a 3px-ink system, and it is the only part that is purely decorative — the
+ *  control stays fully native underneath.
+ *
+ *  Label is visible, as everywhere else. `labelHidden` is the single agreed
+ *  exception; see the prop. */
+export function Select({
+  label,
+  labelHidden = false,
+  hint,
+  error,
+  id,
+  className,
+  surface = "pos",
+  children,
+  ...rest
+}: React.SelectHTMLAttributes<HTMLSelectElement> & {
+  label: string;
+  /** Renders the label into an `sr-only` span instead of dropping it.
+   *
+   *  ONLY for a control inside an admin table cell, where the column head is
+   *  already the visible label and repeating it on every row is noise rather
+   *  than help. The `<label>` element still exists and is still associated, so
+   *  the accessible name survives — this hides a label, it never removes one.
+   *  Never on a form. */
+  labelHidden?: boolean;
+  hint?: string;
+  error?: string;
+  surface?: Surface;
+}) {
+  const auto = useId();
+  const selectId = id ?? `s${auto}`;
+
+  return (
+    <div className={clsx("flex flex-col gap-[var(--space-1)]", className)}>
+      <label htmlFor={selectId} className={clsx("t-label text-[var(--color-ink)]", labelHidden && "sr-only")}>
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          {...rest}
+          id={selectId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy(selectId, hint, error)}
+          className={clsx(
+            CONTROL_BOX,
+            // Room for our chevron, and the platform arrow suppressed.
+            "appearance-none pr-[var(--space-6)] font-semibold",
+            TAP[surface],
+            controlState(error)
+          )}
+        >
+          {children}
+        </select>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-[var(--space-3)] flex items-center text-[var(--color-ink)]"
+        >
+          ▾
+        </span>
+      </div>
+      <ControlMessage id={selectId} hint={hint} error={error} />
+    </div>
+  );
+}
+
+/** A multi-line `Field`. The surface floor is a MINIMUM here, not a height —
+ *  `rows` grows it from there. */
+export function Textarea({
+  label,
+  hint,
+  error,
+  id,
+  className,
+  surface = "pos",
+  rows = 3,
+  ...rest
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  label: string;
+  hint?: string;
+  error?: string;
+  surface?: Surface;
+}) {
+  const auto = useId();
+  const areaId = id ?? `t${auto}`;
+
+  return (
+    <div className={clsx("flex flex-col gap-[var(--space-1)]", className)}>
+      <label htmlFor={areaId} className="t-label text-[var(--color-ink)]">
+        {label}
+      </label>
+      <textarea
+        {...rest}
+        id={areaId}
+        rows={rows}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(areaId, hint, error)}
+        className={clsx(CONTROL_BOX, "py-3", TAP[surface], controlState(error))}
+      />
+      <ControlMessage id={areaId} hint={hint} error={error} />
+    </div>
+  );
+}
+
+/** A checkbox whose TAP TARGET is the whole row, not the 24px box.
+ *
+ *  A bare `<input type="checkbox">` is roughly 20px on every platform — a
+ *  quarter of the POS floor and a tenth of the kiosk one. Rather than inflate
+ *  the box (which browsers style inconsistently and which looks wrong next to
+ *  a 3px-ink input), the LABEL is the control: the whole ink-edged row is the
+ *  hit area and carries the surface floor, so the box being small costs
+ *  nothing. That is why `label` is required and there is no unlabelled mode. */
+export function Checkbox({
+  label,
+  hint,
+  error,
+  id,
+  className,
+  surface = "pos",
+  ...rest
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & {
+  label: React.ReactNode;
+  hint?: string;
+  error?: string;
+  surface?: Surface;
+}) {
+  const auto = useId();
+  const boxId = id ?? `c${auto}`;
+
+  return (
+    <div className={clsx("flex flex-col gap-[var(--space-1)]", className)}>
+      <label
+        htmlFor={boxId}
+        className={clsx(
+          "flex cursor-pointer items-center gap-[var(--space-3)] rounded-[var(--radius-md)] border-[3px] px-[var(--space-3)]",
+          "t-base font-bold",
+          "transition-[border-color,background-color] duration-[var(--dur-fast)] ease-[var(--ease-out)]",
+          "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60",
+          TAP[surface],
+          controlState(error)
+        )}
+      >
+        <input
+          {...rest}
+          type="checkbox"
+          id={boxId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy(boxId, hint, error)}
+          className="size-6 shrink-0 accent-[var(--color-cobalt)]"
+        />
+        <span>{label}</span>
+      </label>
+      <ControlMessage id={boxId} hint={hint} error={error} />
+    </div>
+  );
+}
+
 // ── Table ───────────────────────────────────────────────────────────────────
 
 /** Admin tables. Wide content scrolls INSIDE this container — the page body

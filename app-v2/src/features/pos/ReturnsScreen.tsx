@@ -34,8 +34,9 @@ import {
   PosScreen,
   Skeleton,
   Text,
+  Checkbox,
+  Select,
 } from "@/components/ui";
-import { PosCheckbox, PosSelect } from "./controls";
 
 const ACTIONS: { value: ReturnAction; label: string }[] = [
   { value: "refund", label: "Refund" },
@@ -235,7 +236,7 @@ export function ReturnsScreen() {
 
               {action === "exchange" && (
                 <div className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] p-[var(--space-3)]">
-                  <PosSelect
+                  <Select
                     label="Exchange for"
                     value={exchangeSkuId}
                     onChange={(e) => setExchangeSkuId(e.target.value)}
@@ -246,7 +247,7 @@ export function ReturnsScreen() {
                         {s.sku_code} — {money(s.unit_price)}
                       </option>
                     ))}
-                  </PosSelect>
+                  </Select>
                   <Field
                     label="Quantity"
                     type="number"
@@ -288,9 +289,9 @@ export function ReturnsScreen() {
                 </div>
               )}
 
-              <PosCheckbox
+              <Checkbox
                 checked={resaleable}
-                onChange={setResaleable}
+                onChange={(e) => setResaleable(e.target.checked)}
                 label="Resaleable — put the returned item(s) back into stock"
               />
 

@@ -18,8 +18,8 @@ import {
   Sheet,
   Skeleton,
   Text,
+  Textarea,
 } from "@/components/ui";
-import { PosTextarea } from "./controls";
 import { clsx } from "@/components/clsx";
 
 /** Everything sold in this environment, newest first, with voids.
@@ -163,7 +163,7 @@ export function OrdersLog() {
             This puts the stock back and marks the sale void. The receipt number stays in the sequence —
             that&apos;s deliberate, so the books still add up.
           </Text>
-          <PosTextarea
+          <Textarea
             label="Why?"
             value={reason}
             onChange={(e) => setReason(e.target.value)}

@@ -46,8 +46,8 @@ import {
   Panel,
   PosScreen,
   Text,
+  Checkbox,
 } from "@/components/ui";
-import { PosCheckbox } from "./controls";
 import { clsx } from "@/components/clsx";
 
 const BASE_PRICE = 450;
@@ -518,10 +518,10 @@ export function WalkUpSale() {
           </Banner>
         )}
 
-        <PosCheckbox
+        <Checkbox
           className="mt-[var(--space-3)]"
           checked={freebie}
-          onChange={setFreebie}
+          onChange={(e) => setFreebie(e.target.checked)}
           label="Freebie (₹0 — needs sign-off)"
         />
 

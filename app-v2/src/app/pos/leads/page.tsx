@@ -26,8 +26,8 @@ import {
   Sheet,
   Skeleton,
   Text,
+  Textarea,
 } from "@/components/ui";
-import { PosTextarea } from "@/features/pos/controls";
 import { PosShell } from "@/features/pos/PosShell";
 
 export default function LeadsPage() {
@@ -163,7 +163,7 @@ export default function LeadsPage() {
               onChange={(e) => setPhone(e.target.value)}
               inputMode="tel"
             />
-            <PosTextarea
+            <Textarea
               label="Notes (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

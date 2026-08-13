@@ -22,7 +22,7 @@ import { useMemo, useState } from "react";
 import { getBackend } from "@/lib/backend";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import type { StockRow } from "@/lib/domain/types";
-import { AdminShell, AdminSelect, NumHead } from "@/features/admin/AdminShell";
+import { AdminShell, NumHead } from "@/features/admin/AdminShell";
 import {
   Badge,
   Banner,
@@ -32,6 +32,7 @@ import {
   Nudge,
   Panel,
   Sheet,
+  Select,
   Skeleton,
   Table,
   Td,
@@ -249,21 +250,21 @@ export default function StockAllocationPage() {
             box needs to move too.
           </Text>
 
-          <AdminSelect id="stock-from" label="From" value={from} onChange={(e) => setFrom(e.target.value)}>
+          <Select surface="admin" id="stock-from" label="From" value={from} onChange={(e) => setFrom(e.target.value)}>
             {locs.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.name} — has {byKey.get(`${l.id}|${moving?.skuId}`) ?? 0}
               </option>
             ))}
-          </AdminSelect>
+          </Select>
 
-          <AdminSelect id="stock-to" label="To" value={to} onChange={(e) => setTo(e.target.value)}>
+          <Select surface="admin" id="stock-to" label="To" value={to} onChange={(e) => setTo(e.target.value)}>
             {locs.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.name} — has {byKey.get(`${l.id}|${moving?.skuId}`) ?? 0}
               </option>
             ))}
-          </AdminSelect>
+          </Select>
 
           <Field
             surface="admin"

@@ -18,7 +18,7 @@ import { useState } from "react";
 import { getBackend } from "@/lib/backend";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import { money } from "@/lib/money";
-import { AdminShell, AdminSelect, NumHead } from "@/features/admin/AdminShell";
+import { AdminShell, NumHead } from "@/features/admin/AdminShell";
 import {
   Badge,
   Banner,
@@ -32,6 +32,7 @@ import {
   Td,
   Text,
   Th,
+  Select,
 } from "@/components/ui";
 
 /** An editable money cell.
@@ -206,7 +207,7 @@ export default function AdminPricingPage() {
           Applies to every product SKU with the chosen fit at once. Leave price or cost blank to leave it unchanged.
         </Text>
         <div className="flex flex-wrap items-end gap-[var(--space-3)]">
-          <AdminSelect
+          <Select surface="admin"
             id="bulk-fit"
             label="Fit"
             className="w-56"
@@ -222,7 +223,7 @@ export default function AdminPricingPage() {
                 {f.name}
               </option>
             ))}
-          </AdminSelect>
+          </Select>
           <Field
             surface="admin"
             label="Price"
