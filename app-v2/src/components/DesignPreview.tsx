@@ -45,7 +45,7 @@ export function DesignPreview({
       {mockup ? (
         <Image src={mockup} alt="" fill sizes="(max-width: 768px) 50vw, 33vw" className="object-contain" />
       ) : (
-        <div className="absolute inset-0 grid place-items-center bg-[var(--color-cream-2)] text-sm text-[var(--color-muted)]">
+        <div className="absolute inset-0 grid place-items-center bg-[var(--color-paper-2)] t-sm text-[var(--color-muted)]">
           No mockup yet
         </div>
       )}
