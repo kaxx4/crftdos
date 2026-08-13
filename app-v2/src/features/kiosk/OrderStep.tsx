@@ -46,6 +46,9 @@ export function OrderStep({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [method, setMethod] = useState<PaymentMethod | null>(null);
+  // The QR being shown is not proof of payment — a volunteer has to say the
+  // customer's screen actually showed success before the order finalizes as paid.
+  const [upiConfirmed, setUpiConfirmed] = useState(false);
   const [touched, setTouched] = useState(false);
   const { run, busy, error } = useAction();
   const settings = useAsync(() => getBackend().getSettings(), []);
@@ -60,7 +63,8 @@ export function OrderStep({
   // the customer, so there has to be a way to reach them.
   const phoneOk = /^[6-9]\d{9}$/.test(phone.replace(/\D/g, ""));
   const nameOk = name.trim().length >= 2;
-  const ready = nameOk && phoneOk && method !== null;
+  const upiReady = method !== "upi" || upiConfirmed;
+  const ready = nameOk && phoneOk && method !== null && upiReady;
 
   const submit = async () => {
     setTouched(true);
@@ -137,13 +141,19 @@ export function OrderStep({
           <div className="grid gap-3 sm:grid-cols-2">
             <PaymentChoice
               selected={method === "upi"}
-              onClick={() => setMethod("upi")}
+              onClick={() => {
+                setMethod("upi");
+                setUpiConfirmed(false);
+              }}
               title="UPI"
               detail="Scan a code and pay now from your phone."
             />
             <PaymentChoice
               selected={method === "cash"}
-              onClick={() => setMethod("cash")}
+              onClick={() => {
+                setMethod("cash");
+                setUpiConfirmed(false);
+              }}
               title="Cash"
               detail="Pay the volunteer when you collect."
             />
@@ -151,13 +161,38 @@ export function OrderStep({
           {touched && method === null && (
             <p className="mt-3 text-sm font-semibold text-[var(--color-signal)]">Pick how you&apos;d like to pay.</p>
           )}
+          {touched && method === "upi" && !upiConfirmed && (
+            <p className="mt-3 text-sm font-semibold text-[var(--color-signal)]">
+              Confirm the customer has actually paid before placing the order.
+            </p>
+          )}
 
           {method === "upi" && settings.data && (
-            <UpiPanel
-              vpa={String(settings.data.upi_vpa ?? "")}
-              payee={String(settings.data.upi_payee_name ?? "crftd")}
-              amount={canvas.total}
-            />
+            <>
+              <UpiPanel
+                vpa={String(settings.data.upi_vpa ?? "")}
+                payee={String(settings.data.upi_payee_name ?? "crftd")}
+                amount={canvas.total}
+              />
+              {/* The QR being on screen is not proof anyone paid — this is the
+                  explicit human confirmation that replaces "deep link fired". */}
+              {!upiConfirmed ? (
+                <Banner tone="warn" className="mt-3" title="Has the customer paid?">
+                  <div className="mt-2 flex gap-2">
+                    <Button variant="primary" size="md" onClick={() => setUpiConfirmed(true)}>
+                      Yes, paid
+                    </Button>
+                    <Button variant="ghost" size="md" onClick={() => setUpiConfirmed(false)}>
+                      Not yet
+                    </Button>
+                  </div>
+                </Banner>
+              ) : (
+                <Banner tone="success" className="mt-3">
+                  Marked as paid by UPI. Placing the order now finalizes it that way.
+                </Banner>
+              )}
+            </>
           )}
 
           {method === "cash" && (
