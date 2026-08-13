@@ -4,9 +4,12 @@
 
 ---
 
-## 0. Naming discrepancy, flagged up front
+## 0. Naming discrepancy — resolved 2026-08-13
 
-The wordmark is spelled three different ways across the artifacts: the PRD prose says "crftd," both `.dc.html` prototypes render "CRFT★O" in the actual markup, and the shipped kiosk (`app/src/app/page.tsx`) renders "CRFT★D." This needs a client-side decision before any further visual work locks it in one direction. Everything below assumes **CRFT★D** (the shipped spelling) since it's the one currently live, but this should be confirmed, not assumed.
+> [!info] Resolved
+> See [[Design Decision - Direction Resolved]]. Canonical spelling is **CRFTD** (five letters, star as an optional trailing decorative glyph, never fused into the word). Confirmed unanimous across every live occurrence in `app-v2`. This section is kept below as the historical record of the discrepancy that prompted the decision.
+
+The wordmark used to be spelled three different ways across the artifacts: the PRD prose says "crftd," both `.dc.html` prototypes render "CRFT★O" in the actual markup, and the *old* `app/` kiosk (`app/src/app/page.tsx`, since superseded by `app-v2`) rendered "CRFT★D." That ambiguity is closed — see the decision doc.
 
 ---
 
@@ -18,7 +21,9 @@ The good news first: the shipped code did not round the corners off. `app/src/co
 
 The problems:
 
-1. **Three different visual directions exist across the project's own history, and the shipped code picked pieces of two of them without reconciling.** The original POS prototype (`Stall OS Flow v1.dc.html`) is hard-edged, 2px-border, flat-color brutalism — no rounding, no shadows, `3px solid #0F0F10` on the primary CTA. `Kiosk v3.dc.html`, the later prototype, drifted somewhere else entirely: pill-shaped buttons (`border-radius:999px`), rounded cards (`border-radius: R px` with a soft radius variable), a JS theme-token color system (`t.blue`, `t.hot`, `t.ink`) instead of literal hex, a 26px signal-red slider thumb. The shipped kiosk sided with the *first* prototype's hard edges but never engaged with why v3 existed or what it was trying to fix. Nobody has written down which of these is canon. That ambiguity is exactly what a "rework" pass needs to close off — not just re-skin the kiosk, but declare v3's rounded/pill direction dead and say why (see §2 below — it's the right call, but it should be a decision, not a silent default).
+1. **Three different visual directions exist across the project's own history, and the old `app/` build picked pieces of two of them without reconciling.** The original POS prototype (`Stall OS Flow v1.dc.html`) is hard-edged, 2px-border, flat-color brutalism — no rounding, no shadows, `3px solid #0F0F10` on the primary CTA. `Kiosk v3.dc.html`, the later prototype, drifted somewhere else entirely: pill-shaped buttons (`border-radius:999px`), rounded cards (`border-radius: R px` with a soft radius variable), a JS theme-token color system (`t.blue`, `t.hot`, `t.ink`) instead of literal hex, a 26px signal-red slider thumb. The old `app/` kiosk sided with the *first* prototype's hard edges but never engaged with why v3 existed or what it was trying to fix.
+   > [!info] Resolved 2026-08-13 — see [[Design Decision - Direction Resolved]]
+   > `app-v2` (the current live build) has since settled this on its own: a modest, deliberate radius scale (4–24px) on every surface, no pills anywhere except the physical slider-thumb drag handles. Not zero-radius brutalism, not v3's pills — a third answer, already shipped, now formalised. The rest of this section is kept as the historical analysis that prompted the resolution.
 
 2. **The kiosk's ornament, while dense, is decorative rather than structural.** Every motif in `page.tsx` — halftone, crop marks, star-burst, box label — is a small isolated component dropped onto an otherwise conventional stacked-card layout (logo, headline, CTA, centered column). That's an *illustrated* brutalist page, not a *collision* layout. True collision layout means the grid itself breaks: elements overlap, type bleeds off the module, price tags sit at an angle across a product photo, the halftone is a background field the layout fights against rather than a corner sticker. The current build has the right props on the right stage but the actors are still standing in a line. §2 below is the aggressive version of what's currently there.
 
@@ -152,10 +157,10 @@ Exact values, extending what's already correct in `ui.tsx`/`globals.css` and fil
 
 ## 6. What to kill
 
-1. **`Kiosk v3.dc.html`'s rounded-pill/soft-radius/theme-token direction, entirely.** Pill buttons, soft card radii, the 26px red slider thumb — none of it belongs anywhere near this system. It's a legitimate alternate direction someone explored, but it contradicts the hard-edged print-shop logic that both the PRD and the earlier prototype (and the shipped code) correctly commit to. This needs to be said out loud and closed off so it stops being a live ambiguity in the project's history.
+1. **`Kiosk v3.dc.html`'s pill/999px/theme-token direction, as a literal spec.** Pill buttons and the 26px red slider thumb never belonged anywhere near this system. **Resolved 2026-08-13**, per [[Design Decision - Direction Resolved]]: `app-v2` settled on a modest 4–24px radius scale instead of either the old zero-radius build or v3's pills — a third, already-shipped answer. No longer a live ambiguity.
 2. **The `TabBar` 44px touch target.** Off-system, no reason for it to be smaller than every other target in the product. Bump to 48px.
 3. **Any stray decorative blue on POS panels that aren't the header band, the primary action, or the active-selection state.** If an audit finds a blue border on a panel that's just sitting there for "brand," neutralize it to ink per §3's explicit allow-list.
 4. **The Eina references anywhere they still linger in code comments or dead CSS** (the `.dc.html` prototypes both `@font-face` it, and it's referenced in the PRD table) — not a licensing risk since it's not shipped, but worth a pass to make sure no comment or dead import still points at it as if it were live, so nobody reintroduces it by copying an old block.
 5. **Hand-rolled one-off card/table markup per screen.** Every screen currently improvising its own bordered-box-with-header pattern instead of using a shared `Card`/`Table` primitive (§5) is technical and visual drift waiting to happen — consolidate before adding more screens, not after.
 6. **The kiosk's current "illustrated brutalism" layout** (ornament components dropped onto an otherwise centered-stack layout) in favor of the actual collision grid described in §2 — this is the single biggest gap between what's shipped and what the brief actually asks for.
-7. **The three-way wordmark spelling conflict** (§0) — pick one, delete the other two from every prototype/reference doc that still shows them, so future work stops copying whichever one is closest at hand.
+7. **The three-way wordmark spelling conflict** (§0) — **resolved 2026-08-13**, canonical spelling is `CRFTD`, per [[Design Decision - Direction Resolved]]. The prototype spellings (`CRFT★O`, `CRFT★D`) remain in the archived `.dc.html` files for historical reference only; do not copy them into new work.
