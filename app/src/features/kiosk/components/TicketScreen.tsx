@@ -18,7 +18,7 @@ export function TicketScreen({
   return (
     <div
       className="relative flex flex-col items-center gap-5 bg-cream text-ink p-8 border-2 border-ink max-w-sm overflow-hidden"
-      style={{ borderRadius: "var(--radius-kiosk-lg)" }}
+      style={{ borderRadius: "var(--radius-kiosk-lg)", transform: "rotate(0.5deg)" }}
     >
       <KioskCropMarks dark arm={14} />
       <div className="absolute -top-4 -right-4 rotate-6">
@@ -28,7 +28,22 @@ export function TicketScreen({
         <BoxLabel rotate={-4}>YOUR TICKET</BoxLabel>
       </div>
       <div className="w-full bg-blue text-cream -mt-8 -mx-8 px-8 py-4 mb-2">
-        <div className="font-extrabold text-2xl text-center" style={{ fontFamily: "var(--font-fraunces), serif", fontStyle: "italic" }}>
+        {/* Hero-moment wordmark, halftone-dot-filled per the visual-direction
+            rework's receipt spec (§4) — tighter 5px dots than the attract
+            screen's field per the ornament section's "vary dot size per
+            screen" rule. Still exactly one Fraunces word on this screen. */}
+        <div
+          className="font-extrabold text-2xl text-center"
+          style={{
+            fontFamily: "var(--font-fraunces), serif",
+            fontStyle: "italic",
+            backgroundImage: "radial-gradient(var(--color-cream) 1.3px, transparent 1.6px)",
+            backgroundSize: "5px 5px",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+          }}
+        >
           Get pressed
         </div>
       </div>
