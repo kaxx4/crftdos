@@ -4,15 +4,42 @@
  *
  *  Prices SNAPSHOT onto order lines at sale time — editing here never rewrites
  *  history. Every save below only changes what the NEXT sale charges; past
- *  orders keep whatever price they were charged at checkout. */
+ *  orders keep whatever price they were charged at checkout.
+ *
+ *  Two edit surfaces with very different blast radii sit on one page, so they
+ *  are guarded differently: a single cell needs a deliberate second tap, and
+ *  the bulk-by-fit control — which can rewrite dozens of SKUs from one click —
+ *  is armed by `ConfirmAction` and states the count before it commits.
+ *
+ *  Colour budget: sky on the standing explanation, cobalt on the two save
+ *  actions. Signal appears only on a negative margin, which is a real "stop". */
 
 import { useState } from "react";
 import { getBackend } from "@/lib/backend";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import { money } from "@/lib/money";
-import { AdminShell, ScrollX } from "@/features/admin/AdminShell";
-import { Banner, Button, ConfirmAction, Field, Panel, Skeleton } from "@/components/ui";
+import { AdminShell, AdminSelect, NumHead } from "@/features/admin/AdminShell";
+import {
+  Badge,
+  Banner,
+  Button,
+  ConfirmAction,
+  EmptyState,
+  Field,
+  Panel,
+  Skeleton,
+  Table,
+  Td,
+  Text,
+  Th,
+} from "@/components/ui";
 
+/** An editable money cell.
+ *
+ *  The visible label for this control is its column head — `aria-label`
+ *  carries the row identity that a column head alone cannot ("Price for
+ *  TR-M-BLK"), which is the one case where a labelled `Field` would be worse:
+ *  a hundred repeated visible labels down a table column is noise, not help. */
 function PriceCostCell({
   value,
   onSave,
@@ -36,7 +63,7 @@ function PriceCostCell({
   };
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-[var(--space-2)]">
       <input
         value={shown}
         disabled={busy}
@@ -46,24 +73,52 @@ function PriceCostCell({
         }}
         inputMode="decimal"
         aria-label={label}
-        className="min-h-[40px] w-24 rounded-md border-2 border-[var(--color-line)] bg-white px-2 text-sm font-[family-name:var(--font-mono)] tnum focus:border-[var(--color-blue)]"
+        className={cellInputClass(dirty)}
       />
       {/* No auto-commit on blur: a stray tap while scrolling this table used to
           silently rewrite what the next sale charges. Saving now needs a
-          deliberate second tap. */}
-      {dirty && (
-        <ConfirmAction
-          size="sm"
-          surface="admin"
-          variant="primary"
-          busy={busy}
-          label="Save"
-          confirmLabel={`Confirm ₹${n}?`}
-          onConfirm={commit}
-        />
-      )}
+          deliberate second tap. The slot is reserved at a fixed width so an
+          appearing button never shunts the column sideways mid-edit. */}
+      <span className="inline-flex w-[136px] shrink-0">
+        {dirty && (
+          <ConfirmAction
+            size="sm"
+            surface="admin"
+            variant="primary"
+            busy={busy}
+            block
+            label="Save"
+            confirmLabel={`Charge ${money(Number(n))}?`}
+            onConfirm={commit}
+          />
+        )}
+      </span>
     </div>
   );
+}
+
+function cellInputClass(dirty: boolean) {
+  return [
+    "w-24 min-h-[var(--tap-admin)] rounded-[var(--radius-sm)] border-[3px] bg-white px-2",
+    "t-sm font-[family-name:var(--font-mono)] tnum font-bold",
+    "transition-[background-color,border-color] duration-[var(--dur-fast)] ease-[var(--ease-out)]",
+    dirty ? "border-[var(--color-cobalt)] bg-[var(--color-yellow-wash)]" : "border-[var(--color-ink)]",
+  ].join(" ");
+}
+
+function MarginCell({ price, cost }: { price: number; cost: number }) {
+  const m = price - cost;
+  if (m < 0) {
+    return (
+      <span className="inline-flex items-center gap-[var(--space-2)]">
+        <Badge tone="signal">Loss</Badge>
+        <span className="font-[family-name:var(--font-mono)] tnum font-bold text-[var(--color-signal)]">
+          {money(m)}
+        </span>
+      </span>
+    );
+  }
+  return <span className="font-[family-name:var(--font-mono)] tnum font-bold">{money(m)}</span>;
 }
 
 export default function AdminPricingPage() {
@@ -116,46 +171,60 @@ export default function AdminPricingPage() {
 
   const fitName = (fitId: string) => fits.find((f) => f.id === fitId)?.name ?? fitId;
 
-  return (
-    <AdminShell title="Pricing">
-      <Banner tone="info" className="mb-5">
-        Changing a price here never touches past orders — it only sets what the <strong>next</strong> sale charges.
-        Order lines snapshot the price at checkout, so history stays exactly as it was charged.
-      </Banner>
+  /** How many SKUs the bulk control is actually about to rewrite. Stating the
+   *  number is the difference between friction and theatre. */
+  const bulkCount = bulkFit ? skus.filter((s) => fitName(s.fit_id) === bulkFit).length : 0;
+  const bulkReady = Boolean(bulkFit) && (bulkPrice.trim() !== "" || bulkCost.trim() !== "");
 
+  return (
+    <AdminShell
+      title="Pricing"
+      lede="What the next sale charges. Past orders keep the price they were charged at checkout — nothing here rewrites history."
+    >
       {error && (
-        <Banner tone="danger" title="Couldn't save that" className="mb-5" action={<Button size="sm" variant="ghost" onClick={clearError}>Dismiss</Button>}>
+        <Banner
+          tone="danger"
+          title="Couldn't save that"
+          action={
+            <Button size="sm" surface="admin" variant="ghost" onClick={clearError}>
+              Dismiss
+            </Button>
+          }
+        >
           {error}
         </Banner>
       )}
 
-      <Panel title="Bulk set by fit" className="mb-5">
-        <p className="mb-3 max-w-[70ch] text-sm text-[var(--color-muted)]">
-          Applies to every product SKU with the chosen fit. Leave price or cost blank to leave it unchanged.
-        </p>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="bulk-fit" className="text-sm font-semibold text-[var(--color-ink)]">
-              Fit
-            </label>
-            <select
-              id="bulk-fit"
-              value={bulkFit}
-              onChange={(e) => {
-                setBulkFit(e.target.value);
-                setBulkDone(null);
-              }}
-              className="min-h-[52px] rounded-lg border-2 border-[var(--color-line)] bg-white px-3.5 text-base focus:border-[var(--color-blue)]"
-            >
-              <option value="">Select a fit…</option>
-              {fits.map((f) => (
-                <option key={f.id} value={f.name}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-          </div>
+      {catalogue.error && (
+        <Banner tone="danger" title="Couldn't load the catalogue">
+          {catalogue.error}
+        </Banner>
+      )}
+
+      <Panel title="Bulk set by fit">
+        <Text step="sm" muted className="mb-[var(--space-3)] max-w-[70ch]">
+          Applies to every product SKU with the chosen fit at once. Leave price or cost blank to leave it unchanged.
+        </Text>
+        <div className="flex flex-wrap items-end gap-[var(--space-3)]">
+          <AdminSelect
+            id="bulk-fit"
+            label="Fit"
+            className="w-56"
+            value={bulkFit}
+            onChange={(e) => {
+              setBulkFit(e.target.value);
+              setBulkDone(null);
+            }}
+          >
+            <option value="">Select a fit…</option>
+            {fits.map((f) => (
+              <option key={f.id} value={f.name}>
+                {f.name}
+              </option>
+            ))}
+          </AdminSelect>
           <Field
+            surface="admin"
             label="Price"
             value={bulkPrice}
             onChange={(e) => {
@@ -167,6 +236,7 @@ export default function AdminPricingPage() {
             className="w-32"
           />
           <Field
+            surface="admin"
             label="Cost"
             value={bulkCost}
             onChange={(e) => {
@@ -177,64 +247,67 @@ export default function AdminPricingPage() {
             placeholder="150"
             className="w-32"
           />
-          <Button variant="primary" busy={busy} disabled={!bulkFit} onClick={bulkSet}>
-            Set all
-          </Button>
-          {bulkDone && (
-            <span className="text-sm font-semibold text-[var(--color-teal)]">Applied to {bulkDone}.</span>
-          )}
+          {/* One click here can rewrite dozens of prices. It is armed, and the
+              armed label says how many. */}
+          <ConfirmAction
+            size="sm"
+            surface="admin"
+            variant="primary"
+            busy={busy}
+            disabled={!bulkReady}
+            label="Set all"
+            confirmLabel={`Rewrite ${bulkCount} SKU${bulkCount === 1 ? "" : "s"}?`}
+            onConfirm={bulkSet}
+          />
         </div>
+        {bulkDone && (
+          <p role="status" className="mt-[var(--space-3)] t-sm font-extrabold text-[var(--color-acid-deep)]">
+            Applied to every {bulkDone} SKU.
+          </p>
+        )}
       </Panel>
 
-      <Panel title="Product SKUs" className="mb-5">
+      <Panel title="Product SKUs">
         {catalogue.loading ? (
           <Skeleton className="h-64" />
         ) : skus.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted)]">No product SKUs yet.</p>
+          <EmptyState
+            headline="No product SKUs yet"
+            teach="A product SKU is one colour, fit and size of garment. Until one exists there is nothing for a transfer to be pressed onto."
+          />
         ) : (
-          <ScrollX>
-            <table className="w-full min-w-[640px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b-2 border-[var(--color-ink)] text-left">
-                  {["SKU", "Fit", "Size", "Cost", "Price", "Margin"].map((h) => (
-                    <th key={h} scope="col" className="py-2 pr-4 font-bold">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {skus.map((s) => (
-                  <tr key={s.id} className="border-b border-[var(--color-line)]">
-                    <th scope="row" className="py-2.5 pr-4 text-left font-[family-name:var(--font-mono)] font-bold">
-                      {s.sku_code}
-                    </th>
-                    <td className="py-2.5 pr-4">{fitName(s.fit_id)}</td>
-                    <td className="py-2.5 pr-4">{s.size}</td>
-                    <td className="py-2.5 pr-4">
-                      <PriceCostCell
-                        value={s.unit_cost}
-                        busy={busy}
-                        label={`Cost for ${s.sku_code}`}
-                        onSave={(n) => saveSku(s.id, "unit_cost", n)}
-                      />
-                    </td>
-                    <td className="py-2.5 pr-4">
-                      <PriceCostCell
-                        value={s.unit_price}
-                        busy={busy}
-                        label={`Price for ${s.sku_code}`}
-                        onSave={(n) => saveSku(s.id, "unit_price", n)}
-                      />
-                    </td>
-                    <td className="py-2.5 pr-4 font-[family-name:var(--font-mono)] font-bold tnum">
-                      {money(s.unit_price - s.unit_cost)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </ScrollX>
+          <Table
+            className="min-w-[820px]"
+            caption="Product SKU cost and price, editable in place"
+            head={["SKU", "Fit", "Size", "Cost", "Price", <NumHead key="m">Margin</NumHead>]}
+          >
+            {skus.map((s) => (
+              <tr key={s.id}>
+                <Th className="font-[family-name:var(--font-mono)]">{s.sku_code}</Th>
+                <Td>{fitName(s.fit_id)}</Td>
+                <Td>{s.size}</Td>
+                <Td>
+                  <PriceCostCell
+                    value={s.unit_cost}
+                    busy={busy}
+                    label={`Cost for ${s.sku_code}`}
+                    onSave={(n) => saveSku(s.id, "unit_cost", n)}
+                  />
+                </Td>
+                <Td>
+                  <PriceCostCell
+                    value={s.unit_price}
+                    busy={busy}
+                    label={`Price for ${s.sku_code}`}
+                    onSave={(n) => saveSku(s.id, "unit_price", n)}
+                  />
+                </Td>
+                <Td className="text-right">
+                  <MarginCell price={s.unit_price} cost={s.unit_cost} />
+                </Td>
+              </tr>
+            ))}
+          </Table>
         )}
       </Panel>
 
@@ -242,52 +315,49 @@ export default function AdminPricingPage() {
         {catalogue.loading ? (
           <Skeleton className="h-64" />
         ) : designs.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted)]">No sticker designs yet.</p>
+          <EmptyState
+            headline="No sticker designs yet"
+            teach="Designs are the transfers themselves. Add them on the Catalogue page and their cost and price become editable here."
+          />
         ) : (
-          <ScrollX>
-            <table className="w-full min-w-[560px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b-2 border-[var(--color-ink)] text-left">
-                  {["Code", "Name", "Cost", "Price", "Margin"].map((h) => (
-                    <th key={h} scope="col" className="py-2 pr-4 font-bold">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {designs.map((d) => (
-                  <tr key={d.id} className="border-b border-[var(--color-line)]">
-                    <th scope="row" className="py-2.5 pr-4 text-left font-[family-name:var(--font-mono)] font-bold">
-                      {d.code}
-                    </th>
-                    <td className="py-2.5 pr-4">{d.name}</td>
-                    <td className="py-2.5 pr-4">
-                      <PriceCostCell
-                        value={d.unit_cost}
-                        busy={busy}
-                        label={`Cost for ${d.code}`}
-                        onSave={(n) => saveDesign(d.id, "unit_cost", n)}
-                      />
-                    </td>
-                    <td className="py-2.5 pr-4">
-                      <PriceCostCell
-                        value={d.unit_price}
-                        busy={busy}
-                        label={`Price for ${d.code}`}
-                        onSave={(n) => saveDesign(d.id, "unit_price", n)}
-                      />
-                    </td>
-                    <td className="py-2.5 pr-4 font-[family-name:var(--font-mono)] font-bold tnum">
-                      {money(d.unit_price - d.unit_cost)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </ScrollX>
+          <Table
+            className="min-w-[760px]"
+            caption="Sticker design cost and price, editable in place"
+            head={["Code", "Name", "Cost", "Price", <NumHead key="m">Margin</NumHead>]}
+          >
+            {designs.map((d) => (
+              <tr key={d.id}>
+                <Th className="font-[family-name:var(--font-mono)]">{d.code}</Th>
+                <Td>{d.name}</Td>
+                <Td>
+                  <PriceCostCell
+                    value={d.unit_cost}
+                    busy={busy}
+                    label={`Cost for ${d.code}`}
+                    onSave={(n) => saveDesign(d.id, "unit_cost", n)}
+                  />
+                </Td>
+                <Td>
+                  <PriceCostCell
+                    value={d.unit_price}
+                    busy={busy}
+                    label={`Price for ${d.code}`}
+                    onSave={(n) => saveDesign(d.id, "unit_price", n)}
+                  />
+                </Td>
+                <Td className="text-right">
+                  <MarginCell price={d.unit_price} cost={d.unit_cost} />
+                </Td>
+              </tr>
+            ))}
+          </Table>
         )}
       </Panel>
+
+      <Banner tone="info">
+        Changing a price here never touches past orders — it only sets what the <strong>next</strong> sale charges.
+        Order lines snapshot the price at checkout, so history stays exactly as it was charged.
+      </Banner>
     </AdminShell>
   );
 }
