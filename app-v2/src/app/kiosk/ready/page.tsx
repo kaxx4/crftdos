@@ -20,7 +20,7 @@ import { getBackend } from "@/lib/backend";
 import { track } from "@/lib/analytics";
 import { money } from "@/lib/money";
 import type { Template } from "@/lib/domain/types";
-import { Badge, Banner, Button, EmptyState, Heading, Mono, Panel, Skeleton, Sticker, Text } from "@/components/ui";
+import { Badge, Banner, Button, Chip, EmptyState, Heading, Mono, Panel, Skeleton, Sticker, Text } from "@/components/ui";
 import { KioskFrame } from "../_lib/KioskFrame";
 import { Mockup } from "../_lib/Mockup";
 import { useKiosk } from "../_lib/session";
@@ -30,6 +30,10 @@ export default function KioskReadyPage() {
   const router = useRouter();
   const { templates, templatesLoading, skus, catalogue, canvas, environment } = useKiosk();
   const [openingId, setOpeningId] = useState<string | null>(null);
+  // Templates carry no real category field — is_featured is the only true
+  // grouping in the data, so that's the only filter offered. Inventing a
+  // taxonomy that doesn't exist would be worse than not having one.
+  const [onlyPopular, setOnlyPopular] = useState(false);
 
   const open = async (t: Template) => {
     if (openingId) return;
@@ -43,6 +47,8 @@ export default function KioskReadyPage() {
   };
 
   const active = templates.filter((t) => t.is_active !== false);
+  const hasFeatured = active.some((t) => t.is_featured);
+  const visible = onlyPopular ? active.filter((t) => t.is_featured) : active;
 
   return (
     <KioskFrame
@@ -65,6 +71,17 @@ export default function KioskReadyPage() {
         </Banner>
       )}
 
+      {hasFeatured && !templatesLoading && (
+        <div className="flex gap-[var(--space-2)]">
+          <Chip surface="kiosk" selected={!onlyPopular} onClick={() => setOnlyPopular(false)}>
+            All
+          </Chip>
+          <Chip surface="kiosk" selected={onlyPopular} onClick={() => setOnlyPopular(true)}>
+            Popular
+          </Chip>
+        </div>
+      )}
+
       {templatesLoading ? (
         <div className="grid gap-[var(--space-3)] sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -85,7 +102,7 @@ export default function KioskReadyPage() {
         />
       ) : (
         <div className="stagger grid gap-[var(--space-3)] sm:grid-cols-2 lg:grid-cols-3">
-          {active.map((t, i) => {
+          {visible.map((t, i) => {
             const sku = skus.find((s) => s.id === t.payload.product_sku_id);
             const price = t.payload.unit_price + t.payload.placements.reduce((n, p) => n + p.unit_price, 0);
             return (
