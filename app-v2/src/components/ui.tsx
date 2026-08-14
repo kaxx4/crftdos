@@ -1294,8 +1294,34 @@ TicketStub.Divider = TicketDivider;
 
 /** A section of ticket content with the standard padding — sits between
  *  dividers, or stands alone for a single-section ticket. */
-function TicketSection({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={clsx("p-[var(--space-4)]", className)}>{children}</div>;
+/** `tone`, when given, insets a solid colour fill within the section's own
+ *  padding rather than trying to flush-match the outer stub's corners — the
+ *  outer TicketStub stays overflow-visible (the divider notches must be
+ *  able to poke past its straight edges), so a fill that reached the card's
+ *  own edge would need a second, corner-matched clipping box per section.
+ *  Insetting avoids that entirely and reads as a photo/hero block sitting
+ *  inside the ticket, which is the same picture the references show. */
+function TicketSection({
+  children,
+  tone,
+  className,
+}: {
+  children: React.ReactNode;
+  tone?: Tone;
+  className?: string;
+}) {
+  return (
+    <div
+      className={clsx(
+        tone
+          ? clsx("m-[var(--space-2)] rounded-[var(--radius-lg)] p-[var(--space-4)]", TONE_FILL[tone])
+          : "p-[var(--space-4)]",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 TicketStub.Section = TicketSection;
 

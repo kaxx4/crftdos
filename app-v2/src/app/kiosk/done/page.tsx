@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { Button, Heading, Panel, PosScreen, Text } from "@/components/ui";
+import { Button, Heading, PosScreen, Text, TicketStub } from "@/components/ui";
 import { useKiosk } from "../_lib/session";
 import { ticketCode, useStageGuard } from "../_lib/util";
 import { money } from "@/lib/money";
@@ -68,43 +68,52 @@ export default function KioskDonePage() {
     <PosScreen className="min-h-dvh bg-[var(--color-paper)]">
       <PosScreen.Body className="p-[var(--space-5)]">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-[var(--space-5)]">
-          <Panel tone="acid" lift className="animate-pop text-center">
-            <p className="t-label">Order placed</p>
-            <Heading level={1} step="xxl" className="mt-[var(--space-2)]">
-              Thanks{firstName ? `, ${firstName}` : ""}.
-            </Heading>
-            <Text step="md" className="mx-auto mt-[var(--space-2)] max-w-[46ch]">
-              Show this code at the counter when your name is called.
-            </Text>
-            <p className="mt-[var(--space-4)] font-[family-name:var(--font-mono)] tnum t-mega tracking-[0.12em]">
-              {code}
-            </p>
-            {qr && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={qr}
-                alt={`QR code for order ${code}`}
-                className="mx-auto mt-[var(--space-4)] size-44 rounded-[var(--radius-md)] border-[3px] border-[var(--color-ink)] bg-white"
-              />
-            )}
-            <p className="mt-[var(--space-4)] font-[family-name:var(--font-mono)] tnum t-base">
-              {environment?.prefix ? `${environment.prefix} · ` : ""}
-              {money(order.total)} · pay at the counter
-            </p>
-          </Panel>
+          {/* One physical object, not two cards: the acid hero and the
+              instructions are two acts of the SAME ticket, torn apart at a
+              die-cut seam — the structure the reference confirmations use,
+              kept to our own acid + cobalt budget. */}
+          <TicketStub className="animate-pop">
+            <TicketStub.Section tone="acid" className="text-center">
+              <p className="t-label">Order placed</p>
+              <Heading level={1} step="xxl" className="mt-[var(--space-2)]">
+                Thanks{firstName ? `, ${firstName}` : ""}.
+              </Heading>
+              <Text step="md" className="mx-auto mt-[var(--space-2)] max-w-[46ch]">
+                Show this code at the counter when your name is called.
+              </Text>
+              <p className="mt-[var(--space-4)] font-[family-name:var(--font-mono)] tnum t-mega tracking-[0.12em]">
+                {code}
+              </p>
+              {qr && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={qr}
+                  alt={`QR code for order ${code}`}
+                  className="mx-auto mt-[var(--space-4)] size-44 rounded-[var(--radius-md)] border-[3px] border-[var(--color-ink)] bg-white"
+                />
+              )}
+              <p className="mt-[var(--space-4)] font-[family-name:var(--font-mono)] tnum t-base">
+                {environment?.prefix ? `${environment.prefix} · ` : ""}
+                {money(order.total)} · pay at the counter
+              </p>
+            </TicketStub.Section>
 
-          <Panel title="What happens now">
-            <ol className="flex flex-col gap-[var(--space-3)]">
-              {steps.map((s, i) => (
-                <li key={i} className="flex items-start gap-[var(--space-3)]">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-pill)] border-2 border-[var(--color-ink)] bg-white font-[family-name:var(--font-mono)] tnum t-sm font-bold">
-                    {i + 1}
-                  </span>
-                  <span className="t-base">{s}</span>
-                </li>
-              ))}
-            </ol>
-          </Panel>
+            <TicketStub.Divider />
+
+            <TicketStub.Section>
+              <p className="t-label text-[var(--color-muted)]">What happens now</p>
+              <ol className="mt-[var(--space-3)] flex flex-col gap-[var(--space-3)]">
+                {steps.map((s, i) => (
+                  <li key={i} className="flex items-start gap-[var(--space-3)]">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-pill)] border-2 border-[var(--color-ink)] bg-white font-[family-name:var(--font-mono)] tnum t-sm font-bold">
+                      {i + 1}
+                    </span>
+                    <span className="t-base">{s}</span>
+                  </li>
+                ))}
+              </ol>
+            </TicketStub.Section>
+          </TicketStub>
 
           <Text step="base" muted>
             Can&apos;t remember the code later? A volunteer can find your order by your name.
