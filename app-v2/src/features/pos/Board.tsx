@@ -48,6 +48,7 @@ import {
   Nudge,
   PosScreen,
   Skeleton,
+  Stepper,
   Text,
 } from "@/components/ui";
 import { clsx } from "@/components/clsx";
@@ -283,6 +284,20 @@ function TicketCard({
         <p className="mt-[var(--space-2)]">
           <Badge tone="yellow">Just arrived</Badge>
         </p>
+      )}
+
+      {/* Only on the SELECTED card — one instance, not a per-row repeat,
+          because a queue that is already filtered to one stage would just
+          show the same step on every card. This one exists to confirm what
+          the pinned foot button is about to do to THIS ticket, not to
+          differentiate cards from each other. */}
+      {selected && (
+        <Stepper
+          steps={STAGES.map((s) => s.label)}
+          activeIndex={STAGES.findIndex((s) => s.id === stage)}
+          tone="acid"
+          className="mt-[var(--space-3)]"
+        />
       )}
 
       {garment && (
