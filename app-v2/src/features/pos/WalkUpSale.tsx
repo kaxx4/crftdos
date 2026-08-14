@@ -32,7 +32,22 @@ import { enqueueOrder } from "@/lib/outbox";
 import type { CreateOrderInput } from "@/lib/backend";
 import type { PaymentMethod, Placement, ProductSku, StickerDesign, StockRow } from "@/lib/domain/types";
 import { money } from "@/lib/money";
-import { Banner, Button, Chip, ConfirmAction, EmptyState, Field, Nudge, Panel } from "@/components/ui";
+import {
+  Badge,
+  Banner,
+  Button,
+  Chip,
+  ConfirmAction,
+  EmptyState,
+  Field,
+  Heading,
+  Mono,
+  Nudge,
+  Panel,
+  PosScreen,
+  Text,
+  Checkbox,
+} from "@/components/ui";
 import { clsx } from "@/components/clsx";
 
 const BASE_PRICE = 450;
@@ -160,30 +175,43 @@ export function WalkUpSale() {
 
   if (!bound) {
     return (
-      <div className="p-4">
-        <Banner tone="warn" title="This phone isn't assigned to a stall yet">
-          Open Settings and pick your stall before selling — otherwise the sale lands in the wrong place.
-        </Banner>
-      </div>
+      <PosScreen>
+        <PosScreen.Body>
+          <Banner tone="warn" title="This phone isn't assigned to a stall yet">
+            Pick your stall before selling — otherwise the sale lands in the wrong place.
+          </Banner>
+        </PosScreen.Body>
+        <PosScreen.Foot>
+          {/* inline-flex on the anchor: without it the <a> collapses to the
+              line box and becomes a 21px-tall tap target wrapped around a
+              56px button. The link is what receives the tap. */}
+          <Link href="/settings" className="inline-flex w-full">
+            <Button variant="primary" size="xl" block>
+              Choose this phone&apos;s stall
+            </Button>
+          </Link>
+        </PosScreen.Foot>
+      </PosScreen>
     );
   }
 
   if (!shift.loading && !shift.data?.shift) {
     return (
-      <div className="p-4">
-        <EmptyState
-          headline="No shift open yet"
-          teach="A shift has to be open before you can sell — it's what allocates this phone its receipt numbers. Open one from More."
-          // inline-flex on the anchor: without it the <a> collapses to the line
-          // box and becomes a 21px-tall tap target wrapped around a 48px
-          // button. The link is what receives the tap, not the button.
-          action={
-            <Link href="/pos/more" className="inline-flex">
-              <Button variant="primary">Go to More</Button>
-            </Link>
-          }
-        />
-      </div>
+      <PosScreen>
+        <PosScreen.Body>
+          <EmptyState
+            headline="No shift open yet"
+            teach="A shift has to be open before you can sell — it's what gives this phone its own block of receipt numbers. Open one from More, then come back here."
+          />
+        </PosScreen.Body>
+        <PosScreen.Foot>
+          <Link href="/pos/more" className="inline-flex w-full">
+            <Button variant="primary" size="xl" block>
+              Open a shift
+            </Button>
+          </Link>
+        </PosScreen.Foot>
+      </PosScreen>
     );
   }
 
@@ -299,21 +327,37 @@ export function WalkUpSale() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-3">
+    <PosScreen>
+      {/* Fixed: what is on the ticket right now. A volunteer mid-conversation
+          should never have to scroll back up to check whether they picked a
+          size, and the count is the thing that silently goes wrong. */}
+      <PosScreen.Head className="flex items-center justify-between gap-[var(--space-3)]">
+        <div className="min-w-0">
+          <p className="t-label text-[var(--color-muted)]">On this ticket</p>
+          <p className="t-base truncate font-extrabold">
+            {sku ? `${sku.sku_code} · ${sku.size}` : "No tee picked yet"}
+          </p>
+        </div>
+        <Badge tone={stickers.length > 0 ? "cobalt" : "white"}>
+          <Mono>{stickers.length}</Mono> transfer{stickers.length === 1 ? "" : "s"}
+        </Badge>
+      </PosScreen.Head>
+
+      <PosScreen.Body>
       {toast && (
-        <Banner tone="success" action={<Button size="md" variant="ghost" onClick={() => setToast(null)}>Dismiss</Button>}>
+        <Banner tone="success" action={<Button variant="ghost" onClick={() => setToast(null)}>Dismiss</Button>}>
           {toast}
         </Banner>
       )}
       {error && (
-        <Banner tone="danger" title="That sale didn't go through" action={<Button size="md" variant="ghost" onClick={clearError}>Dismiss</Button>}>
+        <Banner tone="danger" title="That sale didn't go through" action={<Button variant="ghost" onClick={clearError}>Dismiss</Button>}>
           {error}
         </Banner>
       )}
 
       <Panel title="Tee">
         {!catalogue ? (
-          <p className="text-sm text-[var(--color-muted)]">Loading the catalogue…</p>
+          <Text muted>Loading the catalogue…</Text>
         ) : (
           <SkuGrid catalogue={catalogue} value={sku} onChange={setSku} />
         )}
@@ -327,27 +371,38 @@ export function WalkUpSale() {
           placeholder="Type 14, or m14, or a name"
           hint="Bin location is shown so you know where to walk. Add as many as this order needs."
         />
-        <ul className="mt-3 flex flex-col gap-2">
+        {/* One tone for the whole result list — the row you want is found by
+            its code and its bin, not by being a different colour. */}
+        <ul className="mt-[var(--space-3)] flex flex-col gap-[var(--space-2)]">
           {results.map((d) => (
             <li key={d.id}>
               <button
                 onClick={() => setStickers((p) => [...p, { kind: "catalogue", key: `${d.id}-${Date.now()}`, design: d }])}
-                className="tap-target flex w-full items-center justify-between gap-3 rounded-lg border-2 border-[var(--color-line)] bg-white px-3 text-left transition-transform duration-[var(--dur-fast)] active:scale-[0.98]"
+                className={clsx(
+                  "flex min-h-[var(--tap-pos)] w-full items-center justify-between gap-[var(--space-3)] text-left",
+                  "rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-white px-[var(--space-3)] py-[var(--space-2)]",
+                  "shadow-[var(--shadow-sticker)] transition-[transform,box-shadow] duration-[var(--dur-fast)]",
+                  "active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+                )}
               >
-                <span>
-                  <span className="font-[family-name:var(--font-mono)] font-bold">{d.code}</span>
-                  <span className="ml-2 text-sm">{d.name}</span>
-                  <span className="block text-xs text-[var(--color-muted)]">
+                <span className="min-w-0">
+                  <Mono className="t-md font-bold">{d.code}</Mono>
+                  <span className="ml-2 t-base">{d.name}</span>
+                  {/* Bin location is the highest-value detail on this screen:
+                      it tells them where to physically walk. */}
+                  <span className="block t-base text-[var(--color-muted)]">
                     {d.bin_location} · {d.stock_qty} left
                   </span>
                 </span>
-                <span className="font-[family-name:var(--font-mono)] font-bold tnum">{money(d.unit_price)}</span>
+                <Mono className="t-md font-bold">{money(d.unit_price)}</Mono>
               </button>
             </li>
           ))}
           {results.length === 0 && (
-            <li className="py-3 text-center text-sm text-[var(--color-muted)]">
-              Nothing matches that. Try just the number.
+            <li>
+              <Text muted className="py-[var(--space-3)] text-center">
+                Nothing matches that. Try just the number.
+              </Text>
             </li>
           )}
         </ul>
@@ -356,104 +411,122 @@ export function WalkUpSale() {
             the server assigns the next C-series number, since nobody at the
             till is expected to remember which one's free. */}
         {addingCustom ? (
-          <div className="mt-3 flex flex-col gap-2 rounded-lg border-2 border-dashed border-[var(--color-line)] p-3">
+          <div className="mt-[var(--space-3)] flex flex-col gap-[var(--space-3)] rounded-[var(--radius-lg)] border-[3px] border-dashed border-[var(--color-ink)] p-[var(--space-3)]">
             <Field
               label="Describe the custom print"
               value={customDesc}
               onChange={(e) => setCustomDesc(e.target.value)}
               placeholder="e.g. hand-drawn cat, back placement"
+              hint="The server assigns the next C-series code — you don't need to know which one is free."
             />
-            <div className="flex gap-2">
-              {(["S", "M", "L"] as const).map((sz) => (
-                <Chip key={sz} selected={customSize === sz} onClick={() => setCustomSize(sz)}>
-                  {sz}
-                </Chip>
-              ))}
+            <div className="flex flex-col gap-[var(--space-1)]">
+              <span className="t-label">Size class</span>
+              <div className="flex gap-[var(--space-2)]">
+                {(["S", "M", "L"] as const).map((sz) => (
+                  <Chip key={sz} selected={customSize === sz} onClick={() => setCustomSize(sz)} className="flex-1 justify-center">
+                    {sz}
+                  </Chip>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="primary" size="md" disabled={!customDesc.trim()} onClick={addCustomSticker}>
+            <div className="flex flex-wrap gap-[var(--space-3)]">
+              <Button variant="secondary" disabled={!customDesc.trim()} onClick={addCustomSticker} className="flex-1">
                 Add custom sticker
               </Button>
-              <Button variant="ghost" size="md" onClick={() => setAddingCustom(false)}>
+              <Button variant="ghost" onClick={() => setAddingCustom(false)}>
                 Cancel
               </Button>
             </div>
           </div>
         ) : (
-          <Button variant="ghost" size="md" className="mt-3" onClick={() => setAddingCustom(true)}>
+          <Button variant="ghost" block className="mt-[var(--space-3)]" onClick={() => setAddingCustom(true)}>
             + Add a custom sticker (no code)
           </Button>
         )}
       </Panel>
 
       {stickers.length > 0 && (
-        <Panel title="On this order">
-          <ul className="flex flex-col gap-2">
+        <Panel title={`On this order (${stickers.length})`}>
+          <ul className="flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
             {stickers.map((s, i) => (
-              <li key={s.key} className="flex items-center justify-between gap-3">
-                <span className="font-[family-name:var(--font-mono)] font-bold">
-                  {s.kind === "catalogue" ? s.design.code : `C-series · ${s.sizeClass}`}
+              <li key={s.key} className="flex items-center justify-between gap-[var(--space-3)] py-[var(--space-2)]">
+                <span className="flex min-w-0 flex-1 flex-wrap items-center gap-[var(--space-2)]">
+                  <Mono className="t-md font-bold">
+                    {s.kind === "catalogue" ? s.design.code : `C-series · ${s.sizeClass}`}
+                  </Mono>
+                  {s.kind === "custom" && (
+                    <span className="min-w-0 flex-1 truncate t-base text-[var(--color-muted)]">{s.description}</span>
+                  )}
+                  {s.kind === "catalogue" && s.design.stock_qty <= LOW_STOCK_WARNING && (
+                    <Badge tone="orange">{s.design.stock_qty} left</Badge>
+                  )}
                 </span>
-                {s.kind === "custom" && <span className="flex-1 truncate text-sm text-[var(--color-muted)]">{s.description}</span>}
-                {s.kind === "catalogue" && s.design.stock_qty <= LOW_STOCK_WARNING && (
-                  <span className="text-xs font-bold text-[var(--color-signal)]">{s.design.stock_qty} left</span>
-                )}
-                <Button size="md" variant="ghost" onClick={() => setStickers((p) => p.filter((_, j) => j !== i))}>
+                <Button variant="ghost" onClick={() => setStickers((p) => p.filter((_, j) => j !== i))}>
                   Remove
                 </Button>
               </li>
             ))}
           </ul>
           {stickers.some((s) => s.kind === "catalogue" && s.design.stock_qty <= LOW_STOCK_WARNING) && (
-            <Nudge className="mt-3">Running low on one of these transfers — worth restocking after this sale.</Nudge>
+            <Nudge className="mt-[var(--space-3)]">
+              Running low on one of these transfers — worth restocking after this sale.
+            </Nudge>
           )}
         </Panel>
       )}
 
       <Panel title="Price">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-[var(--space-3)]">
           {editingPrice && !freebie ? (
-            <input
+            <Field
               autoFocus
+              label="Price charged (₹)"
               type="number"
               inputMode="numeric"
               value={priceOverride ?? String(suggestedPrice)}
               onChange={(e) => setPriceOverride(e.target.value)}
               onBlur={() => setEditingPrice(false)}
-              className="w-32 rounded-lg border-2 border-[var(--color-blue)] px-2 py-1 font-[family-name:var(--font-mono)] text-2xl font-bold tnum"
+              className="w-40"
             />
           ) : (
             <button
               disabled={freebie}
               onClick={() => setEditingPrice(true)}
-              className="font-[family-name:var(--font-mono)] text-2xl font-bold tnum underline decoration-dashed underline-offset-4 disabled:no-underline disabled:opacity-60"
+              className={clsx(
+                "flex min-h-[var(--tap-pos)] items-center rounded-[var(--radius-lg)] border-[3px] border-dashed border-[var(--color-ink)]",
+                "bg-white px-[var(--space-3)] font-[family-name:var(--font-mono)] tnum t-xl disabled:opacity-60"
+              )}
             >
               {money(finalPrice)}
+              <span className="sr-only"> — tap to change the price</span>
             </button>
           )}
-          <span className="text-sm text-[var(--color-muted)]">
-            Preset {money(suggestedPrice)}
+          <div className="flex items-center gap-[var(--space-2)]">
+            <Text muted>Preset {money(suggestedPrice)}</Text>
             {priceOverride !== null && !freebie && (
-              <Button size="sm" variant="ghost" className="ml-2" onClick={() => setPriceOverride(null)}>
+              <Button variant="ghost" onClick={() => setPriceOverride(null)}>
                 Reset
               </Button>
             )}
-          </span>
+          </div>
         </div>
 
         {priceIsLow && (
-          <Banner tone="warn" className="mt-3">
-            That&apos;s below ₹{LOW_PRICE_WARNING} for one tee and one transfer — worth a second look, or mark it as a freebie instead.
+          <Banner tone="warn" className="mt-[var(--space-3)]">
+            That&apos;s below ₹{LOW_PRICE_WARNING} for one tee and one transfer — worth a second look, or mark it
+            as a freebie instead.
           </Banner>
         )}
 
-        <label className="mt-3 flex items-center gap-2 text-sm font-semibold">
-          <input type="checkbox" checked={freebie} onChange={(e) => setFreebie(e.target.checked)} className="size-5" />
-          Mark as freebie (₹0 — needs sign-off)
-        </label>
+        <Checkbox
+          className="mt-[var(--space-3)]"
+          checked={freebie}
+          onChange={(e) => setFreebie(e.target.checked)}
+          label="Freebie (₹0 — needs sign-off)"
+        />
 
         {freebie && (
-          <div className="mt-3 flex flex-col gap-2 rounded-lg border-2 border-[var(--color-line)] p-3">
+          <div className="mt-[var(--space-3)] flex flex-col gap-[var(--space-3)] rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] p-[var(--space-3)]">
             <Field label="Freebie for (name)" value={freebieName} onChange={(e) => setFreebieName(e.target.value)} />
             <Field label="Department" value={freebieDept} onChange={(e) => setFreebieDept(e.target.value)} placeholder="e.g. Events" />
             <Field label="Approved by" value={freebieApprover} onChange={(e) => setFreebieApprover(e.target.value)} />
@@ -462,7 +535,7 @@ export function WalkUpSale() {
       </Panel>
 
       <Panel title="Customer (optional)">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-[var(--space-3)]">
           <Field label="Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
           <Field
             label="Phone"
@@ -474,7 +547,7 @@ export function WalkUpSale() {
       </Panel>
 
       <Panel title="Payment">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-[var(--space-2)]">
           {(["cash", "upi", "split", "pending"] as const).map((m) => (
             <Chip key={m} selected={method === m} onClick={() => setMethod(m)} className="flex-1 justify-center">
               {m === "pending" ? "Pay later" : m === "split" ? "Cash + UPI" : m.toUpperCase()}
@@ -482,15 +555,23 @@ export function WalkUpSale() {
           ))}
         </div>
         {method === "pending" && (
-          <Nudge className="mt-3">Pending means unpaid — only pick this if you genuinely can&apos;t collect now, and follow up before shift close.</Nudge>
+          <Nudge className="mt-[var(--space-3)]">
+            Pending means unpaid — only pick this if you genuinely can&apos;t collect now, and follow up before
+            shift close.
+          </Nudge>
         )}
         {method === "split" && (
-          <div className="mt-3 flex flex-col gap-2">
-            <div className="flex gap-2">
+          <div className="mt-[var(--space-3)] flex flex-col gap-[var(--space-2)]">
+            <div className="flex gap-[var(--space-3)]">
               <Field label="Cash (₹)" value={splitCash} onChange={(e) => setSplitCash(e.target.value)} inputMode="numeric" />
               <Field label="UPI (₹)" value={splitUpi} onChange={(e) => setSplitUpi(e.target.value)} inputMode="numeric" />
             </div>
-            <p className={clsx("text-sm font-semibold", splitMismatch ? "text-[var(--color-signal)]" : "text-[var(--color-muted)]")}>
+            <p
+              className={clsx(
+                "t-base font-bold",
+                splitMismatch ? "text-[var(--color-signal)]" : "text-[var(--color-muted)]"
+              )}
+            >
               {splitMismatch
                 ? `Cash + UPI must add up to ${money(finalPrice)} — currently ${money(splitTotal)}.`
                 : `Adds up to ${money(splitTotal)}.`}
@@ -500,13 +581,16 @@ export function WalkUpSale() {
       </Panel>
 
       {sku && canCharge && <IdleCartNudge key={cartFingerprint} />}
+      </PosScreen.Body>
 
-      {/* Charge, pinned. It must be reachable with a thumb without scrolling,
-          because it is the last thing in every transaction. */}
-      <div className="sticky bottom-24 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-ink)] p-3 text-[var(--color-cream)]">
-        <div className="mb-2 flex items-end justify-between">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] opacity-70">Total</span>
-          <span className="font-[family-name:var(--font-mono)] text-3xl font-bold tnum">{money(finalPrice)}</span>
+      {/* Charge, pinned. It must be reachable with a thumb at any scroll
+          position, because it is the last thing in every transaction. */}
+      <PosScreen.Foot className="flex flex-col gap-[var(--space-2)]">
+        <div className="flex items-end justify-between gap-[var(--space-3)]">
+          <span className="t-label text-white/80">Total</span>
+          <Heading level={2} step="xl" className="font-[family-name:var(--font-mono)] tnum">
+            {money(finalPrice)}
+          </Heading>
         </div>
         {bigDiscount ? (
           <ConfirmAction
@@ -524,8 +608,8 @@ export function WalkUpSale() {
             {!sku ? "Pick a tee first" : splitMismatch ? "Fix the payment split" : freebie && !canCharge ? "Fill in freebie sign-off" : "Charge"}
           </Button>
         )}
-      </div>
-    </div>
+      </PosScreen.Foot>
+    </PosScreen>
   );
 }
 
@@ -558,42 +642,67 @@ function SkuGrid({
   const sizes = catalogue.skus.filter((s) => s.color_id === colorId && s.fit_id === fitId && s.is_active);
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        {catalogue.colors.map((c) => (
-          <Chip key={c.id} selected={colorId === c.id} onClick={() => setColorId(c.id)}>
-            {c.name}
-          </Chip>
-        ))}
+    <div className="flex flex-col gap-[var(--space-3)]">
+      <div className="flex flex-col gap-[var(--space-1)]">
+        <span className="t-label">Colour</span>
+        <div className="flex flex-wrap gap-[var(--space-2)]">
+          {catalogue.colors.map((c) => (
+            <Chip key={c.id} selected={colorId === c.id} onClick={() => setColorId(c.id)}>
+              {c.name}
+            </Chip>
+          ))}
+        </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {catalogue.fits.map((f) => (
-          <Chip key={f.id} selected={fitId === f.id} onClick={() => setFitId(f.id)}>
-            {f.name}
-          </Chip>
-        ))}
+      <div className="flex flex-col gap-[var(--space-1)]">
+        <span className="t-label">Fit</span>
+        <div className="flex flex-wrap gap-[var(--space-2)]">
+          {catalogue.fits.map((f) => (
+            <Chip key={f.id} selected={fitId === f.id} onClick={() => setFitId(f.id)}>
+              {f.name}
+            </Chip>
+          ))}
+        </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {sizes.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => onChange(s)}
-            aria-pressed={value?.id === s.id}
-            className={clsx(
-              "tap-target min-w-[68px] rounded-lg border-2 px-3 font-bold transition-transform duration-[var(--dur-fast)] active:scale-[0.97]",
-              value?.id === s.id
-                ? "border-[var(--color-blue)] bg-[var(--color-blue)] text-white"
-                : s.stock_qty <= 0
-                  ? "border-[var(--color-signal)] bg-white text-[var(--color-signal)]"
-                  : "border-[var(--color-line)] bg-white"
-            )}
-          >
-            {s.size}
-            <span className="block text-[11px] font-normal opacity-80">
-              {s.stock_qty <= 0 ? "none left" : `${s.stock_qty} left`}
-            </span>
-          </button>
-        ))}
+      <div className="flex flex-col gap-[var(--space-1)]">
+        <span className="t-label">Size</span>
+        <div className="flex flex-wrap gap-[var(--space-2)]">
+          {sizes.map((s) => {
+            const on = value?.id === s.id;
+            const out = s.stock_qty <= 0;
+            return (
+              <button
+                key={s.id}
+                onClick={() => onChange(s)}
+                aria-pressed={on}
+                className={clsx(
+                  "flex min-h-[76px] min-w-[104px] flex-col items-center justify-center rounded-[var(--radius-lg)] px-[var(--space-3)]",
+                  "border-[var(--color-ink)] transition-[transform,box-shadow] duration-[var(--dur-fast)]",
+                  "active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+                  on
+                    ? "on-deep border-[3px] bg-[var(--color-cobalt)] text-white shadow-[var(--shadow-sticker)]"
+                    : "border-2 bg-white text-[var(--color-ink)]"
+                )}
+              >
+                <span className="t-md font-extrabold">{s.size}</span>
+                {/* Out of stock is shown and still selectable, behind a stop
+                    colour — the opposite of the kiosk's choice, deliberately.
+                    A volunteer holding the physical garment outranks the DB. */}
+                <span
+                  className={clsx(
+                    "t-base",
+                    out && !on
+                      ? "text-[var(--color-signal)]"
+                      : on
+                        ? "text-white/80"
+                        : "text-[var(--color-muted)]"
+                  )}
+                >
+                  {out ? "none left" : `${s.stock_qty} left`}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

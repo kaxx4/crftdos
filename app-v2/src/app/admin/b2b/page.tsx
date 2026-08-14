@@ -5,19 +5,70 @@
  *  Org-wide, not environment-scoped (migration 004.2) — a corporate order is
  *  not tied to any single stall. The margin gate (D17) is enforced twice: here
  *  client-side as the operator types, so they see the warning before they
- *  submit, and again server-side, which is the one that actually matters. */
+ *  submit, and again server-side, which is the one that actually matters.
+ *
+ *  Colour budget: acid on the one emphasised Stat, cobalt on the primary
+ *  actions. The margin readout uses washes, not blocks — it changes as you
+ *  type, and a panel that strobes between three saturated fills while someone
+ *  is entering a price is not information, it is noise. */
 
 import { useMemo, useState } from "react";
 import { getBackend } from "@/lib/backend";
 import { useAsync, useAction } from "@/lib/hooks/useAsync";
 import type { B2bOrder, B2bStage, PaymentMethod } from "@/lib/domain/types";
-import { AdminShell, ScrollX } from "@/features/admin/AdminShell";
-import { Banner, Button, Field, Panel, Sheet, Skeleton, Stat } from "@/components/ui";
+import { AdminShell, NumHead } from "@/features/admin/AdminShell";
+import {
+  Badge,
+  Banner,
+  Button,
+  EmptyState,
+  Field,
+  Heading,
+  Panel,
+  Sheet,
+  Select,
+  Skeleton,
+  Stat,
+  Table,
+  Td,
+  Text,
+  Th,
+} from "@/components/ui";
 import { money } from "@/lib/money";
 import { clsx } from "@/components/clsx";
 
 const STAGES: B2bStage[] = ["enquiry", "quoted", "confirmed", "in_production", "dispatched", "delivered", "lost"];
 const PAYMENT_METHODS: PaymentMethod[] = ["upi", "cash", "split", "pending"];
+
+const stageLabel = (s: B2bStage) => s.replace("_", " ");
+
+/** The margin gate, as one function instead of four ternaries that all
+ *  returned the same class — the old version rendered "under 10%" and "under
+ *  15%" identically, so the operator got no signal that they had crossed from
+ *  "needs a PIN" into "just worth a look". */
+type MarginVerdict = { key: "loss" | "gated" | "thin" | "ok"; wash: string; note: string };
+
+function marginVerdict(margin: number): MarginVerdict {
+  if (margin < 0)
+    return {
+      key: "loss",
+      wash: "border-[var(--color-signal)] bg-[var(--color-signal-wash)]",
+      note: "This deal sells at a loss.",
+    };
+  if (margin < 10)
+    return {
+      key: "gated",
+      wash: "border-[var(--color-ink)] bg-[var(--color-yellow-wash)]",
+      note: "Under 10% — needs an admin PIN.",
+    };
+  if (margin < 15)
+    return {
+      key: "thin",
+      wash: "border-[var(--color-ink)] bg-[var(--color-yellow-wash)]",
+      note: "Under 15% — thin, but allowed.",
+    };
+  return { key: "ok", wash: "border-[var(--color-ink)] bg-[var(--color-acid-wash)]", note: "Healthy margin." };
+}
 
 export default function B2bPage() {
   const list = useAsync(() => getBackend().listB2bOrders(), []);
@@ -48,6 +99,8 @@ export default function B2bPage() {
     const c = Number(unitCost);
     return p > 0 ? ((p - c) / p) * 100 : 0;
   }, [unitPrice, unitCost]);
+
+  const verdict = marginVerdict(margin);
 
   const volunteers = list.data?.volunteers ?? [];
   const orders = list.data?.orders ?? [];
@@ -120,105 +173,138 @@ export default function B2bPage() {
     }
   };
 
-  const marginTone =
-    margin < 0
-      ? "border-[var(--color-signal)] bg-[var(--color-signal-wash)]"
-      : margin < 10
-        ? "border-[var(--color-signal)] bg-[var(--color-signal-wash)]"
-        : margin < 15
-          ? "border-[var(--color-signal)] bg-[var(--color-signal-wash)]"
-          : "border-[var(--color-teal)] bg-[color-mix(in_srgb,var(--color-teal)_10%,white)]";
-
   return (
-    <AdminShell title="B2B">
+    <AdminShell
+      title="B2B"
+      lede="Corporate orders, org-wide. These are not tied to a stall, and every one of them has a named person accountable for it."
+      action={
+        <Button surface="admin" size="sm" variant="primary" onClick={() => setCreating(true)}>
+          New enquiry
+        </Button>
+      }
+    >
       {error && (
-        <Banner tone="danger" className="mb-4" action={<Button size="sm" variant="ghost" onClick={clearError}>Dismiss</Button>}>
+        <Banner
+          tone="danger"
+          title="Couldn't save that"
+          action={
+            <Button size="sm" surface="admin" variant="ghost" onClick={clearError}>
+              Dismiss
+            </Button>
+          }
+        >
           {error}
         </Banner>
       )}
 
-      <div className="mb-4 grid gap-4 sm:grid-cols-2">
-        <Stat label="Committed value" value={money(list.data?.committed ?? 0)} sub="Confirmed deals and later" emphasis />
-        <Stat label="Collected so far" value={money(list.data?.collected ?? 0)} sub="Deposits and balances" />
-      </div>
+      {list.error && (
+        <Banner tone="danger" title="Couldn't load enquiries">
+          {list.error}
+        </Banner>
+      )}
 
-      <div className="mb-4 flex justify-end">
-        <Button variant="primary" onClick={() => setCreating(true)}>
-          New enquiry
-        </Button>
+      <div className="grid gap-[var(--space-3)] sm:grid-cols-2 xl:grid-cols-4">
+        <Stat
+          label="Committed value"
+          value={money(list.data?.committed ?? 0)}
+          sub="Confirmed deals and later"
+          emphasis
+        />
+        <Stat label="Collected so far" value={money(list.data?.collected ?? 0)} sub="Deposits and balances" />
+        <Stat
+          label="Still to collect"
+          value={money(Math.max(0, (list.data?.committed ?? 0) - (list.data?.collected ?? 0)))}
+          sub="Committed minus collected"
+        />
+        <Stat label="Open enquiries" value={orders.filter((o) => o.stage !== "delivered" && o.stage !== "lost").length} sub="Not delivered or lost" />
       </div>
 
       {list.loading ? (
         <Skeleton className="h-72" />
       ) : orders.length === 0 ? (
-        <Panel>
-          <p className="py-6 text-center text-[var(--color-muted)]">
-            No enquiries yet. New ones you save will show up here.
-          </p>
-        </Panel>
+        <EmptyState
+          headline="No enquiries yet"
+          teach="When a company asks about a bulk order, log it here with a quantity and a price. The margin gate checks it as you type, and the deal then tracks through to delivery."
+          action={
+            <Button surface="admin" size="sm" variant="primary" onClick={() => setCreating(true)}>
+              New enquiry
+            </Button>
+          }
+        />
       ) : (
         <Panel title="Enquiries">
-          <ScrollX>
-            <table className="w-full min-w-[900px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b-2 border-[var(--color-ink)] text-left">
-                  <th className="py-2 pr-4 font-bold">Client</th>
-                  <th className="px-3 py-2 font-bold">Owner</th>
-                  <th className="px-3 py-2 text-right font-bold">Qty × price</th>
-                  <th className="px-3 py-2 text-right font-bold">Gross</th>
-                  <th className="px-3 py-2 text-right font-bold">Deposit</th>
-                  <th className="px-3 py-2 text-right font-bold">Balance</th>
-                  <th className="px-3 py-2 font-bold">Stage</th>
-                  <th className="py-2" />
+          <Table
+            className="min-w-[980px]"
+            caption="B2B enquiries with value, payments received and current stage"
+            head={[
+              "Client",
+              "Owner",
+              <NumHead key="q">Qty × price</NumHead>,
+              <NumHead key="g">Gross</NumHead>,
+              <NumHead key="d">Deposit</NumHead>,
+              <NumHead key="b">Balance</NumHead>,
+              "Stage",
+              <span key="a" className="sr-only">
+                Payments
+              </span>,
+            ]}
+          >
+            {orders.map((o) => {
+              const owner = volunteers.find((v) => v.id === o.account_owner)?.name ?? o.account_owner;
+              const outstanding = o.gross_value - o.deposit_amount - o.balance_amount;
+              return (
+                <tr key={o.id}>
+                  <Th>
+                    {o.client_org}
+                    {o.contact_name && (
+                      <span className="ml-2 font-normal text-[var(--color-muted)]">{o.contact_name}</span>
+                    )}
+                  </Th>
+                  <Td>{owner}</Td>
+                  <Td mono className="text-right">
+                    {o.quantity} × {money(o.unit_price)}
+                  </Td>
+                  <Td mono className="text-right font-bold">
+                    {money(o.gross_value)}
+                  </Td>
+                  <Td mono className="text-right">
+                    {money(o.deposit_amount)}
+                  </Td>
+                  <Td mono className="text-right">
+                    {money(o.balance_amount)}
+                    {outstanding > 0 && o.stage === "delivered" && (
+                      <span className="ml-2 align-middle">
+                        <Badge tone="orange">Owed</Badge>
+                      </span>
+                    )}
+                  </Td>
+                  <Td>
+                    <Select surface="admin"
+                      id={`stage-${o.id}`}
+                      label={`Stage for ${o.client_org}`}
+                      labelHidden
+                      className="w-40 capitalize"
+                      value={o.stage}
+                      disabled={busy}
+                      onChange={(e) => setStage(o.id, e.target.value as B2bStage)}
+                    >
+                      {STAGES.map((s) => (
+                        <option key={s} value={s} className="capitalize">
+                          {stageLabel(s)}
+                        </option>
+                      ))}
+                    </Select>
+                  </Td>
+                  <Td className="text-right">
+                    <Button size="sm" surface="admin" variant="secondary" onClick={() => openEdit(o)}>
+                      Payments
+                      <span className="sr-only"> for {o.client_org}</span>
+                    </Button>
+                  </Td>
                 </tr>
-              </thead>
-              <tbody>
-                {orders.map((o) => {
-                  const owner = volunteers.find((v) => v.id === o.account_owner)?.name ?? o.account_owner;
-                  return (
-                    <tr key={o.id} className="border-b border-[var(--color-line)]">
-                      <th scope="row" className="py-2.5 pr-4 text-left font-normal">
-                        <span className="font-bold">{o.client_org}</span>
-                        {o.contact_name && <span className="ml-2 text-[var(--color-muted)]">{o.contact_name}</span>}
-                      </th>
-                      <td className="px-3 py-2.5">{owner}</td>
-                      <td className="px-3 py-2.5 text-right font-[family-name:var(--font-mono)] tnum">
-                        {o.quantity} × {money(o.unit_price)}
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-[family-name:var(--font-mono)] font-bold tnum">
-                        {money(o.gross_value)}
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-[family-name:var(--font-mono)] tnum">
-                        {money(o.deposit_amount)}
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-[family-name:var(--font-mono)] tnum">
-                        {money(o.balance_amount)}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <select
-                          value={o.stage}
-                          onChange={(e) => setStage(o.id, e.target.value as B2bStage)}
-                          disabled={busy}
-                          className="min-h-[40px] rounded-md border-2 border-[var(--color-line)] bg-white px-2 text-sm capitalize"
-                        >
-                          {STAGES.map((s) => (
-                            <option key={s} value={s} className="capitalize">
-                              {s.replace("_", " ")}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="py-2.5 text-right">
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(o)}>
-                          Payments
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </ScrollX>
+              );
+            })}
+          </Table>
         </Panel>
       )}
 
@@ -239,58 +325,103 @@ export default function B2bPage() {
           </Button>
         }
       >
-        <div className="flex flex-col gap-4">
-          <Field label="Client organisation" value={clientOrg} onChange={(e) => setClientOrg(e.target.value)} />
-          <div>
-            <label htmlFor="account-owner" className="text-sm font-semibold text-[var(--color-ink)]">
-              Account owner
-            </label>
-            <select
-              id="account-owner"
-              value={accountOwner}
-              onChange={(e) => setAccountOwner(e.target.value)}
-              className="mt-1.5 min-h-[52px] w-full rounded-lg border-2 border-[var(--color-line)] bg-white px-3.5 text-base"
-            >
-              <option value="">Select owner (required)…</option>
-              {volunteers
-                .filter((v) => v.is_active)
-                .map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-            </select>
-            <p className="mt-1.5 text-sm text-[var(--color-muted)]">
-              Every B2B deal needs one person accountable for it.
-            </p>
+        <div className="flex flex-col gap-[var(--space-4)]">
+          <Field
+            surface="admin"
+            label="Client organisation"
+            value={clientOrg}
+            onChange={(e) => setClientOrg(e.target.value)}
+          />
+
+          <Select surface="admin"
+            id="account-owner"
+            label="Account owner"
+            value={accountOwner}
+            onChange={(e) => setAccountOwner(e.target.value)}
+            hint="Every B2B deal needs one person accountable for it."
+          >
+            <option value="">Select owner (required)…</option>
+            {volunteers
+              .filter((v) => v.is_active)
+              .map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+          </Select>
+
+          <div className="grid grid-cols-2 gap-[var(--space-3)]">
+            <Field
+              surface="admin"
+              label="Contact name"
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+            />
+            <Field
+              surface="admin"
+              label="Contact phone"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              inputMode="tel"
+            />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Contact name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
-            <Field label="Contact phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} inputMode="tel" />
+          <Field
+            surface="admin"
+            label="Contact email"
+            value={contactEmail}
+            onChange={(e) => setContactEmail(e.target.value)}
+            inputMode="email"
+          />
+
+          <div className="grid grid-cols-3 gap-[var(--space-3)]">
+            <Field
+              surface="admin"
+              label="Qty"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              inputMode="numeric"
+            />
+            <Field
+              surface="admin"
+              label="Unit price"
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(e.target.value)}
+              inputMode="decimal"
+            />
+            <Field
+              surface="admin"
+              label="Unit cost"
+              value={unitCost}
+              onChange={(e) => setUnitCost(e.target.value)}
+              inputMode="decimal"
+            />
           </div>
-          <Field label="Contact email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} inputMode="email" />
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Qty" value={quantity} onChange={(e) => setQuantity(e.target.value)} inputMode="numeric" />
-            <Field label="Unit price" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} inputMode="decimal" />
-            <Field label="Unit cost" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} inputMode="decimal" />
+
+          <div
+            aria-live="polite"
+            className={clsx(
+              "flex items-baseline justify-between gap-[var(--space-3)] rounded-[var(--radius-md)] border-[3px] p-[var(--space-3)]",
+              verdict.wash
+            )}
+          >
+            <span className="t-lg font-[family-name:var(--font-mono)] tnum">{margin.toFixed(1)}% margin</span>
+            <span className="t-sm font-extrabold">{verdict.note}</span>
           </div>
-          <div className={clsx("rounded-lg border-2 p-3 text-sm font-bold", marginTone)}>{margin.toFixed(1)}% margin</div>
-          {margin < 0 && (
+
+          {verdict.key === "loss" && (
             <Banner tone="danger">
               Can&apos;t save — this deal would sell at a loss. Raise the price or lower the cost.
             </Banner>
           )}
-          {margin >= 0 && margin < 10 && (
+          {verdict.key === "gated" && (
             <Field
+              surface="admin"
               label="Admin PIN"
               type="password"
               value={adminPin}
               onChange={(e) => setAdminPin(e.target.value)}
               hint="Required below 10% margin."
             />
-          )}
-          {margin >= 10 && margin < 15 && (
-            <Banner tone="warn">This margin is under 15% — worth a second look before you commit.</Banner>
           )}
         </div>
       </Sheet>
@@ -301,69 +432,94 @@ export default function B2bPage() {
         title={editing ? `Payments — ${editing.client_org}` : ""}
         footer={
           <Button variant="primary" size="lg" block busy={busy} onClick={saveEdit}>
-            Save
+            Save payments
           </Button>
         }
       >
         {editing && (
-          <div className="flex flex-col gap-5">
-            <div>
-              <p className="mb-2 text-sm font-bold uppercase tracking-[0.14em] text-[var(--color-muted)]">Deposit</p>
-              <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-[var(--space-5)]">
+            <Text step="sm" muted>
+              Gross value {money(editing.gross_value)}. Record what has actually landed — this is what the
+              &ldquo;collected&rdquo; total on the page above counts.
+            </Text>
+
+            <section className="flex flex-col gap-[var(--space-3)]">
+              <Heading level={3} step="lg">
+                Deposit
+              </Heading>
+              <div className="grid grid-cols-2 gap-[var(--space-3)]">
                 <Field
+                  surface="admin"
                   label="Amount"
                   value={editDepositAmount}
                   onChange={(e) => setEditDepositAmount(e.target.value)}
                   inputMode="decimal"
                 />
                 <Field
+                  surface="admin"
                   label="Date"
                   type="date"
                   value={editDepositDate}
                   onChange={(e) => setEditDepositDate(e.target.value)}
                 />
               </div>
-              <select
+              <Select surface="admin"
+                id="deposit-method"
+                label="Paid by"
+                className="capitalize"
                 value={editDepositMethod}
                 onChange={(e) => setEditDepositMethod(e.target.value as PaymentMethod)}
-                className="mt-2 min-h-[48px] w-full rounded-lg border-2 border-[var(--color-line)] bg-white px-3 text-base capitalize"
               >
                 {PAYMENT_METHODS.map((m) => (
                   <option key={m} value={m} className="capitalize">
                     {m}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <p className="mb-2 text-sm font-bold uppercase tracking-[0.14em] text-[var(--color-muted)]">Balance</p>
-              <div className="grid grid-cols-2 gap-3">
+              </Select>
+            </section>
+
+            <section className="flex flex-col gap-[var(--space-3)]">
+              <Heading level={3} step="lg">
+                Balance
+              </Heading>
+              <div className="grid grid-cols-2 gap-[var(--space-3)]">
                 <Field
+                  surface="admin"
                   label="Amount"
                   value={editBalanceAmount}
                   onChange={(e) => setEditBalanceAmount(e.target.value)}
                   inputMode="decimal"
                 />
                 <Field
+                  surface="admin"
                   label="Date"
                   type="date"
                   value={editBalanceDate}
                   onChange={(e) => setEditBalanceDate(e.target.value)}
                 />
               </div>
-              <select
+              <Select surface="admin"
+                id="balance-method"
+                label="Paid by"
+                className="capitalize"
                 value={editBalanceMethod}
                 onChange={(e) => setEditBalanceMethod(e.target.value as PaymentMethod)}
-                className="mt-2 min-h-[48px] w-full rounded-lg border-2 border-[var(--color-line)] bg-white px-3 text-base capitalize"
               >
                 {PAYMENT_METHODS.map((m) => (
                   <option key={m} value={m} className="capitalize">
                     {m}
                   </option>
                 ))}
-              </select>
-            </div>
-            <Field label="Notes" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
+              </Select>
+            </section>
+
+            <Field
+              surface="admin"
+              label="Notes"
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              hint="Anything the next person picking this up would need to know."
+            />
           </div>
         )}
       </Sheet>

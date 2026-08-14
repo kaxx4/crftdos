@@ -5,15 +5,33 @@
  *  Every transfer or blank ruined in the press, logged with a reason, so the
  *  stock count stays honest and the org can eventually see which designs
  *  press worse than others. `logWaste` needs the environment this device is
- *  bound to, same as an order or a return. */
+ *  bound to, same as an order or a return.
+ *
+ *  Logging waste destroys stock and cannot be undone from this surface, so the
+ *  commit is a two-tap `ConfirmAction` in the pinned foot rather than a plain
+ *  red button sitting in the middle of a form. */
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { getBackend } from "@/lib/backend";
 import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import type { LogWasteInput } from "@/lib/backend";
 import type { ProductSku, StickerDesign, WasteReason } from "@/lib/domain/types";
-import { Banner, Button, Chip, EmptyState, Field, Panel, Skeleton } from "@/components/ui";
+import {
+  Badge,
+  Banner,
+  Button,
+  Chip,
+  ConfirmAction,
+  EmptyState,
+  Field,
+  Mono,
+  Panel,
+  PosScreen,
+  Skeleton,
+  Text,
+} from "@/components/ui";
 
 const REASONS: { value: WasteReason; label: string }[] = [
   { value: "misalignment", label: "Misalignment" },
@@ -94,125 +112,169 @@ export function WasteScreen() {
 
   if (!bound) {
     return (
-      <div className="p-4">
-        <Banner tone="warn" title="Assign this phone to a stall first">
-          Waste is logged against the stall this device is bound to.
-        </Banner>
-      </div>
+      <PosScreen>
+        <PosScreen.Body>
+          <Banner tone="warn" title="Assign this phone to a stall first">
+            Waste is logged against the stall this device is bound to.
+          </Banner>
+        </PosScreen.Body>
+        <PosScreen.Foot>
+          <Link href="/settings" className="inline-flex w-full">
+            <Button variant="primary" size="xl" block>
+              Choose this phone&apos;s stall
+            </Button>
+          </Link>
+        </PosScreen.Foot>
+      </PosScreen>
     );
   }
 
+  const chosenLabel = chosen ? (chosen.kind === "sku" ? chosen.item.sku_code : chosen.item.code) : null;
+  const ready = Boolean(chosen) && Number(qty) > 0;
+
   return (
-    <div className="flex flex-col gap-4 p-3">
-      <Banner tone="info">
-        Log every transfer or blank ruined in the press, even when it feels like paperwork. It takes the item out of
-        stock with a reason, so the count stays honest.
-      </Banner>
+    <PosScreen>
+      <PosScreen.Body>
+        <Banner tone="info">
+          Log every transfer or blank ruined in the press, even when it feels like paperwork. It takes the item out
+          of stock with a reason, so the count stays honest.
+        </Banner>
 
-      {toast && <Banner tone="success">{toast}</Banner>}
+        {toast && <Banner tone="success">{toast}</Banner>}
 
-      <Panel title="Log waste">
-        <div className="flex flex-col gap-3">
-          <Field
-            label="Sticker or product code"
-            placeholder="e.g. S-014 or M-BLK-L"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setChosen(null);
-            }}
-          />
+        <Panel title="What was ruined">
+          <div className="flex flex-col gap-[var(--space-3)]">
+            <Field
+              label="Sticker or product code"
+              placeholder="e.g. S-014 or M-BLK-L"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setChosen(null);
+              }}
+              hint="Start typing a code and pick it from the list."
+            />
 
-          {!chosen && (results.skus.length > 0 || results.designs.length > 0) && (
-            <ul className="flex flex-col divide-y divide-[var(--color-line)] rounded-lg border-2 border-[var(--color-line)]">
-              {results.designs.map((d) => (
-                <li key={d.id}>
-                  <button
-                    type="button"
-                    onClick={() => pick({ kind: "design", item: d })}
-                    className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm hover:bg-black/5"
-                  >
-                    <span>
-                      <span className="font-[family-name:var(--font-mono)] font-bold">{d.code}</span>
-                      <span className="ml-2">{d.name}</span>
-                    </span>
-                    <span className="text-xs text-[var(--color-muted)]">sticker</span>
-                  </button>
-                </li>
-              ))}
-              {results.skus.map((s) => (
-                <li key={s.id}>
-                  <button
-                    type="button"
-                    onClick={() => pick({ kind: "sku", item: s })}
-                    className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm hover:bg-black/5"
-                  >
-                    <span className="font-[family-name:var(--font-mono)] font-bold">{s.sku_code}</span>
-                    <span className="text-xs text-[var(--color-muted)]">product</span>
-                  </button>
+            {!chosen && (results.skus.length > 0 || results.designs.length > 0) && (
+              <ul className="flex flex-col divide-y-2 divide-[var(--color-line-soft)] overflow-hidden rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)]">
+                {results.designs.map((d) => (
+                  <li key={d.id}>
+                    <button
+                      type="button"
+                      onClick={() => pick({ kind: "design", item: d })}
+                      className="flex min-h-[var(--tap-pos)] w-full items-center justify-between gap-[var(--space-3)] bg-white px-[var(--space-3)] text-left t-base hover:bg-[var(--color-paper-2)]"
+                    >
+                      <span className="min-w-0 truncate">
+                        <Mono className="font-bold">{d.code}</Mono>
+                        <span className="ml-2">{d.name}</span>
+                      </span>
+                      <Badge tone="white">Sticker</Badge>
+                    </button>
+                  </li>
+                ))}
+                {results.skus.map((s) => (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => pick({ kind: "sku", item: s })}
+                      className="flex min-h-[var(--tap-pos)] w-full items-center justify-between gap-[var(--space-3)] bg-white px-[var(--space-3)] text-left t-base hover:bg-[var(--color-paper-2)]"
+                    >
+                      <Mono className="font-bold">{s.sku_code}</Mono>
+                      <Badge tone="white">Product</Badge>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {chosen && (
+              <div className="rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-[var(--color-yellow)] p-[var(--space-3)] t-md">
+                {chosen.kind === "sku" ? chosen.item.sku_code : `${chosen.item.code} — ${chosen.item.name}`}
+              </div>
+            )}
+
+            <Field label="Quantity wasted" type="number" min={1} value={qty} onChange={(e) => setQty(e.target.value)} />
+
+            <div className="flex flex-col gap-[var(--space-1)]">
+              <span className="t-label">Reason</span>
+              <div className="flex flex-wrap gap-[var(--space-2)]">
+                {REASONS.map((r) => (
+                  <Chip key={r.value} selected={reason === r.value} onClick={() => setReason(r.value)}>
+                    {r.label}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+
+            <Field
+              label="Note (optional)"
+              placeholder="Anything worth flagging"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+
+            {error && <Banner tone="danger">{error}</Banner>}
+          </div>
+        </Panel>
+
+        <Panel title="Recently logged here">
+          {waste.loading ? (
+            <div className="flex flex-col gap-[var(--space-2)]">
+              <Skeleton className="h-14" />
+              <Skeleton className="h-14" />
+            </div>
+          ) : !waste.data?.length ? (
+            <EmptyState
+              headline="Nothing logged yet"
+              teach="Anything ruined in the press gets logged here so the stall's counts stay accurate — and so we can see which designs press badly."
+            />
+          ) : (
+            <ul className="flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
+              {waste.data.map((w) => (
+                <li
+                  key={w.id}
+                  className="flex items-center justify-between gap-[var(--space-3)] py-[var(--space-3)] t-base"
+                >
+                  <span>{REASON_LABEL[w.reason] ?? w.reason}</span>
+                  <Mono className="text-[var(--color-muted)]">
+                    {new Date(w.created_at).toLocaleString("en-IN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      day: "2-digit",
+                      month: "short",
+                    })}
+                  </Mono>
                 </li>
               ))}
             </ul>
           )}
+        </Panel>
+      </PosScreen.Body>
 
-          {chosen && (
-            <div className="rounded-lg border-2 border-[var(--color-blue)] bg-[var(--color-blue-wash)] p-3 text-sm font-bold">
-              {chosen.kind === "sku" ? chosen.item.sku_code : `${chosen.item.code} — ${chosen.item.name}`}
-            </div>
-          )}
-
-          <Field label="Quantity wasted" type="number" min={1} value={qty} onChange={(e) => setQty(e.target.value)} />
-
-          <div>
-            <p className="mb-1.5 text-sm font-semibold">Reason</p>
-            <div className="flex flex-wrap gap-1.5">
-              {REASONS.map((r) => (
-                <Chip key={r.value} selected={reason === r.value} onClick={() => setReason(r.value)}>
-                  {r.label}
-                </Chip>
-              ))}
-            </div>
-          </div>
-
-          <Field
-            label="Note (optional)"
-            placeholder="Anything worth flagging"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-
-          {error && <Banner tone="danger">{error}</Banner>}
-
-          <Button variant="danger" size="lg" block busy={busy} disabled={!chosen || Number(qty) <= 0} onClick={submit}>
-            Log waste (removes stock)
-          </Button>
+      <PosScreen.Foot className="flex flex-col gap-[var(--space-2)]">
+        <div className="flex items-end justify-between gap-[var(--space-3)]">
+          <span className="t-label text-white/80">Removing from stock</span>
+          <Text className="t-base font-extrabold">
+            {chosenLabel ? (
+              <>
+                <Mono>{Number(qty) || 0}</Mono> × <Mono>{chosenLabel}</Mono>
+              </>
+            ) : (
+              "Nothing picked yet"
+            )}
+          </Text>
         </div>
-      </Panel>
-
-      <Panel title="Recently logged here">
-        {waste.loading ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
-          </div>
-        ) : !waste.data?.length ? (
-          <EmptyState
-            headline="Nothing logged yet"
-            teach="Damaged or unsellable stock goes here so counts stay accurate."
-          />
-        ) : (
-          <ul className="flex flex-col divide-y divide-[var(--color-line)]">
-            {waste.data.map((w) => (
-              <li key={w.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                <span>{REASON_LABEL[w.reason] ?? w.reason}</span>
-                <span className="font-[family-name:var(--font-mono)] text-xs text-[var(--color-muted)]">
-                  {new Date(w.created_at).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
-    </div>
+        <ConfirmAction
+          variant="danger"
+          size="xl"
+          block
+          busy={busy}
+          disabled={!ready}
+          label={chosen ? "Log waste (removes stock)" : "Pick what was ruined"}
+          confirmLabel={`Confirm — remove ${Number(qty) || 0} × ${chosenLabel ?? ""} from stock?`}
+          onConfirm={submit}
+        />
+      </PosScreen.Foot>
+    </PosScreen>
   );
 }

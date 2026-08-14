@@ -7,14 +7,31 @@ import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import type { Order } from "@/lib/domain/types";
 import { money } from "@/lib/money";
-import { Banner, Button, ConfirmAction, EmptyState, Panel, Sheet, Skeleton } from "@/components/ui";
+import {
+  Badge,
+  Banner,
+  Button,
+  ConfirmAction,
+  EmptyState,
+  Mono,
+  PosScreen,
+  Sheet,
+  Skeleton,
+  Text,
+  Textarea,
+} from "@/components/ui";
 import { clsx } from "@/components/clsx";
 
 /** Everything sold in this environment, newest first, with voids.
  *
  *  A void is SOFT — the row and its receipt number survive, because a receipt
  *  number that disappears from the sequence is an audit problem, not a
- *  tidiness win. It restocks to the location the order drew from. */
+ *  tidiness win. It restocks to the location the order drew from.
+ *
+ *  The rows are one tone. A log is read by scanning receipt numbers and
+ *  totals; giving each row its own colour would make the list louder and no
+ *  faster to read. The only row that looks different is a voided one, and it
+ *  differs by a signal badge and a struck total, not by decoration. */
 export function OrdersLog() {
   const { environment } = useEnvironment();
   const orders = useAsync(
@@ -38,54 +55,91 @@ export function OrdersLog() {
     }
   };
 
+  const live = (orders.data ?? []).filter((o) => !o.voided_at);
+  const taken = live.reduce((n, o) => n + o.total, 0);
+
   return (
-    <div className="flex flex-col gap-3 p-3">
-      {orders.loading ? (
-        <>
-          <Skeleton className="h-20" />
-          <Skeleton className="h-20" />
-        </>
-      ) : !orders.data?.length ? (
-        <EmptyState
-          headline="No sales here yet"
-          teach="Every sale from this stall — from the kiosk or from the Sell tab — shows up here as soon as it happens."
-        />
-      ) : (
-        orders.data.map((o) => (
-          <Panel key={o.id} tight className={clsx(o.voided_at && "opacity-70")}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-[family-name:var(--font-mono)] font-bold">
-                  {o.receipt_no ?? `#${o.order_no}`}
-                  {o.voided_at && <span className="ml-2 text-[var(--color-signal)]">VOID</span>}
-                </p>
-                <p className="text-sm text-[var(--color-muted)]">
-                  {o.customer_name ?? "Walk-up"} · {o.items.length} item{o.items.length === 1 ? "" : "s"} ·{" "}
-                  {o.payment_method}
-                </p>
-                <p className="text-xs text-[var(--color-muted)]">
-                  {new Date(o.client_created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-[family-name:var(--font-mono)] text-lg font-bold tnum">{money(o.total)}</p>
-                <div className="flex justify-end gap-1">
-                  <Link href={`/pos/receipt?order=${o.id}`}>
-                    <Button size="md" variant="ghost">
+    <PosScreen>
+      <PosScreen.Body>
+        {orders.loading ? (
+          <>
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </>
+        ) : !orders.data?.length ? (
+          <EmptyState
+            headline="No sales here yet"
+            teach="Every sale from this stall — from the kiosk or from the Sell tab — shows up here as soon as it happens, with a receipt you can show or print."
+          />
+        ) : (
+          <ul className="flex flex-col gap-[var(--space-3)]">
+            {orders.data.map((o) => (
+              <li
+                key={o.id}
+                className={clsx(
+                  "rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-white p-[var(--space-3)]",
+                  o.voided_at && "bg-[var(--color-signal-wash)]"
+                )}
+              >
+                <div className="flex items-start justify-between gap-[var(--space-3)]">
+                  <div className="min-w-0">
+                    <Mono className="t-md font-bold">{o.receipt_no ?? `#${o.order_no}`}</Mono>
+                    {o.voided_at && (
+                      <span className="ml-[var(--space-2)]">
+                        <Badge tone="signal">Void</Badge>
+                      </span>
+                    )}
+                    <Text className="truncate">
+                      {o.customer_name ?? "Walk-up"} · {o.items.length} item
+                      {o.items.length === 1 ? "" : "s"} · {o.payment_method}
+                    </Text>
+                    <Text muted className="tnum">
+                      {new Date(o.client_created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  </div>
+                  <Mono className={clsx("t-lg shrink-0", o.voided_at && "line-through")}>
+                    {money(o.total)}
+                  </Mono>
+                </div>
+
+                <div className="mt-[var(--space-3)] flex flex-wrap gap-[var(--space-3)]">
+                  <Link href={`/pos/receipt?order=${o.id}`} className="inline-flex flex-1">
+                    <Button variant="secondary" block>
                       Receipt
                     </Button>
                   </Link>
                   {!o.voided_at && (
-                    <Button size="md" variant="ghost" onClick={() => setVoiding(o)}>
-                      Void
+                    // Void is destructive and money-shaped: it opens a sheet
+                    // that asks why, and the sheet's own confirm is two-tap.
+                    <Button variant="ghost" onClick={() => setVoiding(o)}>
+                      Void…
                     </Button>
                   )}
                 </div>
-              </div>
-            </div>
-          </Panel>
-        ))
-      )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </PosScreen.Body>
+
+      {/* No action to pin on a log, so the foot carries the number an operator
+          is actually asked for mid-shift: what has this stall taken. */}
+      <PosScreen.Foot className="flex flex-col gap-[var(--space-2)]">
+        <div className="flex items-end justify-between gap-[var(--space-3)]">
+          <span className="t-label text-white/80">
+            Taken here · {live.length} sale{live.length === 1 ? "" : "s"}
+          </span>
+          <Mono className="t-xl">{money(taken)}</Mono>
+        </div>
+        <Link href="/pos/sell" className="inline-flex w-full">
+          <Button variant="primary" size="xl" block>
+            Record a sale
+          </Button>
+        </Link>
+      </PosScreen.Foot>
 
       <Sheet
         open={Boolean(voiding)}
@@ -94,7 +148,7 @@ export function OrdersLog() {
         footer={
           <ConfirmAction
             variant="danger"
-            size="lg"
+            size="xl"
             block
             busy={busy}
             disabled={reason.trim().length < 3}
@@ -104,23 +158,22 @@ export function OrdersLog() {
           />
         }
       >
-        <p className="mb-3 text-sm">
-          This puts the stock back and marks the sale void. The receipt number stays in the sequence — that&apos;s
-          deliberate, so the books still add up.
-        </p>
-        <label htmlFor="void-reason" className="text-sm font-semibold">
-          Why?
-        </label>
-        <textarea
-          id="void-reason"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          rows={3}
-          placeholder="Rung up twice, customer changed their mind…"
-          className="mt-1.5 w-full rounded-lg border-2 border-[var(--color-line)] p-3 text-base"
-        />
-        {error && <Banner tone="danger" className="mt-3">{error}</Banner>}
+        <div className="flex flex-col gap-[var(--space-3)]">
+          <Text>
+            This puts the stock back and marks the sale void. The receipt number stays in the sequence —
+            that&apos;s deliberate, so the books still add up.
+          </Text>
+          <Textarea
+            label="Why?"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
+            placeholder="Rung up twice, customer changed their mind…"
+            hint="At least a few words — this is what an admin reads when the day is reconciled."
+          />
+          {error && <Banner tone="danger">{error}</Banner>}
+        </div>
       </Sheet>
-    </div>
+    </PosScreen>
   );
 }

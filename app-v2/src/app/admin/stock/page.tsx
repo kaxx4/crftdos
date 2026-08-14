@@ -12,15 +12,39 @@
  *
  *  The matrix view is the point. A per-stall list would answer "what does
  *  Stall A have" but not "who has the M-001s", and the second question is the
- *  one you ask when a stall runs out mid-event. */
+ *  one you ask when a stall runs out mid-event.
+ *
+ *  Colour budget: orange marks a location about to run dry, cobalt is the one
+ *  primary action. The matrix itself is a single neutral tone — two hundred
+ *  cells in six colours is a heat map nobody asked for. */
 
 import { useMemo, useState } from "react";
 import { getBackend } from "@/lib/backend";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import type { StockRow } from "@/lib/domain/types";
-import { AdminShell, ScrollX } from "@/features/admin/AdminShell";
-import { Banner, Button, EmptyState, Field, Panel, Sheet, Skeleton } from "@/components/ui";
+import { AdminShell, NumHead } from "@/features/admin/AdminShell";
+import {
+  Badge,
+  Banner,
+  Button,
+  EmptyState,
+  Field,
+  Nudge,
+  Panel,
+  Sheet,
+  Select,
+  Skeleton,
+  Table,
+  Td,
+  Text,
+  Th,
+} from "@/components/ui";
 import { clsx } from "@/components/clsx";
+
+/** A stall with one to three left will run out during the event, and nobody
+ *  looks at this page again once doors open. Marked, and stated in words for
+ *  anyone who can't see the colour. */
+const LOW_STOCK_AT_OR_BELOW = 3;
 
 export default function StockAllocationPage() {
   const locations = useAsync(() => getBackend().listStockLocations(), []);
@@ -91,93 +115,115 @@ export default function StockAllocationPage() {
     }
   };
 
-  return (
-    <AdminShell title="Stock allocation">
-      <Banner tone="info" className="mb-4">
-        Each stall sells from its own allocation. A transfer sitting in the warehouse cannot be sold by anyone — send
-        it to a stall first. Two stalls will legitimately show different catalogues to customers, because they
-        genuinely have different boxes.
-      </Banner>
+  /** What the source location actually holds of the thing being moved. Shown
+   *  next to the field, because "not enough stock" arriving from the server
+   *  after a tap is a worse way to learn it. */
+  const availableAtSource = moving ? (byKey.get(`${from}|${moving.skuId}`) ?? 0) : 0;
+  const wanted = Number(qty) || 0;
+  const overdrawn = wanted > availableAtSource;
+  const sameLocation = from === to && from !== "";
 
+  return (
+    <AdminShell
+      title="Stock allocation"
+      lede="Each stall sells from its own allocation. Stock sitting in the warehouse cannot be sold by anyone — send it to a stall first."
+    >
       {error && (
-        <Banner tone="danger" className="mb-4" action={<Button size="sm" variant="ghost" onClick={clearError}>Dismiss</Button>}>
+        <Banner
+          tone="danger"
+          title="Couldn't move that"
+          action={
+            <Button size="sm" surface="admin" variant="ghost" onClick={clearError}>
+              Dismiss
+            </Button>
+          }
+        >
           {error}
+        </Banner>
+      )}
+
+      {allStock.error && (
+        <Banner tone="danger" title="Couldn't load stock levels">
+          {allStock.error}
         </Banner>
       )}
 
       {allStock.loading || catalogue.loading ? (
         <Skeleton className="h-72" />
       ) : items.length === 0 ? (
-        <EmptyState headline="Nothing in the catalogue yet" teach="Add transfers or product SKUs on the Catalogue page before allocating stock." />
+        <EmptyState
+          headline="Nothing in the catalogue yet"
+          teach="Stock is counted per transfer, per location. Add transfers or product SKUs on the Catalogue page and they appear here with a column for every stall."
+        />
       ) : (
-        <Panel title="Transfers by location">
-          <ScrollX>
-            <table className="w-full min-w-[720px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b-2 border-[var(--color-ink)] text-left">
-                  <th scope="col" className="py-2 pr-4 font-bold">
-                    Transfer
-                  </th>
-                  {locs.map((l) => (
-                    <th key={l.id} scope="col" className="px-3 py-2 text-right font-bold">
-                      {l.is_warehouse ? "Warehouse" : l.name.replace(/ —.*/, "")}
-                    </th>
-                  ))}
-                  <th scope="col" className="px-3 py-2 text-right font-bold">
-                    Total
-                  </th>
-                  <th scope="col" className="py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => {
-                  const total = locs.reduce((n, l) => n + (byKey.get(`${l.id}|${item.id}`) ?? 0), 0);
-                  return (
-                    <tr key={`${item.type}:${item.id}`} className="border-b border-[var(--color-line)]">
-                      <th scope="row" className="py-2.5 pr-4 text-left font-normal">
-                        <span className="font-[family-name:var(--font-mono)] font-bold">{item.code}</span>
-                        <span className="ml-2 text-[var(--color-muted)]">{item.name}</span>
-                        <span className="ml-2 rounded bg-[var(--color-cream)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
-                          {item.type === "product" ? "Apparel" : "Transfer"}
-                        </span>
-                      </th>
-                      {locs.map((l) => {
-                        const q = byKey.get(`${l.id}|${item.id}`) ?? 0;
-                        return (
-                          <td
-                            key={l.id}
-                            className={clsx(
-                              "px-3 py-2.5 text-right font-[family-name:var(--font-mono)] tnum",
-                              q === 0 && !l.is_warehouse && "text-[var(--color-muted)]"
-                            )}
-                          >
+        <Panel title="Everything, by location">
+          <Table
+            className="min-w-[900px]"
+            caption="Stock held at each location for every transfer and product SKU"
+            head={[
+              "Item",
+              "Type",
+              ...locs.map((l) => (
+                <NumHead key={l.id}>{l.is_warehouse ? "Warehouse" : l.name.replace(/ —.*/, "")}</NumHead>
+              )),
+              <NumHead key="total">Total</NumHead>,
+              <span key="act" className="sr-only">
+                Move stock
+              </span>,
+            ]}
+          >
+            {items.map((item) => {
+              const total = locs.reduce((n, l) => n + (byKey.get(`${l.id}|${item.id}`) ?? 0), 0);
+              return (
+                <tr key={`${item.type}:${item.id}`}>
+                  <Th>
+                    <span className="font-[family-name:var(--font-mono)]">{item.code}</span>
+                    <span className="ml-2 font-normal text-[var(--color-muted)]">{item.name}</span>
+                  </Th>
+                  <Td className="text-[var(--color-muted)]">{item.type === "product" ? "Apparel" : "Transfer"}</Td>
+                  {locs.map((l) => {
+                    const q = byKey.get(`${l.id}|${item.id}`) ?? 0;
+                    const low = !l.is_warehouse && q > 0 && q <= LOW_STOCK_AT_OR_BELOW;
+                    return (
+                      <Td key={l.id} mono className="text-right">
+                        {q < 0 ? (
+                          <span className="font-bold text-[var(--color-signal)]">
                             {q}
-                          </td>
-                        );
-                      })}
-                      <td className="px-3 py-2.5 text-right font-[family-name:var(--font-mono)] font-bold tnum">
-                        {total}
-                      </td>
-                      <td className="py-2.5 text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setMoving({ skuType: item.type, skuId: item.id, code: item.code });
-                            setFrom(locs.find((l) => l.is_warehouse)?.id ?? "");
-                            setTo(locs.find((l) => !l.is_warehouse)?.id ?? "");
-                            setQty("1");
-                          }}
-                        >
-                          Move
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </ScrollX>
+                            <span className="sr-only"> — negative, this needs reconciling</span>
+                          </span>
+                        ) : low ? (
+                          <Badge tone="orange">
+                            {q} left
+                          </Badge>
+                        ) : (
+                          <span className={clsx(q === 0 && "text-[var(--color-muted)]")}>{q}</span>
+                        )}
+                      </Td>
+                    );
+                  })}
+                  <Td mono className="text-right font-bold">
+                    {total}
+                  </Td>
+                  <Td className="text-right">
+                    <Button
+                      size="sm"
+                      surface="admin"
+                      variant="secondary"
+                      onClick={() => {
+                        setMoving({ skuType: item.type, skuId: item.id, code: item.code });
+                        setFrom(locs.find((l) => l.is_warehouse)?.id ?? "");
+                        setTo(locs.find((l) => !l.is_warehouse)?.id ?? "");
+                        setQty("1");
+                      }}
+                    >
+                      Move…
+                      <span className="sr-only"> {item.code}</span>
+                    </Button>
+                  </Td>
+                </tr>
+              );
+            })}
+          </Table>
         </Panel>
       )}
 
@@ -186,50 +232,55 @@ export default function StockAllocationPage() {
         onClose={() => setMoving(null)}
         title={`Move ${moving?.code ?? ""}`}
         footer={
-          <Button variant="primary" size="lg" block busy={busy} disabled={!from || !to || from === to} onClick={doTransfer}>
-            Move {qty || 0}
+          <Button
+            variant="primary"
+            size="lg"
+            block
+            busy={busy}
+            disabled={!from || !to || sameLocation || wanted < 1 || overdrawn}
+            onClick={doTransfer}
+          >
+            Move {wanted}
           </Button>
         }
       >
-        <div className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="from" className="text-sm font-semibold">
-              From
-            </label>
-            <select
-              id="from"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="mt-1.5 min-h-[52px] w-full rounded-lg border-2 border-[var(--color-line)] bg-white px-3 text-base"
-            >
-              {locs.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name} ({byKey.get(`${l.id}|${moving?.skuId}`) ?? 0})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="to" className="text-sm font-semibold">
-              To
-            </label>
-            <select
-              id="to"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="mt-1.5 min-h-[52px] w-full rounded-lg border-2 border-[var(--color-line)] bg-white px-3 text-base"
-            >
-              {locs.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name} ({byKey.get(`${l.id}|${moving?.skuId}`) ?? 0})
-                </option>
-              ))}
-            </select>
-          </div>
-          <Field label="How many" value={qty} onChange={(e) => setQty(e.target.value)} inputMode="numeric" />
-          {from === to && from !== "" && (
-            <p className="text-sm font-semibold text-[var(--color-signal)]">Pick two different locations.</p>
-          )}
+        <div className="flex flex-col gap-[var(--space-4)]">
+          <Text step="sm" muted>
+            Moving stock is logged as a real transfer. It changes what each stall can sell right now, so the physical
+            box needs to move too.
+          </Text>
+
+          <Select surface="admin" id="stock-from" label="From" value={from} onChange={(e) => setFrom(e.target.value)}>
+            {locs.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name} — has {byKey.get(`${l.id}|${moving?.skuId}`) ?? 0}
+              </option>
+            ))}
+          </Select>
+
+          <Select surface="admin" id="stock-to" label="To" value={to} onChange={(e) => setTo(e.target.value)}>
+            {locs.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name} — has {byKey.get(`${l.id}|${moving?.skuId}`) ?? 0}
+              </option>
+            ))}
+          </Select>
+
+          <Field
+            surface="admin"
+            label="How many"
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+            inputMode="numeric"
+            hint={`${availableAtSource} available where you're moving from.`}
+            error={
+              overdrawn
+                ? `Only ${availableAtSource} there. Moving more would leave that location negative.`
+                : undefined
+            }
+          />
+
+          {sameLocation && <Nudge>Pick two different locations — a transfer from a place to itself does nothing.</Nudge>}
         </div>
       </Sheet>
     </AdminShell>

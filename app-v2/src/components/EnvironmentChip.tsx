@@ -28,8 +28,9 @@ export function EnvironmentChip({ className, tone = "light" }: { className?: str
       <Link
         href="/settings"
         className={clsx(
-          "tap-target inline-flex items-center gap-2 rounded-lg border-2 border-[var(--color-signal)] bg-[var(--color-signal)] px-3 text-sm font-bold text-white",
-          "transition-transform duration-[var(--dur-fast)] active:scale-[0.97]",
+          "tap-target inline-flex items-center gap-2 rounded-[var(--radius-md)] border-[3px] border-[var(--color-ink)] bg-[var(--color-signal)] px-3 t-sm font-extrabold text-white",
+          "transition-[transform,box-shadow] duration-[var(--dur-fast)] ease-[var(--ease-out)]",
+          "active:translate-x-[2px] active:translate-y-[2px] active:shadow-none",
           className
         )}
       >
@@ -46,26 +47,29 @@ export function EnvironmentChip({ className, tone = "light" }: { className?: str
       href="/settings"
       title={`Writing into ${environment.name}. Tap to change.`}
       className={clsx(
-        // 44px floor, not 36. This chip renders on the volunteer's phone and
-        // the kiosk tablet, so it lives under the same touch rules as
-        // everything else on those surfaces.
-        "inline-flex min-h-[44px] items-center gap-2 rounded-lg border-2 px-2.5 text-sm font-bold",
-        "transition-[transform,border-color] duration-[var(--dur-fast)] active:scale-[0.97]",
+        // Full POS tap floor, not a reduced one. This chip renders on the
+        // volunteer's phone and the kiosk tablet, so it lives under the same
+        // touch rules as everything else on those surfaces.
+        "tap-target inline-flex items-center gap-2 rounded-[var(--radius-md)] border-[3px] px-2.5 t-sm font-extrabold",
+        "transition-[transform,box-shadow,border-color] duration-[var(--dur-fast)] ease-[var(--ease-out)]",
+        "active:translate-x-[2px] active:translate-y-[2px] active:shadow-none",
         tone === "dark"
-          ? "border-white/25 bg-white/10 text-white"
-          : "border-[var(--color-line)] bg-white text-[var(--color-ink)]",
+          ? "border-white bg-white/10 text-white"
+          : "border-[var(--color-ink)] bg-white text-[var(--color-ink)]",
         className
       )}
     >
       <span
         aria-hidden
         className={clsx(
-          "font-[family-name:var(--font-mono)] rounded px-1.5 py-0.5 text-xs",
+          // Deep blocks only — this badge always carries white text, so it may
+          // never take a bright block (white on those is under 2.5:1).
+          "font-[family-name:var(--font-mono)] rounded-[var(--radius-sm)] px-1.5 py-0.5 t-xs",
           environment.kind === "cloud"
             ? "bg-[var(--color-muted)] text-white"
             : environment.kind === "online"
-              ? "bg-[var(--color-teal)] text-white"
-              : "bg-[var(--color-blue)] text-white"
+              ? "bg-[var(--color-acid-deep)] text-white"
+              : "bg-[var(--color-cobalt)] text-white"
         )}
       >
         {environment.prefix}

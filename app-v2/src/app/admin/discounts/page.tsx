@@ -6,14 +6,23 @@
  *  `stall_admin_audit` at order time. There's nothing in the `Backend`
  *  contract for this — it's an admin-only audit view, not a domain concept
  *  the mock needs to simulate — so this fetches the raw route directly,
- *  same pattern as `/admin/pins`. */
+ *  same pattern as `/admin/pins`.
+ *
+ *  This used to be a stack of cards, one per entry, each with its own border.
+ *  An audit log is read by scanning down a column looking for the one number
+ *  that is too big, which is what a table is for and what a card list actively
+ *  prevents.
+ *
+ *  Colour budget: yellow and sky. Yellow marks the number and the rows
+ *  that need a second look; sky is the ordinary case. The rows themselves are
+ *  one tone — an audit log where rows are individually coloured is a log that
+ *  looks alarming when nothing is wrong. */
 
-import { AdminShell } from "@/features/admin/AdminShell";
-import { Banner, Mono, Panel, Skeleton, EmptyState } from "@/components/ui";
+import { AdminShell, NumHead } from "@/features/admin/AdminShell";
+import { Badge, Banner, EmptyState, Panel, Skeleton, Stat, Table, Td, Th } from "@/components/ui";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { ok, err, type Result } from "@/lib/backend/contract";
 import { money } from "@/lib/money";
-import { clsx } from "@/components/clsx";
 
 type AuditEntry = {
   id: string;
@@ -37,74 +46,77 @@ async function fetchEntries(): Promise<Result<AuditEntry[]>> {
 export default function DiscountsPage() {
   const entries = useAsync(fetchEntries, []);
 
-  return (
-    <AdminShell title="Discounts">
-      <p className="mb-4 max-w-[70ch] text-sm text-[var(--color-muted)]">
-        Every order with a discount or a freebie writes a row here at sale time. Freebies are called out — giving
-        something away for nothing is a bigger deal than knocking a bit off the price.
-      </p>
+  const rows = entries.data ?? [];
+  const freebies = rows.filter((e) => e.action === "freebie_given");
+  const givenAway = freebies.reduce((n, e) => n + (e.detail?.amount ?? 0), 0);
+  const knockedOff = rows
+    .filter((e) => e.action !== "freebie_given")
+    .reduce((n, e) => n + (e.detail?.amount ?? 0), 0);
 
-      {entries.error && <Banner tone="danger" className="mb-4" title="Couldn't load discounts">{entries.error}</Banner>}
+  return (
+    <AdminShell
+      title="Discounts"
+      lede="Every order with a discount or a freebie writes a row here at sale time. Freebies are called out — giving something away for nothing is a bigger deal than knocking a bit off the price."
+    >
+      {entries.error && (
+        <Banner tone="danger" title="Couldn't load discounts">
+          {entries.error}
+        </Banner>
+      )}
 
       {entries.loading ? (
-        <Skeleton className="h-40" />
-      ) : !entries.data || entries.data.length === 0 ? (
-        <Panel>
-          <EmptyState
-            headline="No discounts or freebies logged"
-            teach="This fills in as staff apply discounts or give things away at the till. Nothing to review yet."
-          />
-        </Panel>
+        <Skeleton className="h-56" />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          headline="No discounts or freebies logged"
+          teach="This fills in as staff apply discounts or give things away at the till. Nothing to review yet — and nothing you need to do to make it start recording."
+        />
       ) : (
-        <div className="flex flex-col gap-2">
-          {entries.data.map((e) => {
-            const freebie = e.action === "freebie_given";
-            return (
-              <Panel key={e.id} tight className={clsx(freebie && "border-[var(--color-signal)]")}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span
-                      className={clsx(
-                        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wide",
-                        freebie
-                          ? "bg-[var(--color-signal-wash)] text-[var(--color-signal)]"
-                          : "bg-[var(--color-blue-wash)] text-[var(--color-blue)]"
-                      )}
-                    >
-                      {freebie ? "Freebie" : "Discount"}
-                    </span>
-                    <p className="mt-1.5 text-sm">
-                      <span className="font-semibold">{e.actor}</span>
-                      {e.detail?.order_id && (
-                        <span className="text-[var(--color-muted)]"> · order {e.detail.order_id}</span>
-                      )}
-                    </p>
-                    {(e.detail?.reason || e.detail?.note) && (
-                      <p className="mt-0.5 text-sm text-[var(--color-muted)]">
-                        {e.detail?.reason}
-                        {e.detail?.reason && e.detail?.note ? " — " : ""}
-                        {e.detail?.note}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <Mono className={clsx("text-base font-bold", freebie && "text-[var(--color-signal)]")}>
-                      {money(e.detail?.amount ?? 0)}
-                    </Mono>
-                    <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+        <>
+          <div className="grid gap-[var(--space-3)] sm:grid-cols-3">
+            <Stat label="Given away" value={money(givenAway)} sub={`${freebies.length} freebies`} emphasis tone="yellow" />
+            <Stat label="Knocked off" value={money(knockedOff)} sub={`${rows.length - freebies.length} discounts`} />
+            <Stat label="Entries" value={rows.length} sub="Across every stall" />
+          </div>
+
+          <Panel title="Every discount and freebie">
+            <Table
+              className="min-w-[860px]"
+              caption="Discounts and freebies, newest first"
+              head={["When", "Who", "Kind", "Order", "Reason", <NumHead key="a">Amount</NumHead>]}
+            >
+              {rows.map((e) => {
+                const freebie = e.action === "freebie_given";
+                return (
+                  <tr key={e.id}>
+                    <Th className="font-normal whitespace-nowrap text-[var(--color-muted)]">
                       {new Date(e.created_at).toLocaleString("en-IN", {
                         hour: "2-digit",
                         minute: "2-digit",
                         day: "2-digit",
                         month: "short",
                       })}
-                    </p>
-                  </div>
-                </div>
-              </Panel>
-            );
-          })}
-        </div>
+                    </Th>
+                    <Td className="font-extrabold">{e.actor}</Td>
+                    <Td>
+                      {/* Two states of one field, not decoration on a list. */}
+                      <Badge tone={freebie ? "yellow" : "sky"}>{freebie ? "Freebie" : "Discount"}</Badge>
+                    </Td>
+                    <Td mono className="text-[var(--color-muted)]">
+                      {e.detail?.order_id ?? "—"}
+                    </Td>
+                    <Td className="text-[var(--color-muted)]">
+                      {[e.detail?.reason, e.detail?.note].filter(Boolean).join(" — ") || "—"}
+                    </Td>
+                    <Td mono className="text-right font-bold">
+                      {money(e.detail?.amount ?? 0)}
+                    </Td>
+                  </tr>
+                );
+              })}
+            </Table>
+          </Panel>
+        </>
       )}
     </AdminShell>
   );

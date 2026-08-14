@@ -1,67 +1,137 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════════════════════════════════
-   crftd Stall OS — design system
+   crftd Stall OS — DESIGN FOUNDATION
+   Binding contract: app-v2/DESIGN-SPEC.md. Read it before editing this file.
 
-   The governing idea is ASYMMETRIC SKIN (PRD D19): the brand goes loud exactly
-   where it sells and quiet where it works. One token set, three applications.
+   Visual direction: LOUD Y2K COLOUR-BLOCK. Flat saturated panels, heavy black
+   type, sticker/badge energy, generous radii, hard black rules. Derived from a
+   single reference; the rest of the moodboard is explicitly NOT the direction.
 
-     KIOSK  — customer-facing, the surface people photograph. Ecommerce-grade
-              storefront energy. Carries the brand load.
-     POS    — a volunteer's phone in direct sunlight with a queue waiting.
-              Restrained, huge targets, maximum contrast. Collision layout
-              here would be actively hostile.
-     ADMIN  — a dense desktop console. Information first.
+   Layout is NOT borrowed from the reference. Layout comes from point-of-sale
+   ergonomics: large targets, fixed non-scrolling action regions, glanceable
+   state, error-resistance for a stressed operator in daylight.
 
-   Colour values come from the executed visual prototype, which supersedes the
-   PRD §11 table where they conflict. The blue is markedly more saturated and
-   the signal colour has moved from orange toward red.
+   LIGHT MODE ONLY. There is no dark theme and none is planned — a stall runs
+   in daylight and the colour-block system depends on a light ground for its
+   contrast maths. Do not add `prefers-color-scheme` overrides.
+
+   EVERY value a screen needs is a token below. If you are typing a raw hex in
+   a component, you are off-spec.
    ══════════════════════════════════════════════════════════════════════════ */
 
 @theme inline {
-  /* ── Core palette ───────────────────────────────────────────────────── */
-  --color-ink: #0f0f10;
-  --color-ink-2: #1a1a1d;
-  --color-ink-3: #26262b;
-  --color-cream: #f7f5f1;
-  --color-cream-2: #ebe7df;
-  --color-blue: #1b4df5;
-  --color-blue-deep: #1339c4;
-  --color-blue-wash: #e8edff;
-  --color-teal: #0f7d78;
-  --color-sand: #e9dcc3;
+  /* ── BLOCK COLOURS ────────────────────────────────────────────────────────
+     Flat saturated panel fills. These are LOUD and they are the signature of
+     the system. Each one is annotated with its ONLY legal foreground.
 
-  /* SIGNAL IS RESERVED. Void, negative stock, overdue collection, destructive
-     confirmation. It must never appear decoratively on a volunteer screen,
-     because its entire job is to be the only thing on screen that means STOP. */
-  --color-signal: #c6302b;
-  --color-signal-wash: #fbeae9;
+     BRIGHT BLOCKS — INK text only. White text on these is illegal (all fail
+     WCAG AA badly). Ratios below are against --color-ink. */
+  --color-pink: #ff8fd4;        /* ink 9.14:1 */
+  --color-acid: #5be86b;        /* ink 11.91:1 */
+  --color-yellow: #ffe24b;      /* ink 14.65:1 */
+  --color-orange: #ff8a3d;      /* ink 8.08:1  */
+  --color-lilac: #c9a7ff;       /* ink 9.44:1  */
+  --color-sky: #8fd3ff;         /* ink 11.67:1 */
 
-  --color-line: #d9d4c9;
-  --color-line-dark: #33333a;
-  --color-muted: #6b6b73;
+  /* DEEP BLOCKS — WHITE text only. Ink on these is illegal. Ratios vs white. */
+  --color-cobalt: #1b44e8;      /* white 6.91:1  */
+  --color-cobalt-deep: #0f2ca8; /* white 10.79:1 */
+  --color-pink-deep: #c4257f;   /* white 5.36:1  */
+  --color-acid-deep: #12833a;   /* white 4.85:1  */
+  --color-orange-deep: #c43d06; /* white 5.23:1  */
 
-  /* ── Radius ─────────────────────────────────────────────────────────────
-     Modest rounding on both surfaces. No pills — the 999px geometry from the
-     v3 prototypes is deliberately killed. Kiosk runs one step softer than POS
-     because it is a storefront, not an instrument. */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  /* ── SIGNAL — RESERVED ────────────────────────────────────────────────────
+     Void, refund, negative stock, destructive confirmation, offline data loss.
+     It is the only thing on a screen that means STOP. Never decorative, never
+     a colour-block panel, never a brand accent. White text only. */
+  --color-signal: #d91e2a;      /* white 5.04:1 */
+  --color-signal-deep: #a4141e; /* white 7.79:1 */
+  --color-signal-wash: #fdeaea; /* ink 15.9:1 — wash, backgrounds only */
 
-  /* ── Motion ─────────────────────────────────────────────────────────────
-     Durations are short on POS and generous on kiosk, on purpose. A volunteer
-     mid-queue experiences animation as latency; a customer experiences it as
-     quality. */
+  /* ── INK & PAPER ──────────────────────────────────────────────────────────
+     Ink is the type colour and the rule colour. Paper is the ground. */
+  --color-ink: #111014;
+  --color-ink-2: #1c1a20;
+  --color-ink-3: #2a2731;
+  --color-paper: #fbf7f0;
+  --color-paper-2: #efe9de;
+  --color-paper-3: #e3dccf;
+  --color-white: #ffffff;
+
+  /* Secondary text on paper/white. 7.11:1 — safe for body copy. Do NOT invent
+     a lighter grey; anything above #6b6673 fails on paper. */
+  --color-muted: #57525c;
+  /* Hard rule. Colour-block edges are BLACK, not grey. */
+  --color-line: #111014;
+  /* The single permitted soft divider: inside a white panel, between rows. */
+  --color-line-soft: #d6cfc1;
+
+  /* ── WASHES ───────────────────────────────────────────────────────────────
+     Tinted grounds for banners/nudges. Ink text only. Not colour-blocks —
+     never use a wash as a panel fill where a block colour is wanted. */
+  --color-cobalt-wash: #e6ebff;
+  --color-acid-wash: #e6fbe9;
+  --color-yellow-wash: #fff8d6;
+
+  /* ── LEGACY ALIASES ───────────────────────────────────────────────────────
+     Existing pages reference these names. Keep them; do not use them in NEW
+     code — use the semantic names above. */
+  --color-cream: var(--color-paper);
+  --color-cream-2: var(--color-paper-2);
+  --color-blue: var(--color-cobalt);
+  --color-blue-deep: var(--color-cobalt-deep);
+  --color-blue-wash: var(--color-cobalt-wash);
+  --color-teal: var(--color-acid-deep);
+  --color-line-dark: var(--color-ink-3);
+  --color-sand: var(--color-paper-3);
+
+  /* ── RADIUS ───────────────────────────────────────────────────────────────
+     Y2K is generous. Closed set — no arbitrary radii. */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 36px;
+  --radius-pill: 999px;
+
+  /* ── SPACING ──────────────────────────────────────────────────────────────
+     4px base. Closed set. Nothing between steps. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ── BORDER WEIGHTS ───────────────────────────────────────────────────────
+     Only three. Hairlines do not exist in this system. */
+  --border-1: 2px;   /* dividers, inputs at rest */
+  --border-2: 3px;   /* panels, chips, buttons */
+  --border-3: 5px;   /* hero panels, armed destructive controls */
+
+  /* ── SHADOW ───────────────────────────────────────────────────────────────
+     Hard offset only. No blur, no soft ambient elevation — the reference has
+     none and a blurred shadow reads as a different design language.
+     Exception: --shadow-lift for modal/sheet layers, which must separate from
+     everything behind them. */
+  --shadow-sticker: 3px 3px 0 0 var(--color-ink);
+  --shadow-block: 6px 6px 0 0 var(--color-ink);
+  --shadow-lift: 0 18px 48px -12px rgb(17 16 20 / 0.45);
+
+  /* ── TOUCH TARGETS ────────────────────────────────────────────────────────
+     POS floor is 56 (thumb, sunlight, queue). Admin floor is 40 (mouse,
+     density). Kiosk floor is 64. Never go below the surface's floor. */
+  --tap-pos: 56px;
+  --tap-admin: 40px;
+  --tap-kiosk: 64px;
+
+  /* ── MOTION ───────────────────────────────────────────────────────────── */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  /* A single restrained overshoot, reserved for ONE thing: a sticker landing
-     on the canvas. A pre-cut transfer being placed is a physical object coming
-     to rest, and the slight settle is what makes a tap read as "that became a
-     real thing" rather than "a state changed". Kept deliberately mild (1.28,
-     not the usual 1.56) so it snaps rather than bounces — bounce reads as
-     decoration, and nothing else in this system is allowed to use it. */
+  /* One restrained overshoot, reserved for a sticker landing. Nothing else. */
   --ease-place: cubic-bezier(0.34, 1.28, 0.64, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
@@ -71,19 +141,59 @@
   --dur-slow: 380ms;
   --dur-stage: 560ms;
 
-  /* ── Type ───────────────────────────────────────────────────────────── */
+  /* ── TYPE FACES ───────────────────────────────────────────────────────────
+     Three, already wired in layout.tsx. Do not add a fourth. */
   --font-body: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-face), ui-monospace, "SF Mono", monospace;
   --font-display: var(--font-fraunces), Georgia, serif;
+
+  /* ── TYPE SCALE ───────────────────────────────────────────────────────────
+     Closed set of nine steps. Each has a size, a line-height and a tracking.
+     Roles are documented in DESIGN-SPEC.md §3. Never type an arbitrary
+     font-size; use a step (or the Text/Heading primitives that wrap them). */
+  --text-mega: 56px;    --text-mega-lh: 0.92;  --text-mega-tr: -0.03em;
+  --text-xxl: 40px;     --text-xxl-lh: 0.98;   --text-xxl-tr: -0.025em;
+  --text-xl: 30px;      --text-xl-lh: 1.06;    --text-xl-tr: -0.02em;
+  --text-lg: 22px;      --text-lg-lh: 1.18;    --text-lg-tr: -0.015em;
+  --text-md: 18px;      --text-md-lh: 1.35;    --text-md-tr: -0.01em;
+  --text-base: 16px;    --text-base-lh: 1.5;   --text-base-tr: 0em;
+  --text-sm: 14px;      --text-sm-lh: 1.45;    --text-sm-tr: 0em;
+  --text-xs: 12px;      --text-xs-lh: 1.35;    --text-xs-tr: 0.02em;
+  --text-label: 12px;   --text-label-lh: 1.2;  --text-label-tr: 0.14em;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   Motion vocabulary
+   Type step utilities. Use these (or the primitives) instead of Tailwind's
+   text-* sizes, which do not carry the tracking and line-height.
+   ══════════════════════════════════════════════════════════════════════════ */
 
-   The approved prototype defined a whole motion language the shipped build
-   never used — it shipped 0 keyframes against the prototype's 8. These are
-   the ones that earn their place. Each is entrance or feedback; NONE of them
-   block an interaction or delay a number appearing.
+.t-mega  { font-size: var(--text-mega);  line-height: var(--text-mega-lh);  letter-spacing: var(--text-mega-tr);  font-weight: 800; }
+.t-xxl   { font-size: var(--text-xxl);   line-height: var(--text-xxl-lh);   letter-spacing: var(--text-xxl-tr);   font-weight: 800; }
+.t-xl    { font-size: var(--text-xl);    line-height: var(--text-xl-lh);    letter-spacing: var(--text-xl-tr);    font-weight: 800; }
+.t-lg    { font-size: var(--text-lg);    line-height: var(--text-lg-lh);    letter-spacing: var(--text-lg-tr);    font-weight: 700; }
+.t-md    { font-size: var(--text-md);    line-height: var(--text-md-lh);    letter-spacing: var(--text-md-tr);    font-weight: 600; }
+.t-base  { font-size: var(--text-base);  line-height: var(--text-base-lh);  letter-spacing: var(--text-base-tr);  font-weight: 400; }
+.t-sm    { font-size: var(--text-sm);    line-height: var(--text-sm-lh);    letter-spacing: var(--text-sm-tr);    font-weight: 400; }
+.t-xs    { font-size: var(--text-xs);    line-height: var(--text-xs-lh);    letter-spacing: var(--text-xs-tr);    font-weight: 600; }
+.t-label {
+  font-size: var(--text-label); line-height: var(--text-label-lh);
+  letter-spacing: var(--text-label-tr); font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* The one display face. Fraunces 900 italic, display only — never body, never
+   a control label, never below 30px. */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Motion vocabulary. Every animation here is entrance or feedback. None of
+   them block an interaction or delay a number appearing on a POS screen.
    ══════════════════════════════════════════════════════════════════════════ */
 
 @keyframes rise {
@@ -91,22 +201,18 @@
   to   { opacity: 1; transform: none; }
 }
 
-/* Confirmation entrance. No overshoot: a panel is not an object with momentum,
-   and scaling past 1 on a receipt-like surface reads as decoration. */
 @keyframes pop {
   0%   { transform: scale(0.96); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* A sticker landing on the canvas — the one place a settle is earned, because
-   a pre-cut transfer really is being placed. See --ease-place. */
+/* A sticker landing on the canvas — the one place a settle is earned. */
 @keyframes place {
   0%   { transform: scale(0.82) rotate(-4deg); opacity: 0; }
   100% { transform: scale(1) rotate(0); opacity: 1; }
 }
 
-/* Refusal. Short, lateral, unmistakably "no" — used when a placement would
-   overlap or leave the print area. Never used decoratively. */
+/* Refusal. Short, lateral, unmistakably "no". Never decorative. */
 @keyframes refuse {
   0%, 100% { transform: translateX(0); }
   20%      { transform: translateX(-6px); }
@@ -115,8 +221,6 @@
   80%      { transform: translateX(2px); }
 }
 
-/* A ticket arriving on the POS board from the kiosk. It has to be noticeable
-   across a counter without being alarming. */
 @keyframes arrive {
   0%   { opacity: 0; transform: translateX(-14px); }
   100% { opacity: 1; transform: none; }
@@ -128,7 +232,7 @@
 }
 
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-blue) 45%, transparent); }
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-cobalt) 45%, transparent); }
   70%  { box-shadow: 0 0 0 12px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
@@ -138,15 +242,15 @@
   to   { transform: translateX(-50%); }
 }
 
-.animate-rise   { animation: rise var(--dur-base) var(--ease-out) both; }
-.animate-pop    { animation: pop var(--dur-base) var(--ease-out) both; }
-.animate-place  { animation: place var(--dur-base) var(--ease-place) both; }
-.animate-refuse { animation: refuse var(--dur-slow) var(--ease-in-out); }
-.animate-arrive { animation: arrive var(--dur-slow) var(--ease-out) both; }
+.animate-rise    { animation: rise var(--dur-base) var(--ease-out) both; }
+.animate-pop     { animation: pop var(--dur-base) var(--ease-out) both; }
+.animate-place   { animation: place var(--dur-base) var(--ease-place) both; }
+.animate-refuse  { animation: refuse var(--dur-slow) var(--ease-in-out); }
+.animate-arrive  { animation: arrive var(--dur-slow) var(--ease-out) both; }
 .animate-marquee { animation: marquee 24s linear infinite; }
 
-/* Staggered entrance for grids. Capped at 8 so a 200-design catalogue does
-   not make the last tile arrive a full second late. */
+/* Staggered entrance for grids. Capped at 8 so a 200-item catalogue does not
+   make the last tile arrive a full second late. */
 .stagger > * { animation: rise var(--dur-base) var(--ease-out) both; }
 .stagger > *:nth-child(1) { animation-delay: 0ms; }
 .stagger > *:nth-child(2) { animation-delay: 35ms; }
@@ -157,12 +261,8 @@
 .stagger > *:nth-child(7) { animation-delay: 210ms; }
 .stagger > *:nth-child(n + 8) { animation-delay: 240ms; }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   Reduced motion — a blanket kill.
-
-   `.animate-spin` is the sole exception: a spinner that does not spin reads as
-   a frozen app, which is worse for a vestibular user than the motion is.
-   ══════════════════════════════════════════════════════════════════════════ */
+/* Reduced motion — a blanket kill. `.animate-spin` is the sole exception: a
+   spinner that does not spin reads as a frozen app. */
 @media (prefers-reduced-motion: reduce) {
   *:not(.animate-spin),
   *:not(.animate-spin)::before,
@@ -172,6 +272,9 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* Stickers are rotated by static transform, not animation. Straighten them
+     too — a tilted panel is fine, but do not also animate it in. */
+  .sticker-tilt-l, .sticker-tilt-r { transform: none !important; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -182,33 +285,36 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  color-scheme: light;
   /* A POS is not a document. Rubber-band scroll on a fixed-height till screen
      reads as the app breaking. */
   overscroll-behavior: none;
 }
 
 body {
-  background: var(--color-cream);
+  background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-body);
-  /* 16px floor. PRD §11 asks for sunlight legibility, not WCAG minimums. */
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: var(--text-base);
+  line-height: var(--text-base-lh);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overscroll-behavior: none;
 }
 
-/* Touch surfaces must not fight the user with a text cursor or a 300ms
-   double-tap-zoom delay, but text that matters must stay selectable. */
 button, [role="button"], label { touch-action: manipulation; }
 
-/* Focus is never removed, only styled. The old build had zero focus treatment
-   on any surface, which makes admin unusable from a keyboard. */
+/* Focus is never removed, only styled. Ink, not colour — the ring has to be
+   visible on top of every block colour in the palette, and no chromatic ring
+   can do that on both yellow and cobalt. */
 :focus-visible {
-  outline: 3px solid var(--color-blue);
-  outline-offset: 2px;
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
   border-radius: var(--radius-xs);
+}
+/* On deep blocks the ink ring disappears; invert it there. */
+.on-deep :focus-visible, .on-deep:focus-visible {
+  outline-color: var(--color-white);
 }
 
 /* Number spinners are a mis-tap hazard on a POS. */
@@ -218,9 +324,14 @@ input[type="number"] { -moz-appearance: textfield; }
 
 /* ── Utilities ───────────────────────────────────────────────────────────── */
 
-/* The 48px floor from PRD §11. Note this is 48, not 44 — the old TabBar used
-   44 and disagreed with its own token. */
-.tap-target { min-height: 48px; min-width: 48px; }
+.tap-target      { min-height: var(--tap-pos); min-width: var(--tap-pos); }
+.tap-target-admin { min-height: var(--tap-admin); min-width: var(--tap-admin); }
+.tap-target-kiosk { min-height: var(--tap-kiosk); min-width: var(--tap-kiosk); }
+
+/* Sticker geometry. A badge sits slightly off-axis, like a pre-cut transfer
+   pressed on by hand. Two fixed angles only — do not invent a third. */
+.sticker-tilt-l { transform: rotate(-2.5deg); }
+.sticker-tilt-r { transform: rotate(2deg); }
 
 /* Recurring print-shop motif on header bands. */
 .crop-marks { position: relative; }
@@ -236,23 +347,22 @@ input[type="number"] { -moz-appearance: textfield; }
 .crop-marks::before { top: 6px; left: 6px; border-top: 2px solid; border-left: 2px solid; }
 .crop-marks::after { bottom: 6px; right: 6px; border-bottom: 2px solid; border-right: 2px solid; }
 
-/* A default range thumb is ungrabbable on a touchscreen. This is the canvas
-   rotation control, so it has to be usable with a thumb, at arm's length. */
+/* A default range thumb is ungrabbable on a touchscreen. */
 .kiosk-slider { -webkit-appearance: none; appearance: none; background: transparent; }
 .kiosk-slider::-webkit-slider-runnable-track {
-  height: 6px; border-radius: 999px; background: var(--color-line);
+  height: 8px; border-radius: var(--radius-pill);
+  background: var(--color-paper-3); border: 2px solid var(--color-ink);
 }
 .kiosk-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 32px; height: 32px; margin-top: -13px;
-  border-radius: 999px;
-  background: var(--color-blue);
-  border: 3px solid var(--color-cream);
-  box-shadow: 0 1px 6px rgb(0 0 0 / 0.28);
+  width: 34px; height: 34px; margin-top: -15px;
+  border-radius: var(--radius-pill);
+  background: var(--color-cobalt);
+  border: 3px solid var(--color-ink);
 }
 .kiosk-slider::-moz-range-thumb {
-  width: 32px; height: 32px; border-radius: 999px;
-  background: var(--color-blue); border: 3px solid var(--color-cream);
+  width: 34px; height: 34px; border-radius: var(--radius-pill);
+  background: var(--color-cobalt); border: 3px solid var(--color-ink);
 }
 
 /* Numerals that must not jitter as they update — totals, counts, timers. */
@@ -260,14 +370,14 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .skeleton {
   background: linear-gradient(90deg,
-    var(--color-cream-2) 25%,
-    color-mix(in srgb, var(--color-cream-2) 55%, white) 50%,
-    var(--color-cream-2) 75%);
+    var(--color-paper-2) 25%,
+    color-mix(in srgb, var(--color-paper-2) 55%, white) 50%,
+    var(--color-paper-2) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
 }
 
-/* Hides scrollbars on horizontal filter rails without disabling scrolling. */
+/* Hides scrollbars on horizontal rails without disabling scrolling. */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
@@ -276,7 +386,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .mock-hatch {
   background-image: repeating-linear-gradient(
     45deg,
-    color-mix(in srgb, var(--color-signal) 12%, transparent) 0 8px,
+    color-mix(in srgb, var(--color-signal) 14%, transparent) 0 8px,
     transparent 8px 16px
   );
 }

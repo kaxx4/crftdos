@@ -47,7 +47,10 @@ export const viewport: Viewport = {
   // A POS that zooms when a volunteer double-taps a total is a POS that loses
   // its own layout mid-queue. Text still scales via the browser's own setting.
   maximumScale: 1,
-  themeColor: "#0f0f10",
+  // Must be a literal — viewport metadata is read outside the document, so a
+  // CSS variable has nothing to resolve against. Kept equal to --color-ink,
+  // and a guard asserts they stay equal.
+  themeColor: "#111014",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
