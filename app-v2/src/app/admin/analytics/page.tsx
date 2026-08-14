@@ -27,8 +27,11 @@ import {
   Chip,
   EmptyState,
   Heading,
+  Mono,
   Panel,
+  ProgressBar,
   Rail,
+  Ring,
   Skeleton,
   Stat,
   Table,
@@ -112,6 +115,29 @@ export default function AnalyticsPage() {
           />
         ) : (
           <>
+            {/* Conversion is the one genuinely bounded 0-100% figure this
+                page has (completed/sessions) — the only honest use for a
+                Ring here. raisedForAquaterra on the main dashboard has no
+                ceiling to ring against, so it stays a plain Stat there. */}
+            <Panel tone="white" className="flex flex-wrap items-center gap-[var(--space-5)]">
+              <Ring
+                value={interaction.data.completed}
+                max={interaction.data.sessions}
+                tone="acid"
+                size="md"
+              >
+                <Heading step="xl">
+                  {Math.round((interaction.data.completed / interaction.data.sessions) * 100)}%
+                </Heading>
+              </Ring>
+              <div>
+                <p className="t-label text-[var(--color-muted)]">Conversion</p>
+                <p className="t-md">
+                  {interaction.data.completed} of {interaction.data.sessions} sessions ordered.
+                </p>
+              </div>
+            </Panel>
+
             <div className="grid gap-[var(--space-3)] sm:grid-cols-3">
               <Stat label="Sessions" value={interaction.data.sessions} sub="People who touched the kiosk" />
               <Stat
@@ -128,29 +154,30 @@ export default function AnalyticsPage() {
 
             <div className="grid gap-[var(--space-5)] xl:grid-cols-2">
               <Panel title="Where people stop">
-                <ul className="flex flex-col gap-[var(--space-3)]">
+                <ul className="flex flex-col gap-[var(--space-4)]">
                   {interaction.data.funnel.map((f) => {
-                    const pct = interaction.data!.sessions ? (f.sessions / interaction.data!.sessions) * 100 : 0;
+                    const pct = interaction.data!.sessions ? Math.round((f.sessions / interaction.data!.sessions) * 100) : 0;
                     return (
                       <li key={f.stage}>
+                        {/* The number is stated, not only drawn — a bar
+                            alone is colour-as-information. Session count
+                            sits in its own line since ProgressBar's own
+                            percent label doesn't carry the raw count. */}
                         <div className="mb-1 flex items-baseline justify-between gap-[var(--space-3)] t-sm">
                           <span className="font-extrabold capitalize">{f.stage}</span>
-                          {/* The number is stated, not only drawn — a bar
-                              alone is colour-as-information. */}
-                          <span className="font-[family-name:var(--font-mono)] tnum">
-                            {f.sessions} · {Math.round(pct)}%
-                          </span>
+                          <Mono className="tnum text-[var(--color-muted)]">
+                            {f.sessions} · {pct}%
+                          </Mono>
                         </div>
-                        <div
-                          role="img"
-                          aria-label={`${f.stage}: ${f.sessions} sessions, ${Math.round(pct)} percent`}
-                          className="h-[var(--space-3)] overflow-hidden rounded-[var(--radius-pill)] border-2 border-[var(--color-ink)] bg-[var(--color-paper-3)]"
-                        >
-                          <div
-                            className="h-full bg-[var(--color-cobalt)] transition-[width] duration-[var(--dur-slow)] ease-[var(--ease-out)]"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
+                        {/* Own header above already states stage/count/percent
+                            in words, so ProgressBar's label row is switched
+                            off here — this is purely the accessible track+fill. */}
+                        <ProgressBar
+                          value={f.sessions}
+                          max={interaction.data!.sessions}
+                          tone="cobalt"
+                          showPercent={false}
+                        />
                       </li>
                     );
                   })}
