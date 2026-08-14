@@ -954,6 +954,41 @@ export function Nudge({ children, className }: { children: React.ReactNode; clas
 
 // ── Sheet ───────────────────────────────────────────────────────────────────
 
+/** Module-level, not component state: the count has to survive across every
+ *  Sheet instance on the page, or two independently-mounted sheets would each
+ *  think they own the lock and the first to unmount would release it while
+ *  the second is still open. `position: fixed` on body (rather than
+ *  `overflow: hidden`) is what actually stops iOS Safari from scrolling the
+ *  document behind a fixed-position overlay — overflow:hidden alone does not
+ *  reliably block touch scroll on WebKit. The scroll position is preserved
+ *  and restored so unlocking doesn't jump the page back to the top. */
+let scrollLockCount = 0;
+let scrollLockY = 0;
+
+function lockBodyScroll() {
+  if (typeof document === "undefined") return;
+  if (scrollLockCount === 0) {
+    scrollLockY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollLockY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+  }
+  scrollLockCount += 1;
+}
+
+function unlockBodyScroll() {
+  if (typeof document === "undefined") return;
+  scrollLockCount = Math.max(0, scrollLockCount - 1);
+  if (scrollLockCount === 0) {
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    window.scrollTo(0, scrollLockY);
+  }
+}
+
 export function Sheet({
   open,
   onClose,
@@ -975,6 +1010,18 @@ export function Sheet({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  // Nothing else in the app locks background scroll, so the page behind a
+  // Sheet stayed scrollable — on touch this reads as the modal "not really
+  // blocking" and lets a swipe inside the sheet drag the page underneath it
+  // instead. Ref-counted rather than a plain boolean so two Sheets open at
+  // once (a confirm sheet over a form sheet) don't have the first close
+  // re-enable scroll while the second is still up.
+  useEffect(() => {
+    if (!open) return;
+    lockBodyScroll();
+    return unlockBodyScroll;
+  }, [open]);
 
   if (!open) return null;
   return (

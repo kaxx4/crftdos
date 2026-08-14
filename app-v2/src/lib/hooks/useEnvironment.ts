@@ -13,9 +13,17 @@ import { getBoundEnvironmentId, setBoundEnvironmentId } from "../device";
 
 /** Resolves this device's environment binding into the actual environment.
  *
- *  `bound === false` is a first-class state that surfaces must handle, not an
- *  edge case to default away. A device that has never been through Settings
- *  has no business writing an order anywhere. */
+ *  A device that has NEVER been through Settings auto-binds to the cloud
+ *  environment rather than blocking — Cloud (HQ) is the safe general-purpose
+ *  bucket every deployment has, so a fresh tablet is immediately usable and
+ *  Settings is a "change where this writes to" control, not a "turn this
+ *  device on" gate.
+ *
+ *  A device that WAS explicitly bound and whose environment has since closed
+ *  or been deleted does NOT fall back silently, though — that binding was a
+ *  deliberate choice, and re-pointing it without telling anyone is how a
+ *  day's sales land in the wrong bucket. That case still surfaces as unbound
+ *  and sends the operator to Settings. */
 export function useEnvironment() {
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [all, setAll] = useState<Environment[]>([]);
@@ -29,7 +37,16 @@ export function useEnvironment() {
       return;
     }
     const id = getBoundEnvironmentId();
-    const match = id ? res.data.find((e) => e.id === id) ?? null : null;
+    let match = id ? res.data.find((e) => e.id === id) ?? null : null;
+
+    if (!id) {
+      const cloud = res.data.find((e) => e.kind === "cloud" && e.is_active) ?? null;
+      if (cloud) {
+        setBoundEnvironmentId(cloud.id);
+        match = cloud;
+      }
+    }
+
     setAll(res.data);
     setEnvironment(match);
     // A binding that points at a closed or deleted environment counts as

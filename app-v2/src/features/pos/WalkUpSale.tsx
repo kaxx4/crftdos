@@ -22,7 +22,7 @@
  *  which is the same id the server uses as a primary key — so a retry cannot
  *  double-charge. */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getBackend } from "@/lib/backend";
 import { getDeviceId } from "@/lib/device";
@@ -30,7 +30,7 @@ import { useEnvironment } from "@/lib/hooks/useEnvironment";
 import { useAction, useAsync } from "@/lib/hooks/useAsync";
 import { enqueueOrder } from "@/lib/outbox";
 import type { CreateOrderInput } from "@/lib/backend";
-import type { PaymentMethod, Placement, ProductSku, StickerDesign, StockRow } from "@/lib/domain/types";
+import type { DesignPayload, Order, PaymentMethod, Placement, ProductSku, StickerDesign, StockRow } from "@/lib/domain/types";
 import { money } from "@/lib/money";
 import {
   Badge,
@@ -75,6 +75,73 @@ function atThisStall<T extends { id: string }>(items: T[], stock: StockRow[], sk
   return items.map((item) => ({ ...item, stock_qty: byId.get(item.id) ?? 0 }));
 }
 
+/** Placement-building is identical for every tee on the order, so it is
+ *  pulled out once rather than duplicated per bundle. */
+function buildPlacements(stickers: PickedSticker[]): Placement[] {
+  return stickers.map((s) => {
+    if (s.kind === "catalogue") {
+      const d = s.design;
+      return {
+        sticker_design_id: d.id,
+        code: d.code,
+        side: "front",
+        // A walk-up sale has no composed layout — the volunteer presses it
+        // centred. Recording 50/50 rather than null keeps the press sheet's
+        // shape identical for kiosk and walk-up tickets.
+        pos_x: 50,
+        pos_y: 50,
+        rotation: 0,
+        print_w_cm: d.print_w_cm ?? 0,
+        print_h_cm: d.print_h_cm ?? 0,
+        cutout_path: d.cutout_path,
+        unit_price: d.unit_price,
+        unit_cost: d.unit_cost,
+      };
+    }
+    return {
+      sticker_design_id: null,
+      code: "C-????", // server assigns the real C-series code
+      description: s.description,
+      size_class: s.sizeClass,
+      side: "front",
+      pos_x: 50,
+      pos_y: 50,
+      rotation: 0,
+      print_w_cm: 0,
+      print_h_cm: 0,
+      cutout_path: null,
+      unit_price: 0,
+      unit_cost: 0,
+    };
+  });
+}
+
+/** One tee, locked into the order. The sale used to be able to hold exactly
+ *  one of these — a customer buying two different tees together needed two
+ *  separate transactions, which is the "multiple to cart" gap. The backend
+ *  already accepts `designs` as an array and prices/decrements stock per
+ *  line, so this is purely a frontend restructure: what used to be the
+ *  screen's only state IS a bundle now, and "the order" is a list of them
+ *  plus the one still being built. */
+type Bundle = {
+  key: string;
+  sku: ProductSku;
+  stickers: PickedSticker[];
+  /** Locked in at add-to-cart time — a flat-priced sale, so this is not
+   *  recomputed later even if the catalogue price changes underneath it. */
+  price: number;
+  naturalSubtotal: number;
+  freebie: boolean;
+  freebieName: string;
+  freebieDept: string;
+  freebieApprover: string;
+};
+
+function bundleDiscount(b: Pick<Bundle, "naturalSubtotal" | "price" | "freebie">): number {
+  // A freebie's whole price IS the sign-off, not a discount to re-confirm.
+  return b.freebie ? 0 : Math.max(0, b.naturalSubtotal - b.price);
+}
+
 export function WalkUpSale() {
   const { environment, bound } = useEnvironment();
   const catalogueRaw = useAsync(() => getBackend().getCatalogue(), []);
@@ -100,7 +167,34 @@ export function WalkUpSale() {
     [environment?.id]
   );
 
-  // ── Tee ──────────────────────────────────────────────────────────────────
+  // Recent orders at this stall, mined client-side for repeat customers —
+  // there is no dedicated lookup endpoint, and 300 rows is plenty for a
+  // name-prefix match without needing one.
+  const orderHistory = useAsync(
+    () =>
+      environment
+        ? getBackend().listOrders({ environment_id: environment.id, limit: 300 })
+        : Promise.resolve({ ok: true as const, data: [] as Order[] }),
+    [environment?.id]
+  );
+  const customerDirectory = useMemo(() => {
+    const byPhone = new Map<string, { name: string; phone: string; at: string }>();
+    for (const o of orderHistory.data ?? []) {
+      if (!o.customer_name || !o.customer_phone) continue;
+      const prev = byPhone.get(o.customer_phone);
+      // Keep the most recent name on file for a phone number — a repeat
+      // customer's name is whatever they went by last time, not the first.
+      if (!prev || o.created_at > prev.at) {
+        byPhone.set(o.customer_phone, { name: o.customer_name, phone: o.customer_phone, at: o.created_at });
+      }
+    }
+    return Array.from(byPhone.values());
+  }, [orderHistory.data]);
+
+  // ── Order (locked-in tees) ──────────────────────────────────────────────
+  const [cart, setCart] = useState<Bundle[]>([]);
+
+  // ── Tee (the bundle still being built) ──────────────────────────────────
   const [sku, setSku] = useState<ProductSku | null>(null);
 
   // ── Transfers ────────────────────────────────────────────────────────────
@@ -121,6 +215,49 @@ export function WalkUpSale() {
   // ── Customer ─────────────────────────────────────────────────────────────
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [showCustomerMatches, setShowCustomerMatches] = useState(false);
+  const customerMatches = useMemo(() => {
+    const q = customerName.trim().toLowerCase();
+    if (!q) return [];
+    return customerDirectory.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 5);
+  }, [customerDirectory, customerName]);
+
+  // The Name field usually sits well down PosScreen.Body, which scrolls —
+  // and overflow-y-auto clips ANY absolutely-positioned descendant to its own
+  // box, containing block or not. A dropdown anchored the ordinary way is
+  // invisible whenever the field is scrolled near the bottom of that box,
+  // exactly the kind of clipping that showed up in the admin tables. Fixed
+  // positioning computed from the wrapper's real screen rect escapes that
+  // clip entirely, the same fix in spirit.
+  const customerFieldWrapRef = useRef<HTMLDivElement>(null);
+  const [customerDropdownRect, setCustomerDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  /* eslint-disable react-hooks/set-state-in-effect --
+     Reading getBoundingClientRect is synchronizing with an external system
+     (real DOM layout, not React state) — the same sanctioned case as the
+     effects in useEnvironment, and there is no way to know an element's
+     screen position without having rendered it first. */
+  useEffect(() => {
+    if (!showCustomerMatches || customerMatches.length === 0) {
+      setCustomerDropdownRect(null);
+      return;
+    }
+    const update = () => {
+      const r = customerFieldWrapRef.current?.getBoundingClientRect();
+      if (r) setCustomerDropdownRect({ top: r.bottom, left: r.left, width: r.width });
+    };
+    update();
+    // Reposition on resize (keyboard opening changes viewport height on some
+    // browsers); a scroll mid-lookup is rare enough to just close on rather
+    // than track continuously.
+    const onScroll = () => setShowCustomerMatches(false);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [showCustomerMatches, customerMatches.length]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // ── Payment ──────────────────────────────────────────────────────────────
   const [method, setMethod] = useState<PaymentMethod>("cash");
@@ -132,26 +269,38 @@ export function WalkUpSale() {
 
   // A cart a volunteer forgot about mid-conversation — gentle, not a
   // blocker. Keyed by fingerprint below so it remounts (and re-arms) fresh
-  // on any cart change instead of resetting state inside an effect.
-  const cartFingerprint = `${sku?.id ?? ""}|${stickers.length}`;
+  // on any cart or bundle change instead of resetting state inside an effect.
+  const cartFingerprint = `${cart.map((b) => b.key).join(",")}|${sku?.id ?? ""}|${stickers.length}`;
 
-  // Natural (catalogue) subtotal — informational, and the baseline the
-  // logged discount is measured against. Custom stickers carry no catalogue
-  // price (there's nothing to look up), so they contribute 0 here but still
-  // count toward the sticker total the flat-price formula uses.
+  // Natural (catalogue) subtotal for the TEE STILL BEING BUILT — informational,
+  // and the baseline that bundle's own discount is measured against. Custom
+  // stickers carry no catalogue price (there's nothing to look up), so they
+  // contribute 0 here but still count toward the sticker total the flat-price
+  // formula uses.
   const naturalSubtotal =
     (sku?.unit_price ?? 0) + stickers.reduce((n, s) => n + (s.kind === "catalogue" ? s.design.unit_price : 0), 0);
 
   const suggestedPrice = stickers.length === 0 ? BASE_PRICE : BASE_PRICE + PRICE_PER_EXTRA_STICKER * (stickers.length - 1);
   const finalPrice = freebie ? 0 : priceOverride !== null ? Number(priceOverride) || 0 : suggestedPrice;
   const priceIsLow = !freebie && finalPrice > 0 && finalPrice < LOW_PRICE_WARNING;
-  const discountAmount = Math.max(0, naturalSubtotal - finalPrice);
+
+  // A tee is only part of the order once it has a sku. Stickers picked
+  // before a tee is chosen are a mid-build state, not a second line item.
+  const hasPendingBundle = sku !== null;
+  const pendingBundleSignedOff = !freebie || (freebieName.trim() && freebieDept.trim() && freebieApprover.trim());
+
+  // ── Order-level totals — every locked bundle, plus the one still open ───
+  const orderNaturalSubtotal = cart.reduce((n, b) => n + b.naturalSubtotal, 0) + (hasPendingBundle ? naturalSubtotal : 0);
+  const orderTotal = cart.reduce((n, b) => n + b.price, 0) + (hasPendingBundle ? finalPrice : 0);
+  const orderDiscount =
+    cart.reduce((n, b) => n + bundleDiscount(b), 0) +
+    (hasPendingBundle ? bundleDiscount({ naturalSubtotal, price: finalPrice, freebie }) : 0);
   // Freebies already carry their own three-field sign-off, so this only
   // fires for a partial discount steep enough to be worth a second look.
-  const bigDiscount = !freebie && naturalSubtotal > 0 && discountAmount / naturalSubtotal > DISCOUNT_CONFIRM_RATIO;
+  const bigDiscount = orderDiscount > 0 && orderNaturalSubtotal > 0 && orderDiscount / orderNaturalSubtotal > DISCOUNT_CONFIRM_RATIO;
 
   const splitTotal = (Number(splitCash) || 0) + (Number(splitUpi) || 0);
-  const splitMismatch = method === "split" && splitTotal !== finalPrice;
+  const splitMismatch = method === "split" && splitTotal !== orderTotal;
 
   /** Code search that matches how a volunteer actually types under pressure:
    *  "14" finds S-014/M-014/L-014, "m14" narrows to M-014. Results carry BIN
@@ -223,53 +372,71 @@ export function WalkUpSale() {
     setAddingCustom(false);
   };
 
-  const canCharge =
-    !!sku &&
-    !splitMismatch &&
-    (!freebie || (freebieName.trim() && freebieDept.trim() && freebieApprover.trim()));
+  /** Locks the tee being built into the order and opens a fresh one. The
+   *  price is frozen at whatever this bundle currently shows — a flat-priced
+   *  sale, not a live catalogue lookup, so it does not drift if the volunteer
+   *  keeps editing the NEXT tee's price afterward. */
+  const addCurrentToCart = () => {
+    if (!sku || !pendingBundleSignedOff) return;
+    setCart((c) => [
+      ...c,
+      {
+        key: `${sku.id}-${Date.now()}`,
+        sku,
+        stickers,
+        price: finalPrice,
+        naturalSubtotal,
+        freebie,
+        freebieName: freebie ? freebieName.trim() : "",
+        freebieDept: freebie ? freebieDept.trim() : "",
+        freebieApprover: freebie ? freebieApprover.trim() : "",
+      },
+    ]);
+    setSku(null);
+    setStickers([]);
+    setSearch("");
+    setPriceOverride(null);
+    setEditingPrice(false);
+    setFreebie(false);
+    setFreebieName("");
+    setFreebieDept("");
+    setFreebieApprover("");
+  };
+
+  const removeFromCart = (key: string) => setCart((c) => c.filter((b) => b.key !== key));
+
+  const canCharge = (cart.length > 0 || hasPendingBundle) && !splitMismatch && pendingBundleSignedOff;
 
   const charge = async () => {
-    if (!sku || !environment || !canCharge) return;
+    if (!environment || !canCharge) return;
 
-    const placements: Placement[] = stickers.map((s) => {
-      if (s.kind === "catalogue") {
-        const d = s.design;
-        return {
-          sticker_design_id: d.id,
-          code: d.code,
-          side: "front",
-          // A walk-up sale has no composed layout — the volunteer presses it
-          // centred. Recording 50/50 rather than null keeps the press sheet's
-          // shape identical for kiosk and walk-up tickets.
-          pos_x: 50,
-          pos_y: 50,
-          rotation: 0,
-          print_w_cm: d.print_w_cm ?? 0,
-          print_h_cm: d.print_h_cm ?? 0,
-          cutout_path: d.cutout_path,
-          unit_price: d.unit_price,
-          unit_cost: d.unit_cost,
-        };
-      }
-      return {
-        sticker_design_id: null,
-        code: "C-????", // server assigns the real C-series code
-        description: s.description,
-        size_class: s.sizeClass,
-        side: "front",
-        pos_x: 50,
-        pos_y: 50,
-        rotation: 0,
-        print_w_cm: 0,
-        print_h_cm: 0,
-        cutout_path: null,
-        unit_price: 0,
-        unit_cost: 0,
-      };
-    });
+    // Every locked tee, plus the one still open if there is one — a
+    // volunteer should never have to remember to tap "add to order" before
+    // charging the last tee of a sale.
+    const bundles: Bundle[] = [
+      ...cart,
+      ...(hasPendingBundle && sku
+        ? [
+            {
+              key: "pending",
+              sku,
+              stickers,
+              price: finalPrice,
+              naturalSubtotal,
+              freebie,
+              freebieName: freebieName.trim(),
+              freebieDept: freebieDept.trim(),
+              freebieApprover: freebieApprover.trim(),
+            },
+          ]
+        : []),
+    ];
+    if (bundles.length === 0) return;
 
-    const paidCash = method === "cash" ? finalPrice : method === "split" ? Number(splitCash) || 0 : 0;
-    const paidUpi = method === "upi" ? finalPrice : method === "split" ? Number(splitUpi) || 0 : 0;
+    const freebieBundles = bundles.filter((b) => b.freebie);
+
+    const paidCash = method === "cash" ? orderTotal : method === "split" ? Number(splitCash) || 0 : 0;
+    const paidUpi = method === "upi" ? orderTotal : method === "split" ? Number(splitUpi) || 0 : 0;
 
     const payload: CreateOrderInput = {
       id: crypto.randomUUID(),
@@ -282,25 +449,29 @@ export function WalkUpSale() {
       payment_method: method,
       paid_cash: paidCash,
       paid_upi: paidUpi,
-      discount_amount: discountAmount,
-      discount_reason: freebie ? "freebie" : discountAmount > 0 ? "volunteer_discretion" : null,
-      discount_note: freebie
-        ? `Freebie for ${freebieName.trim()}\nDepartment- ${freebieDept.trim()}\nApproved by - ${freebieApprover.trim()}`
-        : null,
-      manual_override: freebie || priceOverride !== null,
-      designs: [
-        {
-          product_sku_id: sku.id,
-          sku_code: sku.sku_code,
-          unit_price: sku.unit_price,
-          unit_cost: sku.unit_cost,
-          placements,
-        },
-      ],
+      discount_amount: orderDiscount,
+      discount_reason: freebieBundles.length > 0 ? "freebie" : orderDiscount > 0 ? "volunteer_discretion" : null,
+      discount_note:
+        freebieBundles.length > 0
+          ? freebieBundles
+              .map((b) => `Freebie (${b.sku.sku_code}) for ${b.freebieName}\nDepartment- ${b.freebieDept}\nApproved by - ${b.freebieApprover}`)
+              .join("\n\n")
+          : null,
+      manual_override: freebieBundles.length > 0 || orderDiscount > 0,
+      designs: bundles.map(
+        (b): DesignPayload => ({
+          product_sku_id: b.sku.id,
+          sku_code: b.sku.sku_code,
+          unit_price: b.sku.unit_price,
+          unit_cost: b.sku.unit_cost,
+          placements: buildPlacements(b.stickers),
+        })
+      ),
       client_created_at: new Date().toISOString(),
     };
 
     // Clear FIRST. The next customer is already standing there.
+    setCart([]);
     setSku(null);
     setStickers([]);
     setSearch("");
@@ -322,24 +493,35 @@ export function WalkUpSale() {
     }
 
     const order = await run(() => getBackend().createOrder(payload));
-    if (order) setToast(`Charged ${money(order.total)} · ${order.receipt_no ?? "pending"}`);
-    else await enqueueOrder({ id: payload.id, payload, queuedAt: new Date().toISOString(), status: "queued" });
+    if (order) {
+      setToast(`Charged ${money(order.total)} · ${order.receipt_no ?? "pending"}`);
+      // So this customer shows up in the lookup on the very next sale —
+      // orderHistory is a one-shot fetch and would otherwise not see this
+      // order until the screen remounts.
+      if (payload.customer_name && payload.customer_phone) void orderHistory.reload();
+    } else {
+      await enqueueOrder({ id: payload.id, payload, queuedAt: new Date().toISOString(), status: "queued" });
+    }
   };
 
   return (
     <PosScreen>
-      {/* Fixed: what is on the ticket right now. A volunteer mid-conversation
-          should never have to scroll back up to check whether they picked a
-          size, and the count is the thing that silently goes wrong. */}
+      {/* Fixed: what is on the order right now, across every tee — locked in
+          the cart plus the one still being built. A volunteer mid-conversation
+          should never have to scroll back up to check the count, and it is
+          the thing that silently goes wrong on a multi-tee sale. */}
       <PosScreen.Head className="flex items-center justify-between gap-[var(--space-3)]">
         <div className="min-w-0">
-          <p className="t-label text-[var(--color-muted)]">On this ticket</p>
+          <p className="t-label text-[var(--color-muted)]">On this order</p>
           <p className="t-base truncate font-extrabold">
-            {sku ? `${sku.sku_code} · ${sku.size}` : "No tee picked yet"}
+            {cart.length + (hasPendingBundle ? 1 : 0) === 0
+              ? "No tee picked yet"
+              : `${cart.length + (hasPendingBundle ? 1 : 0)} tee${cart.length + (hasPendingBundle ? 1 : 0) === 1 ? "" : "s"}`}
           </p>
         </div>
-        <Badge tone={stickers.length > 0 ? "cobalt" : "white"}>
-          <Mono>{stickers.length}</Mono> transfer{stickers.length === 1 ? "" : "s"}
+        <Badge tone={cart.reduce((n, b) => n + b.stickers.length, 0) + stickers.length > 0 ? "cobalt" : "white"}>
+          <Mono>{cart.reduce((n, b) => n + b.stickers.length, 0) + stickers.length}</Mono> transfer
+          {cart.reduce((n, b) => n + b.stickers.length, 0) + stickers.length === 1 ? "" : "s"}
         </Badge>
       </PosScreen.Head>
 
@@ -532,11 +714,99 @@ export function WalkUpSale() {
             <Field label="Approved by" value={freebieApprover} onChange={(e) => setFreebieApprover(e.target.value)} />
           </div>
         )}
+
+        {/* Selling a second, different tee in the same sale used to mean a
+            second transaction. This locks the tee above in and opens a fresh
+            one — the order can hold as many as the customer is buying. */}
+        <Button
+          variant="secondary"
+          block
+          className="mt-[var(--space-3)]"
+          disabled={!sku || !pendingBundleSignedOff}
+          onClick={addCurrentToCart}
+        >
+          + Add another tee to this order
+        </Button>
       </Panel>
+
+      {cart.length > 0 && (
+        <Panel title={`Order so far (${cart.length} tee${cart.length === 1 ? "" : "s"})`}>
+          <ul className="flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
+            {cart.map((b) => (
+              <li key={b.key} className="flex items-center justify-between gap-[var(--space-3)] py-[var(--space-2)]">
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <Mono className="t-md font-bold">
+                      {b.sku.sku_code} · {b.sku.size}
+                    </Mono>
+                    {b.freebie && <Badge tone="acid">Freebie</Badge>}
+                  </span>
+                  <span className="block t-base text-[var(--color-muted)]">
+                    {b.stickers.length} transfer{b.stickers.length === 1 ? "" : "s"} · {money(b.price)}
+                  </span>
+                </span>
+                <Button variant="ghost" onClick={() => removeFromCart(b.key)}>
+                  Remove
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
 
       <Panel title="Customer (optional)">
         <div className="flex flex-col gap-[var(--space-3)]">
-          <Field label="Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+          <div ref={customerFieldWrapRef}>
+            <Field
+              label="Name"
+              value={customerName}
+              onChange={(e) => {
+                setCustomerName(e.target.value);
+                setShowCustomerMatches(true);
+              }}
+              onFocus={() => setShowCustomerMatches(true)}
+              // A plain blur fires before a click on the suggestion below
+              // registers — delay it long enough for that tap to land.
+              onBlur={() => setTimeout(() => setShowCustomerMatches(false), 150)}
+              autoComplete="off"
+              hint={customerMatches.length > 0 ? "Matches a returning customer — pick one to fill in their number" : undefined}
+            />
+            {showCustomerMatches && customerMatches.length > 0 && customerDropdownRect && (
+              <ul
+                style={{
+                  position: "fixed",
+                  top: customerDropdownRect.top + 4,
+                  left: customerDropdownRect.left,
+                  width: customerDropdownRect.width,
+                }}
+                className={clsx(
+                  "z-50 overflow-hidden",
+                  "rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-white shadow-[var(--shadow-sticker)]"
+                )}
+              >
+                {customerMatches.map((c) => (
+                  <li key={c.phone}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setCustomerName(c.name);
+                        setCustomerPhone(c.phone);
+                        setShowCustomerMatches(false);
+                      }}
+                      className={clsx(
+                        "flex min-h-[var(--tap-pos)] w-full items-center justify-between gap-[var(--space-3)]",
+                        "px-[var(--space-3)] text-left t-base hover:bg-[var(--color-paper-2)]"
+                      )}
+                    >
+                      <span className="min-w-0 truncate font-bold">{c.name}</span>
+                      <Mono className="shrink-0 text-[var(--color-muted)]">{c.phone}</Mono>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <Field
             label="Phone"
             value={customerPhone}
@@ -573,23 +843,27 @@ export function WalkUpSale() {
               )}
             >
               {splitMismatch
-                ? `Cash + UPI must add up to ${money(finalPrice)} — currently ${money(splitTotal)}.`
+                ? `Cash + UPI must add up to ${money(orderTotal)} — currently ${money(splitTotal)}.`
                 : `Adds up to ${money(splitTotal)}.`}
             </p>
           </div>
         )}
       </Panel>
 
-      {sku && canCharge && <IdleCartNudge key={cartFingerprint} />}
+      {canCharge && <IdleCartNudge key={cartFingerprint} />}
       </PosScreen.Body>
 
       {/* Charge, pinned. It must be reachable with a thumb at any scroll
-          position, because it is the last thing in every transaction. */}
+          position, because it is the last thing in every transaction. Totals
+          the whole order — every tee locked into the cart, plus the one
+          still open — not just the tee on screen. */}
       <PosScreen.Foot className="flex flex-col gap-[var(--space-2)]">
         <div className="flex items-end justify-between gap-[var(--space-3)]">
-          <span className="t-label text-white/80">Total</span>
+          <span className="t-label text-white/80">
+            Total{cart.length + (hasPendingBundle ? 1 : 0) > 1 ? ` · ${cart.length + (hasPendingBundle ? 1 : 0)} tees` : ""}
+          </span>
           <Heading level={2} step="xl" className="font-[family-name:var(--font-mono)] tnum">
-            {money(finalPrice)}
+            {money(orderTotal)}
           </Heading>
         </div>
         {bigDiscount ? (
@@ -600,12 +874,18 @@ export function WalkUpSale() {
             busy={busy}
             disabled={!canCharge}
             label="Charge"
-            confirmLabel={`Confirm ${money(finalPrice)} — that's a steep discount?`}
+            confirmLabel={`Confirm ${money(orderTotal)} — that's a steep discount?`}
             onConfirm={charge}
           />
         ) : (
           <Button variant="primary" size="xl" block disabled={!canCharge} busy={busy} onClick={charge}>
-            {!sku ? "Pick a tee first" : splitMismatch ? "Fix the payment split" : freebie && !canCharge ? "Fill in freebie sign-off" : "Charge"}
+            {cart.length === 0 && !hasPendingBundle
+              ? "Pick a tee first"
+              : splitMismatch
+                ? "Fix the payment split"
+                : !pendingBundleSignedOff
+                  ? "Fill in freebie sign-off"
+                  : "Charge"}
           </Button>
         )}
       </PosScreen.Foot>
