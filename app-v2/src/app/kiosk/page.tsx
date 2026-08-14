@@ -20,6 +20,7 @@
 
 import Link from "next/link";
 import { Badge, Button, EmptyState, Heading, Panel, Sticker, Text } from "@/components/ui";
+import { Mockup } from "./_lib/Mockup";
 import { useKiosk } from "./_lib/session";
 
 const STEPS = [
@@ -29,7 +30,15 @@ const STEPS = [
 ];
 
 export default function KioskAttractPage() {
-  const { environment, bound, envLoading } = useKiosk();
+  const { environment, bound, envLoading, templates, skus } = useKiosk();
+
+  // A real garment photo with a real transfer on it — not an illustration,
+  // the actual Mockup component the rest of the kiosk uses to show what you
+  // are buying. Featured first, since that's already how the product marks
+  // its best examples; falls back to whatever exists so the object never
+  // depends on someone having flagged one as featured today.
+  const heroTemplate = templates.find((t) => t.is_featured) ?? templates[0];
+  const heroSku = heroTemplate ? skus.find((s) => s.id === heroTemplate.payload.product_sku_id) : undefined;
 
   // An unbound device is a blocking, explained state, never a silent default:
   // a kiosk quietly writing orders into the wrong stall puts a day's takings
@@ -123,6 +132,28 @@ export default function KioskAttractPage() {
             Choose a garment, press your transfers onto it, and pick it up finished. Takes about a minute, and you do
             all of it yourself.
           </Text>
+
+          {/* The hero object — a real garment mockup with a real transfer on
+              it, not an illustration. Every strong poster in the reference
+              set has an actual THING anchoring it, not just type and shapes;
+              this is the honest version of that for a product that already
+              has real photography. Peeking off the hero panel's OWN corner
+              (not the outer column — that positioned it below the steps grid
+              instead, a real bug caught by screenshot, not assumed away).
+              right-4 rather than a negative offset: this must never be able
+              to push the page sideways, and a bottom-only peek can't. Skipped
+              entirely without a template that has a real mockup image — a
+              "no photo yet" placeholder has no business being decoration. */}
+          {heroTemplate && heroSku?.mockup_front && (
+            <span className="absolute -bottom-10 right-4 z-10 hidden rotate-6 md:block">
+              <Mockup
+                sku={heroSku}
+                placements={heroTemplate.payload.placements}
+                side="front"
+                className="w-28 shadow-[var(--shadow-block)] lg:w-36"
+              />
+            </span>
+          )}
         </Panel>
 
         <div className="flex flex-col items-center gap-[var(--space-3)]">
