@@ -28,12 +28,16 @@ import {
   Nudge,
   Panel,
   PosScreen,
+  ProgressBar,
   Rail,
+  Ring,
   Sheet,
   Skeleton,
   Stat,
+  Stepper,
   Sticker,
   Table,
+  TicketStub,
   Td,
   Text,
   Th,
@@ -432,6 +436,57 @@ export default function DesignGallery() {
               <div className="size-16 rounded-[var(--radius-md)] border-[3px] border-[var(--color-ink)] bg-white shadow-[var(--shadow-block)]" />
               <span className="t-xs">block</span>
             </div>
+          </div>
+        </Panel>
+      </Row>
+
+      <Row title="13 · Ticket, Stepper, Ring, ProgressBar">
+        <Panel tone="white" title="TicketStub — die-cut divider, no gradients/masks">
+          <TicketStub className="max-w-sm">
+            <TicketStub.Section>
+              <p className="t-label text-[var(--color-muted)]">Ticket</p>
+              <p className="t-lg font-extrabold">M-014 · Oversized Black</p>
+              <p className="t-sm text-[var(--color-muted)]">2 transfers</p>
+            </TicketStub.Section>
+            <TicketStub.Divider />
+            <TicketStub.Section>
+              <div className="flex items-center justify-between">
+                <span className="t-label text-[var(--color-muted)]">Total</span>
+                <Mono className="t-xl font-extrabold">₹450</Mono>
+              </div>
+            </TicketStub.Section>
+          </TicketStub>
+        </Panel>
+
+        <Panel tone="white" title="Stepper — order stage">
+          <div className="flex flex-col gap-[var(--space-6)]">
+            <Stepper steps={["Ordered", "Pressed", "Ready", "Handed over"]} activeIndex={0} />
+            <Stepper steps={["Ordered", "Pressed", "Ready", "Handed over"]} activeIndex={2} tone="acid" />
+            <Stepper steps={["Ordered", "Pressed", "Ready", "Handed over"]} activeIndex={4} tone="acid" />
+          </div>
+        </Panel>
+
+        <Panel tone="white" title="Ring — centred value, dotted track, no gradient">
+          <div className="flex flex-wrap items-end gap-[var(--space-6)]">
+            <Ring value={70} tone="acid" size="lg">
+              <Heading step="xxl">70</Heading>
+              <Text step="xs" muted>On Track</Text>
+            </Ring>
+            <Ring value={6} max={7} tone="cobalt" size="md">
+              <Heading step="xl">6</Heading>
+              <Text step="xs" muted>of 7 days</Text>
+            </Ring>
+            <Ring value={25} tone="orange" size="md">
+              <Heading step="lg">25%</Heading>
+            </Ring>
+          </div>
+        </Panel>
+
+        <Panel tone="white" title="ProgressBar — labelled linear fill">
+          <div className="flex flex-col gap-[var(--space-4)]">
+            <ProgressBar value={40} tone="orange" label="Processing" />
+            <ProgressBar value={82} tone="acid" label="Stock fulfilled" />
+            <ProgressBar value={100} tone="cobalt" label="Contacted" />
           </div>
         </Panel>
       </Row>

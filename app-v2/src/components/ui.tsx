@@ -1233,3 +1233,263 @@ export function Rail({ children, className }: { children: React.ReactNode; class
     </div>
   );
 }
+
+// ── TicketStub ──────────────────────────────────────────────────────────────
+
+/** A receipt/ticket surface — the kiosk hand-off ticket, the POS receipt.
+ *  Deliberately more textured than an ordinary Panel: a torn edge instead of
+ *  a hard rule wherever the content genuinely splits into two acts (what was
+ *  ordered vs. how to collect it), because that seam is exactly where a
+ *  physical ticket would be perforated. Structure borrowed, palette is not:
+ *  ink border, paper/white fill, the same tone system as everything else. */
+export function TicketStub({
+  children,
+  tone = "white",
+  className,
+}: {
+  children: React.ReactNode;
+  tone?: Tone;
+  className?: string;
+}) {
+  return (
+    <div
+      className={clsx(
+        "relative overflow-visible rounded-[var(--radius-xl)] border-[3px] border-[var(--color-ink)]",
+        "shadow-[var(--shadow-block)]",
+        TONE_FILL[tone],
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The tear line: a dashed rule with a die-cut notch punched at each end,
+ *  exactly where a real ticket stub is perforated. The notches are paper-
+ *  filled ink-ringed circles half overlapping the card's own edge — plain
+ *  CSS, no mask trickery, so it is not a wallpaper match away from breaking. */
+function TicketDivider({ className }: { className?: string }) {
+  return (
+    <div className={clsx("relative flex items-center px-[var(--space-3)]", className)}>
+      <span
+        aria-hidden
+        className={clsx(
+          "absolute -left-[3px] top-1/2 h-[22px] w-[22px] -translate-x-1/2 -translate-y-1/2 rounded-full",
+          "border-[3px] border-[var(--color-ink)] bg-[var(--color-paper)]"
+        )}
+      />
+      <div className="w-full border-t-[3px] border-dashed border-[var(--color-line-soft)]" />
+      <span
+        aria-hidden
+        className={clsx(
+          "absolute -right-[3px] top-1/2 h-[22px] w-[22px] translate-x-1/2 -translate-y-1/2 rounded-full",
+          "border-[3px] border-[var(--color-ink)] bg-[var(--color-paper)]"
+        )}
+      />
+    </div>
+  );
+}
+TicketStub.Divider = TicketDivider;
+
+/** A section of ticket content with the standard padding — sits between
+ *  dividers, or stands alone for a single-section ticket. */
+function TicketSection({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={clsx("p-[var(--space-4)]", className)}>{children}</div>;
+}
+TicketStub.Section = TicketSection;
+
+// ── Stepper ─────────────────────────────────────────────────────────────────
+
+/** A horizontal progress track — order stage, payment collection, any
+ *  sequence where "how far along" matters more than the raw status word.
+ *  Steps before `activeIndex` are done (tone-filled, checked); the step AT
+ *  `activeIndex` is current (ink-ringed); steps after are upcoming (muted,
+ *  empty). The connecting line reads the same story at a glance from across
+ *  a stall. */
+export function Stepper({
+  steps,
+  activeIndex,
+  tone = "cobalt",
+  className,
+}: {
+  steps: string[];
+  /** 0-based. Steps before this are done; this one is current; after, upcoming. */
+  activeIndex: number;
+  tone?: Tone;
+  className?: string;
+}) {
+  const fillClass = TONE_FILL[tone];
+  const isDeep = TONE_IS_DEEP[tone];
+  return (
+    <div className={clsx("flex items-start", className)}>
+      {steps.map((label, i) => {
+        const done = i < activeIndex;
+        const current = i === activeIndex;
+        const last = i === steps.length - 1;
+        return (
+          <div key={label} className={clsx("flex items-center", !last && "flex-1")}>
+            <div className="flex flex-col items-center gap-[var(--space-1)]">
+              <div
+                className={clsx(
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[3px] border-[var(--color-ink)]",
+                  done ? fillClass : "bg-[var(--color-paper)]",
+                  current && !done && "shadow-[var(--shadow-sticker)]"
+                )}
+              >
+                {done ? (
+                  <span aria-hidden className={clsx("t-xs font-extrabold", isDeep ? "text-white" : "text-[var(--color-ink)]")}>
+                    ✓
+                  </span>
+                ) : current ? (
+                  <span aria-hidden className={clsx("h-2.5 w-2.5 rounded-full", fillClass.split(" ")[0])} />
+                ) : null}
+              </div>
+              <span
+                className={clsx(
+                  "t-xs max-w-[8ch] text-center font-bold",
+                  done || current ? "text-[var(--color-ink)]" : "text-[var(--color-muted)]"
+                )}
+              >
+                {label}
+              </span>
+            </div>
+            {!last && (
+              <div
+                className={clsx(
+                  "mx-[var(--space-1)] mt-3.5 h-[3px] flex-1 rounded-full",
+                  done ? fillClass.split(" ")[0] : "bg-[var(--color-line-soft)]"
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Ring ────────────────────────────────────────────────────────────────────
+
+const RING_SIZE = { md: 96, lg: 152 } as const;
+
+/** Maps a Tone to the raw colour token Ring's SVG stroke needs — SVG
+ *  attributes take a colour value, not a Tailwind class, so this is the one
+ *  place the tone table gets re-expressed as bare `--color-*` names. Only
+ *  tones that make sense as a solid ring stroke are listed; `Ring`'s `tone`
+ *  prop is typed off this map's keys, so passing anything else is a type
+ *  error, not a silent fallback. */
+const TONE_TO_COLOR_VAR: Record<
+  Extract<Tone, "acid" | "cobalt" | "pink" | "orange" | "sky" | "lilac" | "yellow" | "signal" | "ink">,
+  string
+> = {
+  acid: "acid", cobalt: "cobalt", pink: "pink", orange: "orange",
+  sky: "sky", lilac: "lilac", yellow: "yellow", signal: "signal", ink: "ink",
+};
+
+/** A circular progress ring with the value centred inside it — a score, a
+ *  completion percentage, anything where "how full" reads faster as a shape
+ *  than as a number alone. The track is dotted (structure borrowed from the
+ *  reference dashboards); the fill arc is one flat tone colour, not a
+ *  gradient — this system does not do gradients. */
+export function Ring({
+  value,
+  max = 100,
+  tone = "acid",
+  size = "md",
+  strokeWidth = 10,
+  children,
+  className,
+}: {
+  value: number;
+  max?: number;
+  tone?: keyof typeof TONE_TO_COLOR_VAR;
+  size?: "md" | "lg";
+  strokeWidth?: number;
+  children?: React.ReactNode;
+  className?: string;
+}) {
+  const px = RING_SIZE[size];
+  const r = px / 2 - strokeWidth;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(1, max > 0 ? value / max : 0));
+  const colorVar = `var(--color-${TONE_TO_COLOR_VAR[tone]})`;
+  return (
+    <div className={clsx("relative inline-flex items-center justify-center", className)} style={{ width: px, height: px }}>
+      <svg width={px} height={px} viewBox={`0 0 ${px} ${px}`} className="-rotate-90">
+        <circle
+          cx={px / 2}
+          cy={px / 2}
+          r={r}
+          fill="none"
+          stroke="var(--color-line-soft)"
+          strokeWidth={strokeWidth}
+          strokeDasharray="1 7"
+          strokeLinecap="round"
+        />
+        <circle
+          cx={px / 2}
+          cy={px / 2}
+          r={r}
+          fill="none"
+          stroke={colorVar}
+          strokeWidth={strokeWidth}
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - pct)}
+          strokeLinecap="round"
+          className="transition-[stroke-dashoffset] duration-[var(--dur-slow)] ease-[var(--ease-out)]"
+        />
+      </svg>
+      {children && <div className="absolute inset-0 flex flex-col items-center justify-center text-center">{children}</div>}
+    </div>
+  );
+}
+
+// ── ProgressBar ─────────────────────────────────────────────────────────────
+
+/** A labelled linear progress bar — stock fulfilment, a B2B stage pipeline,
+ *  a bulk commit in flight. The label and percentage sit above the track
+ *  rather than inside the fill, so they stay legible at 10% as readily as
+ *  at 90%. */
+export function ProgressBar({
+  value,
+  max = 100,
+  tone = "cobalt",
+  label,
+  showPercent = true,
+  className,
+}: {
+  value: number;
+  max?: number;
+  tone?: Tone;
+  label?: string;
+  showPercent?: boolean;
+  className?: string;
+}) {
+  const pct = Math.max(0, Math.min(100, max > 0 ? (value / max) * 100 : 0));
+  const fillClass = TONE_FILL[tone].split(" ")[0];
+  return (
+    <div className={clsx("flex flex-col gap-[var(--space-1)]", className)}>
+      {(label || showPercent) && (
+        <div className="flex items-center justify-between gap-[var(--space-2)]">
+          {label && <span className="t-sm font-bold text-[var(--color-ink)]">{label}</span>}
+          {showPercent && (
+            <Mono className="t-sm font-bold text-[var(--color-ink)]">{Math.round(pct)}%</Mono>
+          )}
+        </div>
+      )}
+      <div
+        role="progressbar"
+        aria-valuenow={value}
+        aria-valuemin={0}
+        aria-valuemax={max}
+        className="h-3 w-full overflow-hidden rounded-[var(--radius-pill)] border-[3px] border-[var(--color-ink)] bg-[var(--color-paper-2)]"
+      >
+        <div
+          className={clsx("h-full rounded-[var(--radius-pill)] transition-[width] duration-[var(--dur-slow)] ease-[var(--ease-out)]", fillClass)}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
