@@ -25,6 +25,7 @@ import {
   Field,
   Heading,
   Panel,
+  Ring,
   Sheet,
   Select,
   Skeleton,
@@ -38,6 +39,10 @@ import { money } from "@/lib/money";
 import { clsx } from "@/components/clsx";
 
 const STAGES: B2bStage[] = ["enquiry", "quoted", "confirmed", "in_production", "dispatched", "delivered", "lost"];
+// "lost" is a terminal branch, not a further step — it never counts toward
+// the dot-slider's position, so it gets its own list rather than reusing
+// STAGES (which drives the Select and needs "lost" as a pickable option).
+const FORWARD_STAGES: B2bStage[] = ["enquiry", "quoted", "confirmed", "in_production", "dispatched", "delivered"];
 const PAYMENT_METHODS: PaymentMethod[] = ["upi", "cash", "split", "pending"];
 
 const stageLabel = (s: B2bStage) => s.replace("_", " ");
@@ -279,21 +284,37 @@ export default function B2bPage() {
                     )}
                   </Td>
                   <Td>
-                    <Select surface="admin"
-                      id={`stage-${o.id}`}
-                      label={`Stage for ${o.client_org}`}
-                      labelHidden
-                      className="w-40 capitalize"
-                      value={o.stage}
-                      disabled={busy}
-                      onChange={(e) => setStage(o.id, e.target.value as B2bStage)}
-                    >
-                      {STAGES.map((s) => (
-                        <option key={s} value={s} className="capitalize">
-                          {stageLabel(s)}
-                        </option>
-                      ))}
-                    </Select>
+                    <div className="flex items-center gap-[var(--space-3)]">
+                      {/* Monochrome dot-slider — state shape, not a colour
+                          per row, so it doesn't reopen the one-tone-per-
+                          collection question the way per-row colour would.
+                          "lost" has exited the forward pipeline rather than
+                          stalled partway through it, so it gets no dots at
+                          all instead of a misleading position. */}
+                      {o.stage !== "lost" && (
+                        <Ring
+                          variant="dots"
+                          value={FORWARD_STAGES.indexOf(o.stage) + 1}
+                          max={FORWARD_STAGES.length}
+                          tone="cobalt"
+                        />
+                      )}
+                      <Select surface="admin"
+                        id={`stage-${o.id}`}
+                        label={`Stage for ${o.client_org}`}
+                        labelHidden
+                        className="w-40 capitalize"
+                        value={o.stage}
+                        disabled={busy}
+                        onChange={(e) => setStage(o.id, e.target.value as B2bStage)}
+                      >
+                        {STAGES.map((s) => (
+                          <option key={s} value={s} className="capitalize">
+                            {stageLabel(s)}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
                   </Td>
                   <Td className="text-right">
                     <Button size="sm" surface="admin" variant="secondary" onClick={() => openEdit(o)}>

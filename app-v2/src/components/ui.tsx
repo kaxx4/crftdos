@@ -1413,17 +1413,65 @@ const TONE_TO_COLOR_VAR: Record<
   sky: "sky", lilac: "lilac", yellow: "yellow", signal: "signal", ink: "ink",
 };
 
+const DOT_SIZE = { md: 10, lg: 14 } as const;
+
+/** A row of discrete dots — `max` steps, `value` of them filled. Not a
+ *  percentage read as a shape (that's the arc variant below); this is for
+ *  a genuinely STEPPED bound, like a pipeline with a fixed stage count,
+ *  where "how full" is a wrong question and "step N of M" is the right one.
+ *
+ *  Deliberately monochrome — filled dots take `tone`, empty ones are a bare
+ *  ink outline, no per-dot colour. That is what makes it safe inside a
+ *  repeating table row: it describes STATE SHAPE the same way a checkmark
+ *  does, not per-row identity, so it doesn't reopen the one-tone-per-
+ *  collection question the way a distinct colour per row would. */
+function RingDots({
+  value,
+  max,
+  tone = "acid",
+  size = "md",
+  className,
+}: {
+  value: number;
+  max: number;
+  tone?: keyof typeof TONE_TO_COLOR_VAR;
+  size?: "md" | "lg";
+  className?: string;
+}) {
+  const d = DOT_SIZE[size];
+  const fillClass = TONE_FILL[tone].split(" ")[0];
+  return (
+    <div className={clsx("inline-flex items-center gap-1.5", className)} role="img" aria-label={`Step ${value} of ${max}`}>
+      {Array.from({ length: max }, (_, i) => (
+        <span
+          key={i}
+          className={clsx(
+            "rounded-full border-2 border-[var(--color-ink)]",
+            i < value ? fillClass : "bg-transparent"
+          )}
+          style={{ width: d, height: d }}
+        />
+      ))}
+    </div>
+  );
+}
+
 /** A circular progress ring with the value centred inside it — a score, a
  *  completion percentage, anything where "how full" reads faster as a shape
  *  than as a number alone. The track is dotted (structure borrowed from the
  *  reference dashboards); the fill arc is one flat tone colour, not a
- *  gradient — this system does not do gradients. */
+ *  gradient — this system does not do gradients.
+ *
+ *  `variant="dots"` switches to `RingDots` for a genuinely stepped bound
+ *  instead of a percentage — same props, same home, because both answer
+ *  "how far along," just for two different shapes of progress. */
 export function Ring({
   value,
   max = 100,
   tone = "acid",
   size = "md",
   strokeWidth = 10,
+  variant = "arc",
   children,
   className,
 }: {
@@ -1432,9 +1480,14 @@ export function Ring({
   tone?: keyof typeof TONE_TO_COLOR_VAR;
   size?: "md" | "lg";
   strokeWidth?: number;
+  variant?: "arc" | "dots";
   children?: React.ReactNode;
   className?: string;
 }) {
+  if (variant === "dots") {
+    return <RingDots value={value} max={max} tone={tone} size={size} className={className} />;
+  }
+
   const px = RING_SIZE[size];
   const r = px / 2 - strokeWidth;
   const c = 2 * Math.PI * r;

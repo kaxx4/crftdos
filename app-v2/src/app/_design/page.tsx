@@ -480,6 +480,13 @@ export default function DesignGallery() {
               <Heading step="lg">25%</Heading>
             </Ring>
           </div>
+          <div className="mt-[var(--space-4)] flex flex-col gap-[var(--space-2)]">
+            <Text step="sm" muted>
+              variant=&quot;dots&quot; — a stepped bound, not a percentage
+            </Text>
+            <Ring variant="dots" value={3} max={6} tone="cobalt" />
+            <Ring variant="dots" value={6} max={6} tone="acid" size="lg" />
+          </div>
         </Panel>
 
         <Panel tone="white" title="ProgressBar — labelled linear fill">
