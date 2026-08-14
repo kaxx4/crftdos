@@ -77,8 +77,38 @@ export default function KioskAttractPage() {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-[var(--space-6)] p-[var(--space-5)]">
-        <Panel tone="pink" lift className="animate-rise text-center">
+      <div className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-[var(--space-6)] p-[var(--space-5)]">
+        {/* Ambient decoration, not a repeating collection — the STEPS row
+            below stays strictly one tone per its own comment, but these are
+            one-off badges scattered around empty canvas, extending the same
+            sticker the hero already carried rather than inventing a new
+            device. Small and few enough that they read as stickers, not a
+            third colour block: DESIGN-SPEC's budget is about panel-scale
+            fills, not sticker-scale accents.
+            Placed to relate to what's near them, not float in their own
+            zone: the two upper ones peek off the hero's own corners (the
+            same "breaks the frame" move as the Popular badge on /kiosk/
+            ready), and the lower one leans toward the CTA button rather
+            than sitting in dead space beside it. Sizes vary on purpose —
+            two are the standard Sticker size, one is scaled up — so no two
+            neighbours are the same weight. */}
+        <span className="absolute -top-2 left-2 z-10 hidden -rotate-6 sm:block md:left-8">
+          <Sticker tone="acid" tilt="l">
+            ★ handmade
+          </Sticker>
+        </span>
+        <span className="absolute -top-3 right-2 z-10 hidden scale-125 rotate-3 sm:block md:right-10">
+          <Sticker tone="sky" tilt="r">
+            no two alike
+          </Sticker>
+        </span>
+        <span className="absolute bottom-16 left-4 z-10 hidden -rotate-3 md:block lg:left-12">
+          <Sticker tone="yellow" tilt="l">
+            takes ~1 min
+          </Sticker>
+        </span>
+
+        <Panel tone="pink" lift className="relative animate-rise text-center">
           <div className="mb-[var(--space-4)] flex justify-center">
             <Sticker tone="white" tilt="r">
               crftd ★ {environment?.name ?? "stall"}
