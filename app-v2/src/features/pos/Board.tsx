@@ -187,7 +187,7 @@ export function Board() {
             teach={current.teach}
           />
         ) : (
-          <ul className="flex flex-col gap-[var(--space-3)]">
+          <ul className="stagger flex flex-col gap-[var(--space-3)]">
             {queue.map((o) => (
               <li key={o.id}>
                 <TicketCard

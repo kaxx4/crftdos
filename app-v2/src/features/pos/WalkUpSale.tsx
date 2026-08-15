@@ -527,7 +527,7 @@ export function WalkUpSale() {
 
       <PosScreen.Body>
       {toast && (
-        <Banner tone="success" action={<Button variant="ghost" onClick={() => setToast(null)}>Dismiss</Button>}>
+        <Banner tone="success" className="animate-pop" action={<Button variant="ghost" onClick={() => setToast(null)}>Dismiss</Button>}>
           {toast}
         </Banner>
       )}
@@ -629,7 +629,7 @@ export function WalkUpSale() {
 
       {stickers.length > 0 && (
         <Panel title={`On this order (${stickers.length})`}>
-          <ul className="flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
+          <ul className="stagger flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
             {stickers.map((s, i) => (
               <li key={s.key} className="flex items-center justify-between gap-[var(--space-3)] py-[var(--space-2)]">
                 <span className="flex min-w-0 flex-1 flex-wrap items-center gap-[var(--space-2)]">
@@ -731,7 +731,7 @@ export function WalkUpSale() {
 
       {cart.length > 0 && (
         <Panel title={`Order so far (${cart.length} tee${cart.length === 1 ? "" : "s"})`}>
-          <ul className="flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
+          <ul className="stagger flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
             {cart.map((b) => (
               <li key={b.key} className="flex items-center justify-between gap-[var(--space-3)] py-[var(--space-2)]">
                 <span className="min-w-0 flex-1">

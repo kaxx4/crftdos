@@ -188,7 +188,7 @@ export function WasteScreen() {
             )}
 
             {chosen && (
-              <div className="rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-[var(--color-yellow)] p-[var(--space-3)] t-md">
+              <div className="animate-pop rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-[var(--color-yellow)] p-[var(--space-3)] t-md">
                 {chosen.kind === "sku" ? chosen.item.sku_code : `${chosen.item.code} — ${chosen.item.name}`}
               </div>
             )}
@@ -229,7 +229,7 @@ export function WasteScreen() {
               teach="Anything ruined in the press gets logged here so the stall's counts stay accurate — and so we can see which designs press badly."
             />
           ) : (
-            <ul className="flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
+            <ul className="stagger flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
               {waste.data.map((w) => (
                 <li
                   key={w.id}

@@ -202,7 +202,7 @@ export function ReturnsScreen() {
               <Banner tone="warn">No order here matches that. Try the exact receipt number or the phone on file.</Banner>
             )}
             {found && (
-              <div className="rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-white p-[var(--space-3)]">
+              <div className="animate-rise rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-white p-[var(--space-3)]">
                 <Mono className="t-md font-bold">{found.receipt_no ?? `#${found.order_no}`}</Mono>
                 <Text muted>
                   {found.customer_name ?? "Walk-up"} · {found.items.length} item
@@ -319,7 +319,7 @@ export function ReturnsScreen() {
               teach="Every return filed for this stall — replace, refund, exchange or reject — shows up here, so the next volunteer can see what's already been decided."
             />
           ) : (
-            <ul className="flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
+            <ul className="stagger flex flex-col divide-y-2 divide-[var(--color-line-soft)]">
               {returns.data.map((r) => (
                 <li
                   key={r.id}

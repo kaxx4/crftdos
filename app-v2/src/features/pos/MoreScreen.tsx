@@ -198,7 +198,7 @@ export function MoreScreen() {
         <Panel title="Stall tools">
           {/* One tone for the whole set. These are five doors, not five
               priorities. */}
-          <ul className="flex flex-col gap-[var(--space-2)]">
+          <ul className="stagger flex flex-col gap-[var(--space-2)]">
             {TOOLS.map((t) => (
               <li key={t.href}>
                 <Link

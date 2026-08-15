@@ -81,7 +81,7 @@ export function StockScreen() {
             anchor, and it is spent here rather than sprinkled per row. */}
         {low.length > 0 && (
           <Panel tone="orange" title={`Running low (${low.length})`}>
-            <ul className="flex flex-col divide-y-2 divide-[var(--color-ink)]">
+            <ul className="stagger flex flex-col divide-y-2 divide-[var(--color-ink)]">
               {low.map(({ row, design }) => (
                 <li
                   key={row.sku_id}

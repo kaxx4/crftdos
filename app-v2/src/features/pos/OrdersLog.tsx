@@ -72,7 +72,7 @@ export function OrdersLog() {
             teach="Every sale from this stall — from the kiosk or from the Sell tab — shows up here as soon as it happens, with a receipt you can show or print."
           />
         ) : (
-          <ul className="flex flex-col gap-[var(--space-3)]">
+          <ul className="stagger flex flex-col gap-[var(--space-3)]">
             {orders.data.map((o) => (
               <li
                 key={o.id}

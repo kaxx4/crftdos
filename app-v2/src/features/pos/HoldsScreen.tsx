@@ -134,7 +134,7 @@ export function HoldsScreen() {
             teach="A hold reserves an item for a customer who says they'll come back. It still counts as stock, but stops anyone else buying it. Holds expire on their own — release one early only if the customer isn't coming back."
           />
         ) : (
-          <ul className="flex flex-col gap-[var(--space-3)]">
+          <ul className="stagger flex flex-col gap-[var(--space-3)]">
             {list.map((h) => {
               const mins = minutesLeft(h);
               const urgent = mins <= 5;
