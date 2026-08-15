@@ -423,7 +423,8 @@ export function Sticker({
       className={clsx(
         "inline-flex items-center gap-1 rounded-[var(--radius-pill)] border-[3px] border-[var(--color-ink)]",
         "px-3 py-1.5 t-xs uppercase shadow-[var(--shadow-sticker)]",
-        tilt === "l" ? "sticker-tilt-l" : "sticker-tilt-r",
+        "transition-transform duration-[var(--dur-fast)] ease-[var(--ease-out)]",
+        tilt === "l" ? "sticker-tilt-l hover:rotate-0" : "sticker-tilt-r hover:rotate-0",
         TONE_FILL[tone],
         className
       )}
