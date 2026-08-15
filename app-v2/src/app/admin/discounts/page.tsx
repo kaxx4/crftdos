@@ -73,13 +73,13 @@ export default function DiscountsPage() {
         />
       ) : (
         <>
-          <div className="grid gap-[var(--space-3)] sm:grid-cols-3">
+          <div className="stagger grid gap-[var(--space-3)] sm:grid-cols-3">
             <Stat label="Given away" value={money(givenAway)} sub={`${freebies.length} freebies`} emphasis tone="yellow" />
             <Stat label="Knocked off" value={money(knockedOff)} sub={`${rows.length - freebies.length} discounts`} />
             <Stat label="Entries" value={rows.length} sub="Across every stall" />
           </div>
 
-          <Panel title="Every discount and freebie">
+          <Panel title="Every discount and freebie" className="animate-rise">
             <Table
               className="min-w-[860px]"
               caption="Discounts and freebies, newest first"

@@ -89,7 +89,7 @@ export default function CataloguePage() {
         </Banner>
       )}
 
-      <Panel title="Transfers">
+      <Panel title="Transfers" className="animate-rise">
         {catalogue.loading ? (
           <Skeleton className="h-64" />
         ) : designs.length === 0 ? (

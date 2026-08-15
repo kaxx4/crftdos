@@ -113,7 +113,7 @@ export default function EnvironmentsPage() {
           }
         />
       ) : (
-        <div className="grid gap-[var(--space-5)] md:grid-cols-2 xl:grid-cols-3">
+        <div className="stagger grid gap-[var(--space-5)] md:grid-cols-2 xl:grid-cols-3">
           {sorted.map((e) => (
             <Panel key={e.id} className="flex flex-col gap-[var(--space-3)]">
               <div className="flex items-start justify-between gap-[var(--space-3)]">

@@ -81,7 +81,7 @@ export default function AnalyticsPage() {
             ))}
           </div>
         ) : sales.data ? (
-          <div className="grid gap-[var(--space-3)] sm:grid-cols-2 xl:grid-cols-4">
+          <div className="stagger grid gap-[var(--space-3)] sm:grid-cols-2 xl:grid-cols-4">
             <Stat
               label="Raised for AquaTerra"
               value={money(sales.data.raisedForAquaterra)}
@@ -119,7 +119,7 @@ export default function AnalyticsPage() {
                 page has (completed/sessions) — the only honest use for a
                 Ring here. raisedForAquaterra on the main dashboard has no
                 ceiling to ring against, so it stays a plain Stat there. */}
-            <Panel tone="white" className="flex flex-wrap items-center gap-[var(--space-5)]">
+            <Panel tone="white" className="animate-rise flex flex-wrap items-center gap-[var(--space-5)]">
               <Ring
                 value={interaction.data.completed}
                 max={interaction.data.sessions}
@@ -138,7 +138,7 @@ export default function AnalyticsPage() {
               </div>
             </Panel>
 
-            <div className="grid gap-[var(--space-3)] sm:grid-cols-3">
+            <div className="stagger grid gap-[var(--space-3)] sm:grid-cols-3">
               <Stat label="Sessions" value={interaction.data.sessions} sub="People who touched the kiosk" />
               <Stat
                 label="Ordered"
@@ -154,7 +154,7 @@ export default function AnalyticsPage() {
 
             <div className="grid gap-[var(--space-5)] xl:grid-cols-2">
               <Panel title="Where people stop">
-                <ul className="flex flex-col gap-[var(--space-4)]">
+                <ul className="stagger flex flex-col gap-[var(--space-4)]">
                   {interaction.data.funnel.map((f) => {
                     const pct = interaction.data!.sessions ? Math.round((f.sessions / interaction.data!.sessions) * 100) : 0;
                     return (

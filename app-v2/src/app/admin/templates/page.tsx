@@ -68,7 +68,7 @@ export default function TemplatesPage() {
           teach="Templates are the designs the kiosk shows on its home page. Without any, customers only get the blank canvas — which most of them won't use."
         />
       ) : (
-        <div className="grid gap-[var(--space-5)] sm:grid-cols-2 xl:grid-cols-3">
+        <div className="stagger grid gap-[var(--space-5)] sm:grid-cols-2 xl:grid-cols-3">
           {templates.data.map((t) => {
             const sku = catalogue.data?.skus.find((s) => s.id === t.payload.product_sku_id);
             const price = (sku?.unit_price ?? 0) + t.payload.placements.reduce((n, p) => n + p.unit_price, 0);

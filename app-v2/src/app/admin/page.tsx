@@ -51,7 +51,7 @@ export default function AdminDashboard() {
       ) : (
         summary.data && (
           <>
-            <div className="grid gap-[var(--space-3)] sm:grid-cols-2 xl:grid-cols-4">
+            <div className="stagger grid gap-[var(--space-3)] sm:grid-cols-2 xl:grid-cols-4">
               <Stat
                 label="Raised for AquaTerra"
                 value={money(summary.data.raisedForAquaterra)}
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
               <Stat label="Items sold" value={summary.data.units} sub="Across every stall" />
             </div>
 
-            <div className="grid gap-[var(--space-5)] xl:grid-cols-2">
+            <div className="animate-rise stagger grid gap-[var(--space-5)] xl:grid-cols-2">
               <Panel title="By stall">
                 {summary.data.byEnvironment.length === 0 ? (
                   <EmptyState
@@ -127,7 +127,7 @@ export default function AdminDashboard() {
             teach="Nothing can be sold until at least one stall is open. Open one on the Stalls page, then allocate stock to it."
           />
         ) : (
-          <ul className="flex flex-wrap gap-[var(--space-2)]">
+          <ul className="stagger flex flex-wrap gap-[var(--space-2)]">
             {openStalls.map((e) => (
               <li key={e.id}>
                 {/* One tone for the whole collection. A stall is not more

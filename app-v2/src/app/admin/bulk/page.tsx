@@ -123,7 +123,7 @@ export default function BulkEntryPage() {
         />
       ) : (
         <>
-          <Panel title="Lines">
+          <Panel title="Lines" className="animate-rise">
             <Table
               className="min-w-[720px]"
               caption="Lines in this bulk order"

@@ -268,7 +268,7 @@ export default function AdminPricingPage() {
         )}
       </Panel>
 
-      <Panel title="Product SKUs">
+      <Panel title="Product SKUs" className="animate-rise">
         {catalogue.loading ? (
           <Skeleton className="h-64" />
         ) : skus.length === 0 ? (
@@ -312,7 +312,7 @@ export default function AdminPricingPage() {
         )}
       </Panel>
 
-      <Panel title="Sticker designs">
+      <Panel title="Sticker designs" className="animate-rise">
         {catalogue.loading ? (
           <Skeleton className="h-64" />
         ) : designs.length === 0 ? (

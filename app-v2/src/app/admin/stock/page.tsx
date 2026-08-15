@@ -156,7 +156,7 @@ export default function StockAllocationPage() {
           teach="Stock is counted per transfer, per location. Add transfers or product SKUs on the Catalogue page and they appear here with a column for every stall."
         />
       ) : (
-        <Panel title="Everything, by location">
+        <Panel title="Everything, by location" className="animate-rise">
           <Table
             className="min-w-[900px]"
             caption="Stock held at each location for every transfer and product SKU"

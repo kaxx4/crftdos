@@ -208,7 +208,7 @@ export default function B2bPage() {
         </Banner>
       )}
 
-      <div className="grid gap-[var(--space-3)] sm:grid-cols-2 xl:grid-cols-4">
+      <div className="stagger grid gap-[var(--space-3)] sm:grid-cols-2 xl:grid-cols-4">
         <Stat
           label="Committed value"
           value={money(list.data?.committed ?? 0)}
@@ -237,7 +237,7 @@ export default function B2bPage() {
           }
         />
       ) : (
-        <Panel title="Enquiries">
+        <Panel title="Enquiries" className="animate-rise">
           <Table
             className="min-w-[980px]"
             caption="B2B enquiries with value, payments received and current stage"
