@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { Button, Heading, PosScreen, Text, TicketStub } from "@/components/ui";
+import { Button, Heading, PosScreen, Sticker, Text, TicketStub } from "@/components/ui";
 import { useKiosk } from "../_lib/session";
 import { ticketCode, useStageGuard } from "../_lib/util";
 import { money } from "@/lib/money";
@@ -72,7 +72,17 @@ export default function KioskDonePage() {
               instructions are two acts of the SAME ticket, torn apart at a
               die-cut seam — the structure the reference confirmations use,
               kept to our own acid + cobalt budget. */}
-          <TicketStub className="animate-pop">
+          <TicketStub className="relative animate-pop">
+            {/* The one sticker this screen earns: a small "fresh off the
+                press" beat that peeks off the ticket's own corner, the same
+                frame-breaking move the attract and start screens already
+                use. White stays legal on the acid section and doesn't add a
+                third block colour. */}
+            <span className="absolute -top-3 -right-2 z-10 hidden rotate-6 sm:block">
+              <Sticker tone="white" tilt="r">
+                ★ fresh off the press
+              </Sticker>
+            </span>
             <TicketStub.Section tone="acid" className="text-center">
               <p className="t-label">Order placed</p>
               <Heading level={1} step="xxl" className="mt-[var(--space-2)]">

@@ -199,7 +199,7 @@ export default function KioskDesignPage() {
           </div>
 
           {selected !== null && placements[selected] ? (
-            <Panel tight className="flex flex-col gap-[var(--space-3)]">
+            <Panel key={selected} tight className="animate-rise flex flex-col gap-[var(--space-3)]">
               <div className="flex items-center justify-between gap-[var(--space-3)]">
                 <Heading level={2} step="lg">
                   {placements[selected].code}
@@ -243,7 +243,7 @@ export default function KioskDesignPage() {
               </Button>
             </Panel>
           ) : (
-            <Nudge>
+            <Nudge key={side} className="animate-rise">
               {onSide.length === 0
                 ? `Nothing on the ${side} yet — tap a design on the right to drop it on.`
                 : "Tap a transfer on the tee to move it, turn it, or take it off."}
@@ -280,7 +280,7 @@ export default function KioskDesignPage() {
               teach="Only designs physically at this stall show up on the kiosk, and right now that's none. A volunteer books stock in from the van and they appear here on their own."
             />
           ) : (
-            <div className="grid grid-cols-2 gap-[var(--space-3)] sm:grid-cols-3">
+            <div className="stagger grid grid-cols-2 gap-[var(--space-3)] sm:grid-cols-3">
               {designs.map((d) => {
                 const used = placements.filter((p) => p.sticker_design_id === d.id).length;
                 const left = d.available_qty - used;

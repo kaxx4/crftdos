@@ -110,49 +110,56 @@ export default function KioskDetailsPage() {
         </Banner>
       )}
 
-      <Panel className="flex flex-col gap-[var(--space-4)]">
-        <Field
-          surface="kiosk"
-          label="Your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="First name is fine"
-          autoComplete="given-name"
-          hint="This is what a volunteer will call out."
-          error={touched && !nameOk ? "We need a name to call out when it's ready." : undefined}
-        />
-        <Field
-          surface="kiosk"
-          label="Phone number"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          inputMode="numeric"
-          placeholder="10 digits"
-          autoComplete="tel"
-          hint="Only used to tell you your tee is ready."
-          error={touched && !phoneOk ? "That doesn't look like a 10-digit mobile number." : undefined}
-        />
-      </Panel>
+      {/* Last screen before the ticket, so it earns the same rise-in energy
+          as every other step rather than landing flat right before the
+          payoff — `stagger` on the three blocks below, same device the
+          catalogue grids already use. */}
+      <div className="stagger flex flex-col gap-[var(--space-5)]">
+        <Panel className="flex flex-col gap-[var(--space-4)]">
+          <Field
+            surface="kiosk"
+            label="Your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="First name is fine"
+            autoComplete="given-name"
+            hint="This is what a volunteer will call out."
+            error={touched && !nameOk ? "We need a name to call out when it's ready." : undefined}
+          />
+          <Field
+            surface="kiosk"
+            label="Phone number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            inputMode="numeric"
+            placeholder="10 digits"
+            autoComplete="tel"
+            hint="Only used to tell you your tee is ready."
+            error={touched && !phoneOk ? "That doesn't look like a 10-digit mobile number." : undefined}
+          />
+        </Panel>
 
-      <Panel title="What you're getting" className="flex flex-col gap-[var(--space-4)] sm:flex-row">
-        <Mockup sku={sku} placements={placements} side="front" className="w-full sm:w-[180px] sm:shrink-0" />
-        <div className="flex flex-col gap-[var(--space-2)]">
-          <Heading level={2} step="lg">
-            {skuLabel(sku, catalogue)}
-          </Heading>
-          <Text step="base" muted>
-            {placements.length} transfer{placements.length === 1 ? "" : "s"} —{" "}
-            {placements.map((p) => p.code).join(", ")}
-          </Text>
-          <Text step="md">
-            <Mono>{money(total)}</Mono>
-          </Text>
-        </div>
-      </Panel>
+        <Panel title="What you're getting" className="flex flex-col gap-[var(--space-4)] sm:flex-row">
+          <Mockup sku={sku} placements={placements} side="front" className="w-full sm:w-[180px] sm:shrink-0" />
+          <div className="flex flex-col gap-[var(--space-2)]">
+            <Heading level={2} step="lg">
+              {skuLabel(sku, catalogue)}
+            </Heading>
+            <Text step="base" muted>
+              {placements.length} transfer{placements.length === 1 ? "" : "s"} —{" "}
+              {placements.map((p) => p.code).join(", ")}
+            </Text>
+            <Text step="md">
+              <Mono>{money(total)}</Mono>
+            </Text>
+          </div>
+        </Panel>
 
-      <Banner tone="info" title="You pay when you collect">
-        Nothing is charged here. A volunteer presses your tee, calls your name, and takes cash or UPI at the counter.
-      </Banner>
+        <Banner tone="info" title="You pay when you collect">
+          Nothing is charged here. A volunteer presses your tee, calls your name, and takes cash or UPI at the
+          counter.
+        </Banner>
+      </div>
     </KioskFrame>
   );
 }
