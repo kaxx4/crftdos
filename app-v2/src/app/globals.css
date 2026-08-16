@@ -146,6 +146,11 @@
   --font-body: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-face), ui-monospace, "SF Mono", monospace;
   --font-display: var(--font-fraunces), Georgia, serif;
+  /* Fourth and last face. Handwritten annotation layer only — a scribbled
+     arrow, a marker-style callout, a "by hand" price flash. Never body,
+     never a control label, never more than a few words. Heaviest on kiosk,
+     light touch on POS, never on admin. See DESIGN-SPEC.md §3. */
+  --font-hand: var(--font-caveat), cursive;
 
   /* ── TYPE SCALE ───────────────────────────────────────────────────────────
      Closed set of nine steps. Each has a size, a line-height and a tracking.
@@ -189,6 +194,15 @@
   font-style: italic;
   letter-spacing: -0.03em;
   line-height: 0.95;
+}
+
+/* The one handwritten face. Annotation only — a scribbled arrow's label, a
+   marker callout, a hand-flashed price. Never body, never a control label. */
+.t-hand {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -380,6 +394,49 @@ input[type="number"] { -moz-appearance: textfield; }
 /* Hides scrollbars on horizontal rails without disabling scrolling. */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ── Collage motifs ──────────────────────────────────────────────────────
+   Shared devices for the reference-driven "hand-crafted collage" layer:
+   torn paper, halftone texture, a polaroid tilt-frame. Kiosk-heaviest per
+   DESIGN-SPEC.md §3a — reuse these rather than hand-rolling a new one. */
+
+/* A torn top edge, like a strip pulled off a larger sheet. Ink-colour so it
+   reads as a cut, not a gradient. Apply to the element that should look torn;
+   pair with a solid background matching the panel behind it. */
+.torn-edge-top {
+  -webkit-mask-image: repeating-linear-gradient(
+    100deg,
+    black 0 14px,
+    transparent 14px 16px,
+    black 16px 24px
+  );
+  mask-image: repeating-linear-gradient(
+    100deg,
+    black 0 14px,
+    transparent 14px 16px,
+    black 16px 24px
+  );
+}
+
+/* Print-shop halftone dot field. Ink dots at low opacity — decoration, never
+   load-bearing for legibility. Size the dots via background-size on the
+   instance if a denser/sparser field is needed. */
+.halftone {
+  background-image: radial-gradient(circle, var(--color-ink) 1.4px, transparent 1.5px);
+  background-size: 10px 10px;
+  opacity: 0.12;
+}
+
+/* A photo pinned to the page like a polaroid: white card, thick bottom
+   margin, ink edge, sticker shadow. Rotate via .sticker-tilt-l/-r on the
+   same element — never invent a third angle. */
+.polaroid {
+  background: var(--color-white);
+  border: var(--border-2) solid var(--color-ink);
+  box-shadow: var(--shadow-sticker);
+  padding: var(--space-2) var(--space-2) var(--space-5);
+  border-radius: var(--radius-sm);
+}
 
 /* Diagonal hatch for the "demo data" state. An operator must never be unsure
    whether a number on screen is real. */

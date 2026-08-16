@@ -169,7 +169,7 @@ Colour-block means *blocks of colour*, not *everything coloured*. On any one scr
 
 ## 3. Type
 
-Three faces, already wired in `layout.tsx`. **Do not add a fourth.**
+Four faces, all wired in `layout.tsx`. **Do not add a fifth.**
 
 - **Plus Jakarta Sans** (`--font-body`) — everything.
 - **JetBrains Mono** (`--font-mono`) — money, counts, codes, timers, IDs. Always
@@ -177,6 +177,31 @@ Three faces, already wired in `layout.tsx`. **Do not add a fourth.**
 - **Fraunces 900 italic** (`--font-display`, `.t-display`) — display only. Kiosk
   hero and at most one admin/POS page title. Never body, never a control label,
   never below the `xl` step.
+- **Caveat 700** (`--font-hand`, `.t-hand`) — the handwritten annotation layer.
+  A scribbled arrow's label, a marker-style callout, a "by hand" price flash.
+  Short only — a few words, never a sentence, never body copy, never a control
+  label. See §3a for where it's allowed.
+
+### 3a. The collage layer — where the hand-crafted texture lives
+
+The Y2K colour-block system got a second, optional layer: torn-paper edges
+(`.torn-edge-top`), halftone dot fields (`.halftone`), polaroid-style photo
+frames (`.polaroid`), hand-drawn arrow/scribble marks, and `.t-hand`
+annotations — all in `globals.css`. This is texture *on top of* the block
+system, not a replacement: colour budget, contrast rules, radii, borders and
+shadows from §2 and §4 still apply to everything underneath it.
+
+Dosage is per-surface, same as colour (§0's register table):
+
+| Surface | Collage dosage |
+|---|---|
+| **Kiosk** | Heaviest. Attract and the hero moments may carry torn edges, halftone fields, polaroid mockups, a scribbled arrow or two, `.t-hand` callouts. This is the storefront — it can look hand-crafted and a little maximalist. |
+| **POS** | Light touch only. At most one small hand-drawn accent per screen (an arrow pointing at the primary action, a `.t-hand` label on a sticker) — never a torn edge or halftone field, which would add visual noise to an instrument a volunteer is reading mid-queue. |
+| **Admin** | None. Console stays dense and information-first — no collage motifs, no `.t-hand`, no halftone. If admin needs emphasis, it's a `Badge`/`Stat`, not a scribble. |
+
+Same proportion discipline as colour blocks: a torn edge or halftone field is
+decoration on ONE element, not a page-wide background. A hand-drawn arrow
+points at something specific — it is never ambient.
 
 ### The scale — closed set of nine steps
 
@@ -369,8 +394,9 @@ Notes that are easy to get wrong:
 8. **Do not let any page scroll horizontally.** Wide content scrolls inside its own
    container.
 9. **Do not add a dark theme, a `dark:` variant, or a theme toggle.** Light only.
-10. **Do not add a font**, and do not use Fraunces below the `xl` step or for
-    anything that is not display.
+10. **Do not add a fifth font.** Do not use Fraunces below the `xl` step or for
+    anything that is not display. Do not use Caveat/`.t-hand` for body copy, a
+    control label, or anything longer than a few words, and never on admin.
 11. **Do not signal state with colour alone.** Always pair with weight, label or ARIA.
 12. **Do not open the other 24 moodboard images.** One reference. Blending in the
     corporate-lime / Swiss-monochrome / soft-gradient languages is the exact failure

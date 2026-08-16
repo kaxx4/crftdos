@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono, Fraunces } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono, Fraunces, Caveat } from "next/font/google";
 import "./globals.css";
 
 /** Fonts are self-hosted through next/font, so a stall on mobile data is
@@ -35,6 +35,18 @@ const fraunces = Fraunces({
   display: "swap",
 });
 
+/** Caveat is OFL. The fourth and last face — a handwritten annotation layer for
+ *  the collage/sticker language (scribbled arrows, marker-style callouts, a
+ *  price flash written "by hand"). Declared globally but, like Fraunces,
+ *  disciplined by where it's *applied*: heaviest on kiosk, a light touch on
+ *  POS, never on admin. See DESIGN-SPEC.md §3. */
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-caveat",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "crftd Stall OS",
   description: "Point of sale, design kiosk and operations for crftd — the commercial arm of AQUATERRA / TerraRoots.",
@@ -55,7 +67,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${mono.variable} ${fraunces.variable}`}>
+    <html lang="en" className={`${jakarta.variable} ${mono.variable} ${fraunces.variable} ${caveat.variable}`}>
       <body>{children}</body>
     </html>
   );
