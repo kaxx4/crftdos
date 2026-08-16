@@ -3,10 +3,7 @@
 /** Discount / freebie audit.
  *
  *  Every order that discounted or gave something away writes a row to
- *  `stall_admin_audit` at order time. There's nothing in the `Backend`
- *  contract for this — it's an admin-only audit view, not a domain concept
- *  the mock needs to simulate — so this fetches the raw route directly,
- *  same pattern as `/admin/pins`.
+ *  `stall_admin_audit` at order time (live only — see below for mock).
  *
  *  This used to be a stack of cards, one per entry, each with its own border.
  *  An audit log is read by scanning down a column looking for the one number
@@ -16,11 +13,22 @@
  *  Colour budget: yellow and sky. Yellow marks the number and the rows
  *  that need a second look; sky is the ordinary case. The rows themselves are
  *  one tone — an audit log where rows are individually coloured is a log that
- *  looks alarming when nothing is wrong. */
+ *  looks alarming when nothing is wrong.
+ *
+ *  `stall_admin_audit` only exists in Postgres, so the live path still hits
+ *  the raw route. But `/api/admin/discounts` calls Supabase unconditionally —
+ *  it doesn't go through `getBackend()` — so under the mock backend (which is
+ *  what this app runs as until the live migrations + credentials land) that
+ *  fetch always 500s and this page was permanently a dead end. The mock has
+ *  no separate audit table, but every discounted/freebie order already
+ *  carries `discount_amount`/`discount_reason`/`discount_note`, which is the
+ *  same information `stall_admin_audit` stores — so in mock mode this derives
+ *  the same rows from `listOrders` instead of the broken fetch. */
 
 import { AdminShell, NumHead } from "@/features/admin/AdminShell";
 import { Badge, Banner, EmptyState, Panel, Skeleton, Stat, Table, Td, Th } from "@/components/ui";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { getBackend } from "@/lib/backend";
 import { ok, err, type Result } from "@/lib/backend/contract";
 import { money } from "@/lib/money";
 
@@ -32,7 +40,30 @@ type AuditEntry = {
   created_at: string;
 };
 
-async function fetchEntries(): Promise<Result<AuditEntry[]>> {
+async function fetchEntriesFromMock(): Promise<Result<AuditEntry[]>> {
+  const res = await getBackend().listOrders({ limit: 500 });
+  if (!res.ok) return err(res.error);
+  const entries = res.data
+    .filter((o) => o.discount_amount > 0)
+    .map(
+      (o): AuditEntry => ({
+        id: o.id,
+        actor: o.device_id ?? "device",
+        action: o.discount_reason === "freebie" ? "freebie_given" : "discount_applied",
+        detail: {
+          order_id: o.id,
+          amount: o.discount_amount,
+          reason: o.discount_reason ?? undefined,
+          note: o.discount_note ?? undefined,
+        },
+        created_at: o.created_at,
+      })
+    )
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  return ok(entries);
+}
+
+async function fetchEntriesFromApi(): Promise<Result<AuditEntry[]>> {
   try {
     const res = await fetch("/api/admin/discounts");
     const j = await res.json().catch(() => ({}));
@@ -41,6 +72,10 @@ async function fetchEntries(): Promise<Result<AuditEntry[]>> {
   } catch {
     return err("Failed to load");
   }
+}
+
+function fetchEntries(): Promise<Result<AuditEntry[]>> {
+  return getBackend().isMock ? fetchEntriesFromMock() : fetchEntriesFromApi();
 }
 
 export default function DiscountsPage() {
