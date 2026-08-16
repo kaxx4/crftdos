@@ -281,7 +281,7 @@ export function WalkUpSale() {
     (sku?.unit_price ?? 0) + stickers.reduce((n, s) => n + (s.kind === "catalogue" ? s.design.unit_price : 0), 0);
 
   const suggestedPrice = stickers.length === 0 ? BASE_PRICE : BASE_PRICE + PRICE_PER_EXTRA_STICKER * (stickers.length - 1);
-  const finalPrice = freebie ? 0 : priceOverride !== null ? Number(priceOverride) || 0 : suggestedPrice;
+  const finalPrice = freebie ? 0 : priceOverride !== null ? Math.max(0, Number(priceOverride) || 0) : suggestedPrice;
   const priceIsLow = !freebie && finalPrice > 0 && finalPrice < LOW_PRICE_WARNING;
 
   // A tee is only part of the order once it has a sku. Stickers picked
@@ -665,6 +665,7 @@ export function WalkUpSale() {
               label="Price charged (₹)"
               type="number"
               inputMode="numeric"
+              min={0}
               value={priceOverride ?? String(suggestedPrice)}
               onChange={(e) => setPriceOverride(e.target.value)}
               onBlur={() => setEditingPrice(false)}
