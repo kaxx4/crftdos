@@ -19,7 +19,7 @@
  *  three-colour row looks next to the reference. */
 
 import Link from "next/link";
-import { Badge, Button, EmptyState, Heading, Panel, Sticker, Text } from "@/components/ui";
+import { Badge, Button, EmptyState, Heading, HandArrow, Panel, Sticker, Text } from "@/components/ui";
 import { Mockup } from "./_lib/Mockup";
 import { useKiosk } from "./_lib/session";
 
@@ -85,6 +85,11 @@ export default function KioskAttractPage() {
           ))}
         </div>
       </div>
+      {/* The marquee band reads as a strip torn off a bigger roll of print
+          stock — one torn edge, on this one screen, right where the loudest
+          band in the product already lives. Ink-on-paper so the mask reads
+          as a cut rather than a gradient. */}
+      <div className="torn-edge-top h-[var(--space-3)] w-full bg-[var(--color-ink)]" aria-hidden />
 
       <div className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-[var(--space-6)] p-[var(--space-5)]">
         {/* Ambient decoration, not a repeating collection — the STEPS row
@@ -118,7 +123,14 @@ export default function KioskAttractPage() {
         </span>
 
         <Panel tone="pink" lift className="relative animate-rise text-center">
-          <div className="mb-[var(--space-4)] flex justify-center">
+          {/* Halftone corner, print-shop style — decoration on ONE corner of
+              the one hero panel, never a page-wide field. Sits under the
+              content, clipped by the panel's own radius. */}
+          <div
+            className="halftone pointer-events-none absolute -top-6 -left-6 z-0 hidden h-32 w-32 rounded-[var(--radius-lg)] sm:block"
+            aria-hidden
+          />
+          <div className="relative z-10 mb-[var(--space-4)] flex justify-center">
             <Sticker tone="white" tilt="r">
               crftd ★ {environment?.name ?? "stall"}
             </Sticker>
@@ -145,18 +157,30 @@ export default function KioskAttractPage() {
               entirely without a template that has a real mockup image — a
               "no photo yet" placeholder has no business being decoration. */}
           {heroTemplate && heroSku?.mockup_front && (
-            <span className="absolute -bottom-10 right-4 z-10 hidden rotate-6 md:block">
+            // Pinned like a photo rather than just floating with a hard
+            // shadow: `.polaroid` is the white mat + ink edge + sticker
+            // shadow, `sticker-tilt-r` is the same tilt angle every other
+            // sticker on this screen already uses.
+            <span className="polaroid sticker-tilt-r absolute -bottom-10 right-4 z-10 hidden md:block">
               <Mockup
                 sku={heroSku}
                 placements={heroTemplate.payload.placements}
                 side="front"
-                className="w-28 shadow-[var(--shadow-block)] lg:w-36"
+                className="w-24 lg:w-32"
               />
             </span>
           )}
         </Panel>
 
-        <div className="flex flex-col items-center gap-[var(--space-3)]">
+        <div className="relative flex flex-col items-center gap-[var(--space-3)]">
+          {/* One hand-drawn nudge at the one decision this screen exists to
+              produce. Never ambient: it points at this button and nothing
+              else, and it disappears below `sm` where there's no canvas
+              room to spare. */}
+          <span className="absolute -top-10 right-2 hidden -rotate-6 sm:right-6 sm:block" aria-hidden>
+            <span className="t-hand t-md block text-right text-[var(--color-ink)]">tap here!</span>
+            <HandArrow curve="l" className="mt-1 h-14 w-14" />
+          </span>
           <Link href="/kiosk/start" className="inline-flex w-full max-w-md">
             <Button surface="kiosk" size="xl" variant="primary" block>
               Start designing →

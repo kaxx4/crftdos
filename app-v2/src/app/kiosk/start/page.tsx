@@ -14,7 +14,7 @@
  *  Colour budget: PINK + COBALT. */
 
 import Link from "next/link";
-import { Button, Heading, Panel, Sticker, Text } from "@/components/ui";
+import { Button, HandArrow, Heading, Panel, Sticker, Text } from "@/components/ui";
 import { KioskFrame } from "../_lib/KioskFrame";
 import { useKiosk } from "../_lib/session";
 
@@ -61,16 +61,32 @@ export default function KioskStartPage() {
               fastest way in
             </Sticker>
           </span>
-          <Panel tone="pink" lift className="flex flex-col gap-[var(--space-3)]">
-            <div>
+          {/* The one hand-drawn nudge on this screen, pointing at the
+              recommended path — the docs above are explicit that this is
+              the route that carries the volume, so this is the one thing
+              worth a scribble. Hidden below `lg`: no canvas room to spare
+              at kiosk-phone width. */}
+          <span className="absolute -top-14 left-8 z-10 hidden -rotate-6 lg:block" aria-hidden>
+            <span className="t-hand t-md block text-[var(--color-ink)]">start here</span>
+            <HandArrow curve="r" className="mt-1 h-14 w-14 -scale-x-100" />
+          </span>
+          <Panel tone="pink" lift className="relative flex flex-col gap-[var(--space-3)]">
+            {/* Halftone corner accent, print-shop style — the recommended
+                panel is the loudest element on this screen, so it's the one
+                that earns the one-off texture, kept to a single corner. */}
+            <div
+              className="halftone pointer-events-none absolute -top-4 -right-4 z-0 hidden h-24 w-24 rounded-[var(--radius-lg)] sm:block"
+              aria-hidden
+            />
+            <div className="relative z-10">
               <Sticker tone="white" tilt="l">
                 Most people start here
               </Sticker>
             </div>
-            <Heading level={2} step="xl">
+            <Heading level={2} step="xl" className="relative z-10">
               Start from a ready-made design
             </Heading>
-            <Text step="md">
+            <Text step="md" className="relative z-10">
               {templatesLoading
                 ? "Loading what we've got made up today…"
                 : `${readyCount} design${readyCount === 1 ? "" : "s"} we've already put together. Tap one, swap anything you don't like, done in about three taps.`}

@@ -434,6 +434,53 @@ export function Sticker({
   );
 }
 
+/** A loose, hand-drawn arrow pointing at something specific — never ambient
+ *  decoration. Part of the collage layer (DESIGN-SPEC §3a): kiosk may carry a
+ *  couple of these on its loudest screens, POS at most one, admin none.
+ *  `curve="l" | "r"` picks which way the scribble bends; the path is
+ *  intentionally imperfect (a slight wobble, an overshot arrowhead) so it
+ *  reads as marker-on-paper rather than a vector icon. Stroke is always
+ *  `--color-ink` — never a raw hex, never a chromatic stroke. */
+export function HandArrow({
+  curve = "r",
+  className,
+}: {
+  curve?: "l" | "r";
+  className?: string;
+}) {
+  const d =
+    curve === "r"
+      ? "M4 6 C 22 2, 44 10, 58 34 C 66 48, 70 56, 72 62"
+      : "M76 6 C 56 3, 30 12, 18 34 C 10 48, 6 56, 4 62";
+  const head =
+    curve === "r"
+      ? "M60 48 L72 62 L58 60 M72 62 L61 68"
+      : "M20 48 L4 62 L18 60 M4 62 L15 68";
+  return (
+    <svg
+      viewBox="0 0 80 70"
+      fill="none"
+      aria-hidden
+      className={clsx("pointer-events-none", className)}
+    >
+      <path
+        d={d}
+        stroke="var(--color-ink)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d={head}
+        stroke="var(--color-ink)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // ── Chip ────────────────────────────────────────────────────────────────────
 
 /** Interactive selection. Selected is a filled colour-block; unselected is
