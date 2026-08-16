@@ -107,7 +107,19 @@ export function MoreScreen() {
         <Panel
           tone={isOpen ? "acid" : "white"}
           lift
-          title="Shift"
+          title={
+            <span className="inline-flex items-center gap-[var(--space-2)]">
+              Shift
+              {bound && !isOpen && (
+                // One small hand-drawn touch, first-run only — a shift being
+                // closed is the start-of-day state, not something layered
+                // onto a transaction in progress. DESIGN-SPEC §3a.
+                <span aria-hidden="true" className="t-hand t-lg sticker-tilt-l text-[var(--color-ink)]/70">
+                  start here
+                </span>
+              )}
+            </span>
+          }
           action={<Badge tone={isOpen ? "white" : "yellow"}>{isOpen ? "Open" : "Not open"}</Badge>}
         >
           {!bound ? (

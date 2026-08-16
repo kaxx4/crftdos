@@ -67,10 +67,35 @@ export function OrdersLog() {
             <Skeleton className="h-28" />
           </>
         ) : !orders.data?.length ? (
-          <EmptyState
-            headline="No sales here yet"
-            teach="Every sale from this stall — from the kiosk or from the Sell tab — shows up here as soon as it happens, with a receipt you can show or print."
-          />
+          <div className="flex flex-col items-center">
+            <EmptyState
+              headline="No sales here yet"
+              teach="Every sale from this stall — from the kiosk or from the Sell tab — shows up here as soon as it happens, with a receipt you can show or print."
+            />
+            {/* One small hand-drawn touch, first-run only — this whole block
+                disappears the moment a real sale lands, so it never sits near
+                live transaction data. DESIGN-SPEC §3a: light touch, POS. */}
+            <div aria-hidden="true" className="mt-[var(--space-2)] flex flex-col items-center text-[var(--color-ink)]/70">
+              <svg width="40" height="52" viewBox="0 0 40 52" fill="none" className="shrink-0">
+                <path
+                  d="M20 2C13 14 10 26 20 46"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d="M11 39L20 47L27 37"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
+              <span className="t-hand t-xl">your first one lands down there</span>
+            </div>
+          </div>
         ) : (
           <ul className="stagger flex flex-col gap-[var(--space-3)]">
             {orders.data.map((o) => (
