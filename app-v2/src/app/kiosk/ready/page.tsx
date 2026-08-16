@@ -20,7 +20,20 @@ import { getBackend } from "@/lib/backend";
 import { track } from "@/lib/analytics";
 import { money } from "@/lib/money";
 import type { Template } from "@/lib/domain/types";
-import { Badge, Banner, Button, Chip, EmptyState, Heading, Mono, Panel, Skeleton, Sticker, Text } from "@/components/ui";
+import {
+  Badge,
+  Banner,
+  Button,
+  Chip,
+  EmptyState,
+  HandArrow,
+  Heading,
+  Mono,
+  Panel,
+  Skeleton,
+  Sticker,
+  Text,
+} from "@/components/ui";
 import { KioskFrame } from "../_lib/KioskFrame";
 import { Mockup } from "../_lib/Mockup";
 import { useKiosk } from "../_lib/session";
@@ -105,12 +118,30 @@ export default function KioskReadyPage() {
           {visible.map((t, i) => {
             const sku = skus.find((s) => s.id === t.payload.product_sku_id);
             const price = t.payload.unit_price + t.payload.placements.reduce((n, p) => n + p.unit_price, 0);
+            const isHero = i === 0 && t.is_featured;
             return (
-              <Panel key={t.id} className="flex flex-col gap-[var(--space-3)]">
+              <Panel key={t.id} className="relative flex flex-col gap-[var(--space-3)]">
+                {/* One hand-drawn nudge, on the first Popular card only —
+                    same device and same restraint as /kiosk/start's "start
+                    here" scribble at the recommended path one screen back.
+                    Never ambient: it names this specific card, and it's gone
+                    below `lg` where a 3-up grid has no canvas room to spare. */}
+                {isHero && (
+                  <span className="absolute -top-14 left-2 z-10 hidden -rotate-6 lg:block" aria-hidden>
+                    <span className="t-hand t-md block text-[var(--color-ink)]">try this one</span>
+                    <HandArrow curve="r" className="mt-1 h-14 w-14 -scale-x-100" />
+                  </span>
+                )}
                 <div className="relative">
-                  <Mockup sku={sku} placements={t.payload.placements} side="front" />
+                  {isHero && (
+                    <div
+                      className="halftone pointer-events-none absolute -top-3 -left-3 z-0 hidden h-20 w-20 rounded-[var(--radius-lg)] sm:block"
+                      aria-hidden
+                    />
+                  )}
+                  <Mockup sku={sku} placements={t.payload.placements} side="front" className="relative z-10" />
                   {t.is_featured && i < 3 && (
-                    <span className="absolute -top-[var(--space-2)] -right-[var(--space-2)]">
+                    <span className="absolute -top-[var(--space-2)] -right-[var(--space-2)] z-10">
                       <Sticker tone="pink" tilt="r">
                         Popular
                       </Sticker>
