@@ -71,7 +71,7 @@ export function StockScreen() {
 
   return (
     <PosScreen>
-      <PosScreen.Body>
+      <PosScreen.Body className="stagger">
         <Banner tone="info">
           These are {environment?.name}&apos;s counts — what&apos;s in this stall&apos;s box, not the whole
           organisation&apos;s. Another stall will show different numbers.

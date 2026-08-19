@@ -178,7 +178,7 @@ export function ReturnsScreen() {
 
   return (
     <PosScreen>
-      <PosScreen.Body>
+      <PosScreen.Body className="stagger">
         <Banner tone="info">
           Replace or refund on genuine defects only — no change-of-mind returns. DTF is rated 10–15 washes, hand
           wash recommended. Log rejected returns too; the pattern of what we turn down is worth knowing.

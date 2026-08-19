@@ -84,7 +84,7 @@ export default function LeadsPage() {
   return (
     <PosShell title="Leads">
       <PosScreen>
-        <PosScreen.Body>
+        <PosScreen.Body className="stagger">
           {leads.error && <Banner tone="danger" title="Couldn't load leads">{leads.error}</Banner>}
 
           {leads.loading ? (

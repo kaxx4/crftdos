@@ -161,7 +161,7 @@ export function Board() {
         </div>
       </PosScreen.Head>
 
-      <PosScreen.Body>
+      <PosScreen.Body className="stagger">
         {error && (
           <Banner
             tone="danger"

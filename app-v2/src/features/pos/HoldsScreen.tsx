@@ -119,7 +119,7 @@ export function HoldsScreen() {
 
   return (
     <PosScreen>
-      <PosScreen.Body>
+      <PosScreen.Body className="stagger">
         {holds.error && <Banner tone="danger" title="Couldn't load holds">{holds.error}</Banner>}
         {release.error && <Banner tone="danger" title="Couldn't release that hold">{release.error}</Banner>}
 

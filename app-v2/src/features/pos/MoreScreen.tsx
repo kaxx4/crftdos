@@ -101,7 +101,7 @@ export function MoreScreen() {
 
   return (
     <PosScreen>
-      <PosScreen.Body>
+      <PosScreen.Body className="stagger">
         {/* The one colour-block on the screen, and it carries the answer to
             the only question worth asking here. */}
         <Panel

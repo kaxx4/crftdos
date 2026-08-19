@@ -134,7 +134,7 @@ export function WasteScreen() {
 
   return (
     <PosScreen>
-      <PosScreen.Body>
+      <PosScreen.Body className="stagger">
         <Banner tone="info">
           Log every transfer or blank ruined in the press, even when it feels like paperwork. It takes the item out
           of stock with a reason, so the count stays honest.

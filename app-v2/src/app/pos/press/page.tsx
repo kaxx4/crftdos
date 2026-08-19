@@ -225,7 +225,7 @@ export default function PressPage() {
           </Badge>
         </PosScreen.Head>
 
-        <PosScreen.Body>
+        <PosScreen.Body className="stagger">
           {(queue.error || catalogue.error) && (
             <Banner tone="danger" title="Couldn't load the press queue">
               {queue.error ?? catalogue.error}

@@ -525,7 +525,7 @@ export function WalkUpSale() {
         </Badge>
       </PosScreen.Head>
 
-      <PosScreen.Body>
+      <PosScreen.Body className="stagger">
       {toast && (
         <Banner tone="success" className="animate-pop" action={<Button variant="ghost" onClick={() => setToast(null)}>Dismiss</Button>}>
           {toast}

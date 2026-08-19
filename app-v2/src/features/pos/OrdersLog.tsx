@@ -60,7 +60,7 @@ export function OrdersLog() {
 
   return (
     <PosScreen>
-      <PosScreen.Body>
+      <PosScreen.Body className="stagger">
         {orders.loading ? (
           <>
             <Skeleton className="h-28" />
