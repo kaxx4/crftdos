@@ -12,7 +12,9 @@
  *  This is the one POS screen a CUSTOMER looks at, so it is allowed to carry
  *  the brand: a cobalt masthead and one acid block for the amount raised.
  *  Everything else stays a plain ink-ruled document, because it is also the
- *  thing that gets printed on a thermal printer in black and white. */
+ *  thing that gets printed on a thermal printer in black and white.
+ *
+ *  Colour budget: COBALT (masthead) + ACID (amount raised for AquaTerra). */
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -36,7 +38,7 @@ function ReceiptInner() {
   return (
     <PosShell title="Receipt">
       <PosScreen>
-        <PosScreen.Body>
+        <PosScreen.Body className="stagger">
           {order.loading && (
             <>
               <Skeleton className="h-56" />

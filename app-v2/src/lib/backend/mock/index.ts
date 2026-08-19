@@ -1249,8 +1249,17 @@ export class MockBackend implements Backend {
     const list = input.type === "product" ? skus : designs;
     const row = list.find((x) => x.id === input.id);
     if (!row) return err("SKU not found.", "not_found");
-    if (typeof input.unit_price === "number") row.unit_price = input.unit_price;
-    if (typeof input.unit_cost === "number") row.unit_cost = input.unit_cost;
+    // A negative price/cost isn't a business decision the way a steep
+    // discount is — it's a typo that would flow straight into a walk-up
+    // sale's subtotal, same floor createB2bOrder already holds margin to.
+    if (typeof input.unit_price === "number") {
+      if (input.unit_price < 0) return err("Price can't be negative.", "conflict");
+      row.unit_price = input.unit_price;
+    }
+    if (typeof input.unit_cost === "number") {
+      if (input.unit_cost < 0) return err("Cost can't be negative.", "conflict");
+      row.unit_cost = input.unit_cost;
+    }
     return ok({ ...row });
   }
 
@@ -1258,6 +1267,12 @@ export class MockBackend implements Backend {
     await latency(80);
     const fit = fits.find((f) => f.name === input.fit_name);
     if (!fit) return err("Fit not found.", "not_found");
+    if (typeof input.unit_price === "number" && input.unit_price < 0) {
+      return err("Price can't be negative.", "conflict");
+    }
+    if (typeof input.unit_cost === "number" && input.unit_cost < 0) {
+      return err("Cost can't be negative.", "conflict");
+    }
     for (const sku of skus) {
       if (sku.fit_id !== fit.id) continue;
       if (typeof input.unit_price === "number") sku.unit_price = input.unit_price;

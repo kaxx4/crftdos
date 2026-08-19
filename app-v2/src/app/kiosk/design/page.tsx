@@ -198,6 +198,15 @@ export default function KioskDesignPage() {
             </Mockup>
           </div>
 
+          {/* Arrow-key nudging moves the placement visibly but silently for
+              anyone not looking at the screen — this is the only feedback a
+              screen-reader user gets that the key actually did something. */}
+          <p className="sr-only" aria-live="polite">
+            {selected !== null && placements[selected]
+              ? `${placements[selected].code} at ${Math.round(placements[selected].pos_x)}%, ${Math.round(placements[selected].pos_y)}%, rotated ${placements[selected].rotation}°`
+              : ""}
+          </p>
+
           {selected !== null && placements[selected] ? (
             <Panel key={selected} tight className="animate-rise flex flex-col gap-[var(--space-3)]">
               <div className="flex items-center justify-between gap-[var(--space-3)]">
@@ -288,7 +297,7 @@ export default function KioskDesignPage() {
                   <Panel key={d.id} tight className="flex flex-col gap-[var(--space-2)]">
                     <div className="relative aspect-square">
                       {d.cutout_path ? (
-                        <Image src={d.cutout_path} alt="" fill sizes="200px" className="object-contain" />
+                        <Image src={d.cutout_path} alt={d.name} fill sizes="200px" className="object-contain" />
                       ) : null}
                     </div>
                     <div className="flex flex-col gap-[var(--space-1)]">

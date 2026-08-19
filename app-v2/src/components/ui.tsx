@@ -1050,14 +1050,50 @@ export function Sheet({
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // The element focus returns to on close — captured at open time, since by
+  // close time (often a click on something inside the sheet) the true
+  // trigger is no longer necessarily document.activeElement.
+  const triggerRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      // A basic focus trap: Tab/Shift+Tab cycles within the dialog rather
+      // than escaping into the page behind the overlay, which is otherwise
+      // still fully tabbable since only scroll is locked, not focus.
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    triggerRef.current = document.activeElement as HTMLElement | null;
+    // Focus the dialog itself rather than guessing at a first field — this
+    // sheet's content varies by caller, and a screen reader announces the
+    // dialog's own label the moment focus lands here.
+    dialogRef.current?.focus();
+    return () => triggerRef.current?.focus();
+  }, [open]);
 
   // Nothing else in the app locks background scroll, so the page behind a
   // Sheet stayed scrollable — on touch this reads as the modal "not really
@@ -1081,11 +1117,13 @@ export function Sheet({
         style={{ animationDuration: "var(--dur-fast)" }}
       />
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={clsx(
-          "animate-rise relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden",
+          "animate-rise relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden focus:outline-none",
           "border-[3px] border-[var(--color-ink)] bg-[var(--color-paper)]",
           "rounded-t-[var(--radius-xl)] shadow-[var(--shadow-lift)] sm:rounded-[var(--radius-xl)]"
         )}

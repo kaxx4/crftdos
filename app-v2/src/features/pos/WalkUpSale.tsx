@@ -220,6 +220,9 @@ export function WalkUpSale() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [showCustomerMatches, setShowCustomerMatches] = useState(false);
+  // Roving index for keyboard use of the match list below — -1 means the
+  // input itself still has the selection, not yet moved into the list.
+  const [activeMatch, setActiveMatch] = useState(-1);
   const customerMatches = useMemo(() => {
     const q = customerName.trim().toLowerCase();
     if (!q) return [];
@@ -768,16 +771,45 @@ export function WalkUpSale() {
               onChange={(e) => {
                 setCustomerName(e.target.value);
                 setShowCustomerMatches(true);
+                setActiveMatch(-1);
               }}
               onFocus={() => setShowCustomerMatches(true)}
               // A plain blur fires before a click on the suggestion below
               // registers — delay it long enough for that tap to land.
               onBlur={() => setTimeout(() => setShowCustomerMatches(false), 150)}
+              onKeyDown={(e) => {
+                const open = showCustomerMatches && customerMatches.length > 0;
+                if (!open) return;
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActiveMatch((i) => (i + 1) % customerMatches.length);
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setActiveMatch((i) => (i <= 0 ? customerMatches.length - 1 : i - 1));
+                } else if (e.key === "Enter" && activeMatch >= 0) {
+                  e.preventDefault();
+                  const c = customerMatches[activeMatch];
+                  setCustomerName(c.name);
+                  setCustomerPhone(c.phone);
+                  setShowCustomerMatches(false);
+                  setActiveMatch(-1);
+                } else if (e.key === "Escape") {
+                  setShowCustomerMatches(false);
+                  setActiveMatch(-1);
+                }
+              }}
               autoComplete="off"
-              hint={customerMatches.length > 0 ? "Matches a returning customer — pick one to fill in their number" : undefined}
+              role="combobox"
+              aria-expanded={showCustomerMatches && customerMatches.length > 0}
+              aria-controls="customer-match-listbox"
+              aria-activedescendant={activeMatch >= 0 ? `customer-match-${activeMatch}` : undefined}
+              hint={customerMatches.length > 0 ? "Matches a returning customer — pick one, or use the arrow keys and Enter" : undefined}
             />
             {showCustomerMatches && customerMatches.length > 0 && customerDropdownRect && (
               <ul
+                id="customer-match-listbox"
+                role="listbox"
+                aria-label="Returning customer matches"
                 style={{
                   position: "fixed",
                   top: customerDropdownRect.top + 4,
@@ -789,19 +821,25 @@ export function WalkUpSale() {
                   "rounded-[var(--radius-lg)] border-[3px] border-[var(--color-ink)] bg-white shadow-[var(--shadow-sticker)]"
                 )}
               >
-                {customerMatches.map((c) => (
-                  <li key={c.phone}>
+                {customerMatches.map((c, i) => (
+                  <li key={c.phone} role="presentation">
                     <button
+                      id={`customer-match-${i}`}
+                      role="option"
+                      aria-selected={activeMatch === i}
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
+                      onMouseEnter={() => setActiveMatch(i)}
                       onClick={() => {
                         setCustomerName(c.name);
                         setCustomerPhone(c.phone);
                         setShowCustomerMatches(false);
+                        setActiveMatch(-1);
                       }}
                       className={clsx(
                         "flex min-h-[var(--tap-pos)] w-full items-center justify-between gap-[var(--space-3)]",
-                        "px-[var(--space-3)] text-left t-base hover:bg-[var(--color-paper-2)]"
+                        "px-[var(--space-3)] text-left t-base",
+                        activeMatch === i ? "bg-[var(--color-paper-2)]" : "hover:bg-[var(--color-paper-2)]"
                       )}
                     >
                       <span className="min-w-0 truncate font-bold">{c.name}</span>
