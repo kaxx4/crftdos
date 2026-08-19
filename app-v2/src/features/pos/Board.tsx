@@ -28,7 +28,11 @@
  *  without looking. DESIGN-SPEC §6.
  *
  *  Both kiosk-originated tickets and volunteer-created walk-up sales land in
- *  the same queue — walk-ups are additive, not replaced. */
+ *  the same queue — walk-ups are additive, not replaced.
+ *
+ *  Colour budget: YELLOW (a wait worth noticing) + ACID (the selected
+ *  card's own stage stepper). Every ticket card is otherwise white — a
+ *  repeating collection, one tone. */
 
 import Link from "next/link";
 import { useState } from "react";

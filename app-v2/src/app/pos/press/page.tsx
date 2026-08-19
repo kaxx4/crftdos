@@ -22,7 +22,10 @@
  *  operator's hands are full; it is now one line per placement. And "Mark
  *  pressed" used to sit under each order, inside the scroller — it is now the
  *  single pinned action, acting on the selected (by default oldest) order,
- *  which is the one the operator should be pressing. */
+ *  which is the one the operator should be pressing.
+ *
+ *  Colour budget: COBALT (the selected order). Every other order in the
+ *  queue is one tone — a repeating collection, not ranked by colour. */
 
 import { useEffect, useMemo, useState } from "react";
 import { getBackend } from "@/lib/backend";

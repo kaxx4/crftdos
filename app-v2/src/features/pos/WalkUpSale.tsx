@@ -20,7 +20,11 @@
  *  customer within a frame whether the write takes 80ms or never completes.
  *  Offline, the order goes to the outbox keyed by its client-generated id,
  *  which is the same id the server uses as a primary key — so a retry cannot
- *  double-charge. */
+ *  double-charge.
+ *
+ *  Colour budget: ORANGE (a transfer running low) + ACID (a freebie line on
+ *  the order). The post-charge toast is the app's fixed success green, not a
+ *  per-screen choice. */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";

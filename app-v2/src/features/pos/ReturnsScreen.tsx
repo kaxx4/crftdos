@@ -10,7 +10,10 @@
  *  The screen is a single funnel: find → decide → confirm. The confirm sits in
  *  the pinned foot and names the money it moves, because a return is the one
  *  thing on this surface that hands cash back. Until an order is found the
- *  foot says so rather than offering a dead button. */
+ *  foot says so rather than offering a dead button.
+ *
+ *  Colour budget: none — no real per-return status is worth a colour here,
+ *  only the shared info/success/error banners every screen carries. */
 
 import { useMemo, useState } from "react";
 import Link from "next/link";

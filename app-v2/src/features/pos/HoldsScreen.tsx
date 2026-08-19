@@ -1,5 +1,9 @@
 "use client";
 
+/** Colour budget: none. Every hold is one tone — there is no real status
+ *  here worth a colour, only the informational SKY banner on the expiry
+ *  note and the shared error/warn banners every screen carries. */
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getBackend } from "@/lib/backend";

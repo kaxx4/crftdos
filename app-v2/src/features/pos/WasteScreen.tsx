@@ -9,7 +9,10 @@
  *
  *  Logging waste destroys stock and cannot be undone from this surface, so the
  *  commit is a two-tap `ConfirmAction` in the pinned foot rather than a plain
- *  red button sitting in the middle of a form. */
+ *  red button sitting in the middle of a form.
+ *
+ *  Colour budget: none — no real per-entry status here, only the shared
+ *  info/success/error banners every screen carries. */
 
 import { useMemo, useState } from "react";
 import Link from "next/link";

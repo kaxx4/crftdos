@@ -12,7 +12,10 @@
  *  plain one when not — because "are we trading?" is a question asked from two
  *  metres away, and the answer decides whether the Sell tab works at all. The
  *  open/close action itself lives in the foot, so it is never scrolled past
- *  and never sits next to a link that just navigates. */
+ *  and never sits next to a link that just navigates.
+ *
+ *  Colour budget: ACID (shift open) + YELLOW (shift not open) on the one
+ *  status panel. Nothing else on the screen carries colour. */
 
 import { useState } from "react";
 import Link from "next/link";

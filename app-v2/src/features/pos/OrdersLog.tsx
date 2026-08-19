@@ -1,5 +1,8 @@
 "use client";
 
+/** Colour budget: SIGNAL (a voided order) — the only real status this list
+ *  ever carries. Every other row is one tone. */
+
 import { useState } from "react";
 import Link from "next/link";
 import { getBackend } from "@/lib/backend";

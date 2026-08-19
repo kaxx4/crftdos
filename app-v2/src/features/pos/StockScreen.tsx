@@ -1,5 +1,9 @@
 "use client";
 
+/** Colour budget: ORANGE (the running-low panel) + SIGNAL (a design with
+ *  none left). Both are real thresholds against actual stock counts, never
+ *  decorative. */
+
 import Link from "next/link";
 import { getBackend } from "@/lib/backend";
 import { useEnvironment } from "@/lib/hooks/useEnvironment";

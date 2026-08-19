@@ -10,7 +10,10 @@
  *
  *  "Log a lead" is the whole point of the screen, so it is the pinned action
  *  rather than a small button in a panel header — this gets tapped mid-
- *  conversation with somebody standing in front of you. */
+ *  conversation with somebody standing in front of you.
+ *
+ *  Colour budget: none — every lead is one tone, only the shared error
+ *  banner carries colour. */
 
 import { useState } from "react";
 import { getBackend } from "@/lib/backend";
