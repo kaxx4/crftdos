@@ -14,19 +14,74 @@
  *
  *  Colour budget: COBALT (selection + continue) + ORANGE (low stock). */
 
+import { useState } from "react";
 import { money } from "@/lib/money";
-import { Badge, Button, EmptyState, HandArrow, Heading, Mono, Panel, Skeleton, Text } from "@/components/ui";
+import { Badge, Button, Chip, EmptyState, HandArrow, Heading, Mono, Panel, Sheet, Skeleton, Table, Td, Text, Th } from "@/components/ui";
 import { KioskFrame } from "../_lib/KioskFrame";
 import { Mockup } from "../_lib/Mockup";
 import { useKiosk } from "../_lib/session";
 import { skuLabel } from "../_lib/util";
+import { sizeChartFor } from "@/lib/sizeChart";
 import Link from "next/link";
+
+/** The fits with a real chart to show, in the order they should tab. Crop
+ *  has no supplied chart, so it isn't offered here rather than guessed. */
+const CHARTED_FITS = ["Oversized", "Regular"] as const;
+
+function SizeGuideSheet({ open, onClose, initialFit }: { open: boolean; onClose: () => void; initialFit: string }) {
+  const [fit, setFit] = useState<string>(CHARTED_FITS.includes(initialFit as (typeof CHARTED_FITS)[number]) ? initialFit : CHARTED_FITS[0]);
+  const rows = sizeChartFor(fit);
+
+  return (
+    <Sheet open={open} onClose={onClose} title="Size guide">
+      <div className="flex flex-col gap-[var(--space-4)]">
+        <Text step="sm" muted>
+          All measurements in inches, laid flat. Chest width is measured pit-to-pit and doubled.
+        </Text>
+        <div className="flex gap-[var(--space-2)]">
+          {CHARTED_FITS.map((f) => (
+            <Chip key={f} surface="admin" selected={fit === f} onClick={() => setFit(f)}>
+              {f}
+            </Chip>
+          ))}
+        </div>
+        {rows ? (
+          <Table caption={`${fit} fit — chest, front length, sleeve length and shoulder width by size`} head={["", ...rows.map((r) => r.size)]}>
+            {(
+              [
+                ["Chest width", "chestWidth"],
+                ["Front length", "frontLength"],
+                ["Sleeve length", "sleeveLength"],
+                ["Shoulder width", "shoulderWidth"],
+              ] as const
+            ).map(([label, key]) => (
+              <tr key={key}>
+                <Th>{label}</Th>
+                {rows.map((r) => (
+                  <Td key={r.size} mono className="text-right">
+                    {r[key]}&Prime;
+                  </Td>
+                ))}
+              </tr>
+            ))}
+          </Table>
+        ) : (
+          <Text step="sm" muted>
+            No chart for this fit yet — a volunteer can measure one against the rack.
+          </Text>
+        )}
+      </div>
+    </Sheet>
+  );
+}
 
 export default function KioskGarmentPage() {
   const { skus, catalogue, catalogueLoading, canvas } = useKiosk();
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const available = skus.filter((s) => s.is_active && s.print_area);
   const chosen = canvas.sku;
+  const chosenFitName = catalogue?.fits.find((f) => f.id === chosen?.fit_id)?.name ?? CHARTED_FITS[0];
 
   return (
     <KioskFrame
@@ -54,6 +109,14 @@ export default function KioskGarmentPage() {
         )
       }
     >
+      {!catalogueLoading && available.length > 0 && (
+        <div className="flex justify-end">
+          <Button surface="kiosk" size="lg" variant="ghost" onClick={() => setSizeGuideOpen(true)}>
+            📏 Size guide
+          </Button>
+        </div>
+      )}
+
       {catalogueLoading ? (
         <div className="grid gap-[var(--space-3)] sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -121,6 +184,8 @@ export default function KioskGarmentPage() {
           })}
         </div>
       )}
+
+      <SizeGuideSheet open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} initialFit={chosenFitName} />
     </KioskFrame>
   );
 }
