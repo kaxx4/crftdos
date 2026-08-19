@@ -3,7 +3,7 @@
     <path d="M250 90l-140 70 44 128 74-30v612h544V258l74 30 44-128-140-70-124-42a90 70 0 01-252 0z"
           fill="#17171a" stroke="#5a5a5e" stroke-width="3"/>
     <path d="M228 850h544M228 868h544" stroke="#5a5a5e" stroke-width="3"/>
-    <path d="M152 139L176 279M173 128.5L187.3 274.5" stroke="#5a5a5e" stroke-width="3" fill="none"/>
-    <path d="M848 139L823.8 279M827 128.5L812.7 274.5" stroke="#5a5a5e" stroke-width="3" fill="none"/>
+    <path d="M152 139L176 279M162.5 133.75L181.65 276.75M173 128.5L187.3 274.5" stroke="#5a5a5e" stroke-width="3" fill="none"/>
+    <path d="M848 139L823.8 279M837.5 133.75L818.25 276.75M827 128.5L812.7 274.5" stroke="#5a5a5e" stroke-width="3" fill="none"/>
   </g>
 </svg>

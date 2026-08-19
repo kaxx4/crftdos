@@ -12,7 +12,7 @@
     <!-- Cuff stripes: each endpoint is a convex combination of the sleeve
          quad's own corners, so it is inside the fill by construction, not
          by eye. -->
-    <path d="M152 139L176 279M173 128.5L187.3 274.5" stroke="#5a5a5e" stroke-width="3" fill="none"/>
-    <path d="M848 139L823.8 279M827 128.5L812.7 274.5" stroke="#5a5a5e" stroke-width="3" fill="none"/>
+    <path d="M152 139L176 279M162.5 133.75L181.65 276.75M173 128.5L187.3 274.5" stroke="#5a5a5e" stroke-width="3" fill="none"/>
+    <path d="M848 139L823.8 279M837.5 133.75L818.25 276.75M827 128.5L812.7 274.5" stroke="#5a5a5e" stroke-width="3" fill="none"/>
   </g>
 </svg>
