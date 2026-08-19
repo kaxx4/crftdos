@@ -187,10 +187,10 @@ export default function StockAllocationPage() {
                     return (
                       <Td key={l.id} mono className="text-right">
                         {q < 0 ? (
-                          <span className="font-bold text-[var(--color-signal)]">
+                          <Badge tone="signal">
                             {q}
                             <span className="sr-only"> — negative, this needs reconciling</span>
-                          </span>
+                          </Badge>
                         ) : low ? (
                           <Badge tone="orange">
                             {q} left
