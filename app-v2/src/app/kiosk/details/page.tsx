@@ -25,7 +25,7 @@ import { track } from "@/lib/analytics";
 import { getDeviceId } from "@/lib/device";
 import { useAction } from "@/lib/hooks/useAsync";
 import { money } from "@/lib/money";
-import { Banner, Button, Field, Heading, Mono, Panel, Text } from "@/components/ui";
+import { Banner, Button, Field, Heading, Panel, Table, Td, Th } from "@/components/ui";
 import { KioskFrame } from "../_lib/KioskFrame";
 import { Mockup } from "../_lib/Mockup";
 import { useKiosk } from "../_lib/session";
@@ -141,17 +141,30 @@ export default function KioskDetailsPage() {
 
         <Panel title="What you're getting" className="flex flex-col gap-[var(--space-4)] sm:flex-row">
           <Mockup sku={sku} placements={placements} side="front" className="w-full sm:w-[180px] sm:shrink-0" />
-          <div className="flex flex-col gap-[var(--space-2)]">
+          <div className="flex flex-1 flex-col gap-[var(--space-3)]">
             <Heading level={2} step="lg">
               {skuLabel(sku, catalogue)}
             </Heading>
-            <Text step="base" muted>
-              {placements.length} transfer{placements.length === 1 ? "" : "s"} —{" "}
-              {placements.map((p) => p.code).join(", ")}
-            </Text>
-            <Text step="md">
-              <Mono>{money(total)}</Mono>
-            </Text>
+            <Table caption={`Order spec — ${skuLabel(sku, catalogue)}`} head={["", ""]}>
+              <tr>
+                <Th>Transfers</Th>
+                <Td mono className="text-right">
+                  {placements.length}
+                </Td>
+              </tr>
+              <tr>
+                <Th>Designs</Th>
+                <Td mono className="text-right">
+                  {placements.map((p) => p.code).join(", ")}
+                </Td>
+              </tr>
+              <tr>
+                <Th>Total</Th>
+                <Td mono className="text-right font-extrabold">
+                  {money(total)}
+                </Td>
+              </tr>
+            </Table>
           </div>
         </Panel>
 
