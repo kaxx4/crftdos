@@ -3,9 +3,10 @@
 /** B2B enquiries and deals.
  *
  *  Org-wide, not environment-scoped (migration 004.2) — a corporate order is
- *  not tied to any single stall. The margin gate (D17) is enforced twice: here
- *  client-side as the operator types, so they see the warning before they
- *  submit, and again server-side, which is the one that actually matters.
+ *  not tied to any single stall. Margin is shown live as the operator types,
+ *  purely informational — nothing here blocks saving, including a loss. The
+ *  PIN step-up (D17) that used to gate low-margin deals has been removed
+ *  app-wide; this was the last place it lived.
  *
  *  Colour budget: acid on the one emphasised Stat, cobalt on the primary
  *  actions. The margin readout uses washes, not blocks — it changes as you
@@ -47,11 +48,11 @@ const PAYMENT_METHODS: PaymentMethod[] = ["upi", "cash", "split", "pending"];
 
 const stageLabel = (s: B2bStage) => s.replace("_", " ");
 
-/** The margin gate, as one function instead of four ternaries that all
+/** The margin readout, as one function instead of four ternaries that all
  *  returned the same class — the old version rendered "under 10%" and "under
- *  15%" identically, so the operator got no signal that they had crossed from
- *  "needs a PIN" into "just worth a look". */
-type MarginVerdict = { key: "loss" | "gated" | "thin" | "ok"; wash: string; note: string };
+ *  15%" identically, so the operator got no signal of where they actually
+ *  stood. Informational only — nothing here blocks saving. */
+type MarginVerdict = { key: "loss" | "low" | "thin" | "ok"; wash: string; note: string };
 
 function marginVerdict(margin: number): MarginVerdict {
   if (margin < 0)
@@ -62,15 +63,15 @@ function marginVerdict(margin: number): MarginVerdict {
     };
   if (margin < 10)
     return {
-      key: "gated",
+      key: "low",
       wash: "border-[var(--color-ink)] bg-[var(--color-yellow-wash)]",
-      note: "Under 10% — needs an admin PIN.",
+      note: "Under 10% — worth a second look.",
     };
   if (margin < 15)
     return {
       key: "thin",
       wash: "border-[var(--color-ink)] bg-[var(--color-yellow-wash)]",
-      note: "Under 15% — thin, but allowed.",
+      note: "Under 15% — thin.",
     };
   return { key: "ok", wash: "border-[var(--color-ink)] bg-[var(--color-acid-wash)]", note: "Healthy margin." };
 }
@@ -88,7 +89,6 @@ export default function B2bPage() {
   const [quantity, setQuantity] = useState("100");
   const [unitPrice, setUnitPrice] = useState("400");
   const [unitCost, setUnitCost] = useState("360");
-  const [adminPin, setAdminPin] = useState("");
 
   const [editing, setEditing] = useState<B2bOrder | null>(null);
   const [editDepositAmount, setEditDepositAmount] = useState("");
@@ -119,7 +119,6 @@ export default function B2bPage() {
     setQuantity("100");
     setUnitPrice("400");
     setUnitCost("360");
-    setAdminPin("");
   };
 
   const create = async () => {
@@ -133,7 +132,6 @@ export default function B2bPage() {
         quantity: Number(quantity) || 0,
         unit_price: Number(unitPrice) || 0,
         unit_cost: Number(unitCost) || 0,
-        admin_pin: adminPin || undefined,
       })
     );
     if (res) {
@@ -339,7 +337,7 @@ export default function B2bPage() {
             size="lg"
             block
             busy={busy}
-            disabled={!clientOrg.trim() || !accountOwner || margin < 0 || (margin < 10 && !adminPin.trim())}
+            disabled={!clientOrg.trim() || !accountOwner}
             onClick={create}
           >
             Save enquiry
@@ -429,21 +427,6 @@ export default function B2bPage() {
             <span className="t-sm font-extrabold">{verdict.note}</span>
           </div>
 
-          {verdict.key === "loss" && (
-            <Banner tone="danger">
-              Can&apos;t save — this deal would sell at a loss. Raise the price or lower the cost.
-            </Banner>
-          )}
-          {verdict.key === "gated" && (
-            <Field
-              surface="admin"
-              label="Admin PIN"
-              type="password"
-              value={adminPin}
-              onChange={(e) => setAdminPin(e.target.value)}
-              hint="Required below 10% margin."
-            />
-          )}
         </div>
       </Sheet>
 

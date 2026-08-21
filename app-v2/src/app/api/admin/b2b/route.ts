@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { verify } from "@node-rs/argon2";
-import { checkRateLimit, recordFailure, clearRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
 // stall_b2b_orders / stall_b2b_activity are explicitly NOT environment-scoped
 // (migration 004.2, org-wide) — no environment_id filtering here.
@@ -29,8 +27,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ orders: orders || [], volunteers: volunteers || [], committed, collected });
 }
 
-// D17 — below 15% margin: amber warning (client-side). Below 10%: requires
-// admin PIN to save (checked here). Below 0%: hard-blocked, no PIN can save it.
 export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
@@ -40,7 +36,6 @@ export async function POST(req: NextRequest) {
     quantity,
     unit_price: unitPrice,
     unit_cost: unitCost,
-    admin_pin: adminPin,
     contact_name: contactName,
     contact_phone: contactPhone,
     contact_email: contactEmail,
@@ -57,32 +52,9 @@ export async function POST(req: NextRequest) {
   const qty = Number(quantity) || 0;
   const price = Number(unitPrice) || 0;
   const cost = Number(unitCost) || 0;
+  // Informational only now — no gate, no PIN. Still logged so margin is
+  // visible in the activity trail, same as it always was for scrutiny.
   const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
-
-  if (margin < 0) {
-    return NextResponse.json({ error: "Margin below 0% — hard blocked, cannot save at a loss." }, { status: 400 });
-  }
-
-  if (margin < 10) {
-    const rlKey = rateLimitKey(req, "admin-pin");
-    const rl = await checkRateLimit(rlKey);
-    if (!rl.allowed) {
-      return NextResponse.json(
-        { error: `Too many failed attempts. Try again in ${Math.ceil(rl.retryAfterSeconds / 60)} minutes.` },
-        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
-      );
-    }
-    const { data: pinRow } = await admin.from("stall_settings").select("value").eq("key", "pin_admin").single();
-    const pinOk = pinRow && adminPin ? await verify(pinRow.value as string, adminPin).catch(() => false) : false;
-    if (!pinOk) {
-      await recordFailure(rlKey);
-      return NextResponse.json(
-        { error: `Margin is ${margin.toFixed(1)}% — below 10% requires admin PIN to save.` },
-        { status: 401 }
-      );
-    }
-    await clearRateLimit(rlKey);
-  }
 
   const { data, error } = await admin
     .from("stall_b2b_orders")

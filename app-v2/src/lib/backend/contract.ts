@@ -173,8 +173,6 @@ export type CreateB2bOrderInput = {
   quantity: number;
   unit_price: number;
   unit_cost: number;
-  /** Required only when the computed margin is below 10% (D17). */
-  admin_pin?: string;
 };
 
 export type UpdateB2bOrderInput = Partial<{
@@ -309,7 +307,7 @@ export interface Backend {
 
   // B2B [org-wide — NOT environment-scoped, migration 004.2]
   listB2bOrders(): Promise<Result<{ orders: B2bOrder[]; volunteers: Volunteer[]; committed: number; collected: number }>>;
-  /** D17 margin gate: <10% requires `admin_pin`, <0% is hard-blocked. */
+  /** Margin is returned for display only — no gate, no PIN. */
   createB2bOrder(input: CreateB2bOrderInput): Promise<Result<{ order: B2bOrder; margin: number }>>;
   updateB2bOrder(id: string, patch: UpdateB2bOrderInput): Promise<Result<B2bOrder>>;
 

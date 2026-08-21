@@ -1082,18 +1082,9 @@ export class MockBackend implements Backend {
     }
     const price = input.unit_price || 0;
     const cost = input.unit_cost || 0;
+    // Informational only now — no gate, no PIN. Still logged so margin is
+    // visible in the activity trail, same as it always was for scrutiny.
     const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
-
-    // D17: below 0% is hard-blocked, no PIN can save it.
-    if (margin < 0) {
-      return err("Margin below 0% — hard blocked, cannot save at a loss.", "conflict");
-    }
-    // D17: below 10% requires admin PIN. The mock has no PIN store, so any
-    // non-empty PIN stands in for a correct one — the real guard is the live
-    // route's argon2 check against stall_settings.pin_admin.
-    if (margin < 10 && !input.admin_pin) {
-      return err(`Margin is ${margin.toFixed(1)}% — below 10% requires admin PIN to save.`, "unauthorised");
-    }
 
     return mutate((s) => {
       const order: B2bOrder = {
